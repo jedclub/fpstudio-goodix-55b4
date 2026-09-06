@@ -306,7 +306,7 @@ O início de sessão por impressão digital do Windows deixará de funcionar nes
 Login and sudo are deliberately left alone, so a sensor that stops working can never lock you out of the machine. The line is &apos;sufficient&apos;: if the fingerprint fails for any reason, you are asked for the password exactly as before.</source>
         <translation>Isto acrescenta uma linha à pilha que o polkit usa, para que o pkexec e a caixa de diálogo de autenticação do ambiente de trabalho experimentem primeiro a impressão digital.
 
-O login e o sudo são deliberadamente deixados intactos, para que um sensor que deixe de funcionar nunca o possa trancar fora da máquina. A linha é 'sufficient': se a impressão digital falhar por qualquer motivo, a palavra-passe é pedida exatamente como antes.</translation>
+O login e o sudo são deliberadamente deixados intactos, para que um sensor que deixe de funcionar nunca o possa trancar fora da máquina. A linha é &apos;sufficient&apos;: se a impressão digital falhar por qualquer motivo, a palavra-passe é pedida exatamente como antes.</translation>
     </message>
     <message>
         <location filename="../src/setupcheck.cpp" line="366"/>
@@ -330,7 +330,7 @@ O login e o sudo são deliberadamente deixados intactos, para que um sensor que 
 The safety net is the same either way. The line added is &apos;sufficient&apos;, so a failing fingerprint falls back to the password exactly as before. sudo itself never stops working - only the fingerprint shortcut can.</source>
         <translation>Opcional, e um passo além da regra polkit acima: o sudo costuma ser o caminho de volta quando outra coisa na máquina está avariada, por isso alargar a autenticação por impressão digital a ele merece ser decidido deliberadamente, não por predefinição.
 
-A rede de segurança é a mesma de qualquer forma. A linha acrescentada é 'sufficient', por isso uma impressão digital falhada recua para a palavra-passe exatamente como antes. O sudo em si nunca deixa de funcionar - só o atalho da impressão digital pode.</translation>
+A rede de segurança é a mesma de qualquer forma. A linha acrescentada é &apos;sufficient&apos;, por isso uma impressão digital falhada recua para a palavra-passe exatamente como antes. O sudo em si nunca deixa de funcionar - só o atalho da impressão digital pode.</translation>
     </message>
     <message>
         <location filename="../src/setupcheck.cpp" line="413"/>

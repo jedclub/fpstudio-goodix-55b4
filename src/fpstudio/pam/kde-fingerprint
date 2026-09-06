@@ -1,0 +1,45 @@
+#%PAM-1.0
+#
+# Let the KDE Plasma lock screen's fingerprint path retry as many times as
+# polkit and sudo do.
+#
+# This file shadows the one kscreenlocker ships at
+# /usr/lib/pam.d/kde-fingerprint, which is the same stack without the
+# max-tries/timeout options on the pam_fprintd line. Overriding in /etc means
+# a kscreenlocker update cannot silently drop the change, and reverting is
+# deleting one file.
+#
+# The lock screen already runs two PAM services side by side: this one
+# (fingerprint only) and "kde" (password only, see /usr/lib/pam.d/kde) - the
+# greeter starts both, and whichever succeeds first unlocks. So this file
+# needs no `sufficient`-plus-fallback logic of its own the way polkit-1 and
+# sudo do; the password fallback already exists one level up, as the other
+# service running at the same time. Only the retry budget needed changing.
+#
+# max-tries=20, timeout=90: see pam/polkit-1 and pam/sudo for the measurement
+# this is based on - roughly a 70% match chance per touch on this sensor, so
+# the module's own defaults (3 tries, 30 seconds) fail far more often than
+# they need to. The `required` control flag and everything else here is
+# copied unchanged from the vendor default; this adds one thing and nothing
+# more.
+#
+# Install:
+#   sudo install -Dm644 kde-fingerprint /etc/pam.d/kde-fingerprint
+#
+# Remove:
+#   sudo rm /etc/pam.d/kde-fingerprint
+#
+# No daemon restart is needed; PAM reads the stack per authentication.
+
+auth       required                    pam_shells.so
+auth       requisite                   pam_nologin.so
+auth       requisite                   pam_faillock.so      preauth
+-auth      required                    pam_fprintd.so max-tries=20 timeout=90
+auth       optional                    pam_permit.so
+auth       required                    pam_env.so
+
+account    include                     system-local-login
+
+password   required                    pam_deny.so
+
+session    include                     system-local-login

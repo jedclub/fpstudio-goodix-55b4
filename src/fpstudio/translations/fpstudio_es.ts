@@ -306,7 +306,7 @@ El inicio de sesión por huella de Windows dejará de funcionar en esta máquina
 Login and sudo are deliberately left alone, so a sensor that stops working can never lock you out of the machine. The line is &apos;sufficient&apos;: if the fingerprint fails for any reason, you are asked for the password exactly as before.</source>
         <translation>Esto añade una línea a la pila que usa polkit, para que pkexec y el diálogo de autenticación del escritorio prueben primero la huella.
 
-El inicio de sesión y sudo se dejan intencionadamente intactos, para que un sensor que deje de funcionar nunca pueda dejarle fuera de la máquina. La línea es 'sufficient': si la huella falla por cualquier motivo, se le pedirá la contraseña exactamente como antes.</translation>
+El inicio de sesión y sudo se dejan intencionadamente intactos, para que un sensor que deje de funcionar nunca pueda dejarle fuera de la máquina. La línea es &apos;sufficient&apos;: si la huella falla por cualquier motivo, se le pedirá la contraseña exactamente como antes.</translation>
     </message>
     <message>
         <location filename="../src/setupcheck.cpp" line="366"/>
@@ -330,7 +330,7 @@ El inicio de sesión y sudo se dejan intencionadamente intactos, para que un sen
 The safety net is the same either way. The line added is &apos;sufficient&apos;, so a failing fingerprint falls back to the password exactly as before. sudo itself never stops working - only the fingerprint shortcut can.</source>
         <translation>Opcional, y un paso más allá de la regla de polkit anterior: sudo suele ser la vía de vuelta cuando algo más en la máquina está roto, así que extender la autenticación por huella a él merece decidirse deliberadamente, no por defecto.
 
-La red de seguridad es la misma en cualquier caso. La línea añadida es 'sufficient', así que una huella fallida recurre a la contraseña exactamente como antes. sudo en sí nunca deja de funcionar; solo el atajo de la huella puede hacerlo.</translation>
+La red de seguridad es la misma en cualquier caso. La línea añadida es &apos;sufficient&apos;, así que una huella fallida recurre a la contraseña exactamente como antes. sudo en sí nunca deja de funcionar; solo el atajo de la huella puede hacerlo.</translation>
     </message>
     <message>
         <location filename="../src/setupcheck.cpp" line="413"/>

@@ -1,0 +1,128 @@
+name: CI
+
+# Every job runs in an Arch container. The driver is an Arch package
+# (PKGBUILD, makepkg) and fpstudio is built the same way a real install
+# would build it - a generic Ubuntu runner would validate less, since the
+# package tooling itself is Arch-specific.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  no-leaked-data:
+    name: No personal paths or real fingerprint captures
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # This project's own history had this exact mistake once - eight real
+      # captures sat in git before the repo's first push. Cheap enough to
+      # never trust "we checked once" again.
+      - name: Scan for /home/<user> paths
+        run: |
+          if grep -rnE "/home/[a-z][a-z0-9_-]*" \
+               --include='*.md' --include='*.cpp' --include='*.h' \
+               --include='*.sh' --include='*.py' --include='*.ts' . \
+               | grep -v 'FPSTUDIO_SOURCE_DIR\|CMAKE_SOURCE_DIR'; then
+            echo "::error::Found a literal /home/<user> path in a tracked file"
+            exit 1
+          fi
+
+      - name: Scan captures/ for anything that isn't a named synthetic image
+        run: |
+          allowed="README.md ridges-correct-geometry.png ridges-wrong-geometry.png normalisation-minmax.png normalisation-percentile.png"
+          bad=0
+          for f in captures/*; do
+            name=$(basename "$f")
+            echo "$allowed" | tr ' ' '\n' | grep -qx "$name" || { echo "::error::Unexpected file in captures/: $name"; bad=1; }
+          done
+          exit $bad
+
+  driver-patches:
+    name: Driver patches apply and build
+    runs-on: ubuntu-latest
+    container: archlinux:base-devel
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install build dependencies
+        run: |
+          pacman -Syu --noconfirm --needed \
+            git meson pkgconf gobject-introspection gtk-doc doctest glib2-devel \
+            libgusb openssl pixman nss libgudev opencv sudo
+
+      # makepkg refuses to run as root, and a fresh container has no
+      # unprivileged user to run it as.
+      - name: Build the package as an unprivileged user
+        run: |
+          useradd -m builder
+          echo 'builder ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers
+          chown -R builder:builder .
+          su builder -c 'cd src/driver && makepkg -f --noconfirm --nocheck'
+
+  fpstudio:
+    name: Build fpstudio (GUI, CLI, MCP)
+    runs-on: ubuntu-latest
+    container: archlinux:base-devel
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install build dependencies
+        run: |
+          pacman -Syu --noconfirm --needed \
+            cmake ninja qt6-base qt6-tools pkgconf glib2 libfprint
+
+      - name: Configure
+        run: cmake -S src/fpstudio -B build -G Ninja
+
+      - name: Build
+        run: cmake --build build
+
+      # No sensor in CI, so this only proves the binary starts, resolves a
+      # translation, and exits cleanly - not that capture/enrol/verify work.
+      - name: Smoke test the CLI entry points
+        run: |
+          ./build/fpstudio --help
+          test "$(./build/fpstudio --lang ko --tr 'Sensor ready')" = "센서 준비 완료"
+          ./build/fpstudio --cli devices
+
+  translations:
+    name: Translation catalogues are up to date
+    runs-on: ubuntu-latest
+    container: archlinux:base-devel
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install lupdate
+        run: pacman -Syu --noconfirm --needed qt6-tools
+
+      # Catches the exact mistake this project made once: a new tr() call
+      # added without re-running lupdate, which left the wizard's own
+      # strings out of every catalogue while the rest of the window was
+      # already translated - a language mix nobody would notice from the
+      # diff alone.
+      - name: lupdate must find nothing new
+        run: |
+          cd src/fpstudio
+          cp -r translations /tmp/translations.before
+          /usr/lib/qt6/bin/lupdate src/ -ts translations/fpstudio_*.ts -no-obsolete
+          if ! diff -rq /tmp/translations.before translations; then
+            echo "::error::Source strings changed without updating the .ts files - run lupdate and translate what it adds"
+            exit 1
+          fi
+
+      - name: No catalogue may have an unfinished translation
+        run: |
+          cd src/fpstudio/translations
+          fail=0
+          for f in fpstudio_*.ts; do
+            n=$(grep -c 'type="unfinished"' "$f" || true)
+            if [ "$n" -gt 0 ]; then
+              echo "::error::$f has $n untranslated string(s)"
+              fail=1
+            fi
+          done
+          exit $fail

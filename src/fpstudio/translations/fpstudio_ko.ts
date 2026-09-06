@@ -306,7 +306,7 @@ Windows fingerprint sign-in will stop working on this machine, permanently. If y
 Login and sudo are deliberately left alone, so a sensor that stops working can never lock you out of the machine. The line is &apos;sufficient&apos;: if the fingerprint fails for any reason, you are asked for the password exactly as before.</source>
         <translation>polkit 이 쓰는 인증 스택에 한 줄을 추가합니다. 그러면 pkexec 와 데스크톱 인증 창이 지문을 먼저 시도합니다.
 
-로그인과 sudo 는 일부러 건드리지 않았습니다. 그래야 센서가 고장 나도 기계에서 잠기지 않습니다. 이 줄은 'sufficient' 이므로 지문이 어떤 이유로든 실패하면 예전과 똑같이 비밀번호를 묻습니다.</translation>
+로그인과 sudo 는 일부러 건드리지 않았습니다. 그래야 센서가 고장 나도 기계에서 잠기지 않습니다. 이 줄은 &apos;sufficient&apos; 이므로 지문이 어떤 이유로든 실패하면 예전과 똑같이 비밀번호를 묻습니다.</translation>
     </message>
     <message>
         <location filename="../src/setupcheck.cpp" line="366"/>
@@ -330,7 +330,7 @@ Login and sudo are deliberately left alone, so a sensor that stops working can n
 The safety net is the same either way. The line added is &apos;sufficient&apos;, so a failing fingerprint falls back to the password exactly as before. sudo itself never stops working - only the fingerprint shortcut can.</source>
         <translation>선택 사항이며, 위 polkit 규칙보다 한 걸음 더 나아간 것입니다. sudo 는 기계의 다른 무언가가 고장 났을 때 되돌아가는 통로인 경우가 많아서, 여기에 지문 인증을 확장하는 건 기본값이 아니라 신중하게 결정할 일입니다.
 
-안전장치는 똑같습니다. 추가되는 줄은 'sufficient' 이므로, 지문이 실패하면 예전처럼 비밀번호로 넘어갑니다. sudo 자체는 절대 멈추지 않습니다 — 지문이라는 지름길만 멈출 수 있습니다.</translation>
+안전장치는 똑같습니다. 추가되는 줄은 &apos;sufficient&apos; 이므로, 지문이 실패하면 예전처럼 비밀번호로 넘어갑니다. sudo 자체는 절대 멈추지 않습니다 — 지문이라는 지름길만 멈출 수 있습니다.</translation>
     </message>
     <message>
         <location filename="../src/setupcheck.cpp" line="413"/>
