@@ -41,7 +41,7 @@
     </message>
     <message>
         <location filename="../src/engine.cpp" line="137"/>
-        <location filename="../src/setupcheck.cpp" line="195"/>
+        <location filename="../src/setupcheck.cpp" line="200"/>
         <source>Secure channel to the sensor established</source>
         <translation>Sicherer Kanal zum Sensor hergestellt</translation>
     </message>
@@ -64,19 +64,19 @@
     </message>
     <message>
         <location filename="../src/headless.cpp" line="81"/>
-        <location filename="../src/headless.cpp" line="379"/>
+        <location filename="../src/headless.cpp" line="373"/>
         <source>Put your finger on the sensor and hold it there</source>
         <translation>Finger auf den Sensor legen und dort halten</translation>
     </message>
     <message>
         <location filename="../src/headless.cpp" line="83"/>
-        <location filename="../src/headless.cpp" line="380"/>
+        <location filename="../src/headless.cpp" line="374"/>
         <source>Enrolling — press and lift your finger repeatedly</source>
         <translation>Registrierung läuft — Finger wiederholt auflegen und abheben</translation>
     </message>
     <message>
         <location filename="../src/headless.cpp" line="85"/>
-        <location filename="../src/headless.cpp" line="381"/>
+        <location filename="../src/headless.cpp" line="375"/>
         <source>Put the enrolled finger on the sensor</source>
         <translation>Registrierten Finger auf den Sensor legen</translation>
     </message>
@@ -165,42 +165,42 @@ This grants the wheel group read and write on the sensor. On a single-user lapto
 Dies gewährt der Gruppe wheel Lese- und Schreibzugriff auf den Sensor. Auf einem Einzelbenutzer-Laptop ist das dieselbe Person, die es ohnehin über pkexec könnte; auf einer gemeinsam genutzten Maschine nicht. Dies zu überspringen ist sicher - es bedeutet nur mehr Passwortabfragen.</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="166"/>
+        <location filename="../src/setupcheck.cpp" line="170"/>
         <source>Install the udev rule and reload</source>
         <translation>udev-Regel installieren und neu laden</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="203"/>
+        <location filename="../src/setupcheck.cpp" line="208"/>
         <source>The sensor answered, but the handshake did not complete</source>
         <translation>Der Sensor hat geantwortet, aber der Handshake wurde nicht abgeschlossen</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="204"/>
+        <location filename="../src/setupcheck.cpp" line="209"/>
         <source>The sensor holds a key this driver does not have. Writing the all-zero key is the next step, and it cannot be undone.</source>
         <translation>Der Sensor besitzt einen Schlüssel, den dieser Treiber nicht hat. Der nächste Schritt ist das Schreiben des Nullschlüssels, und das kann nicht rückgängig gemacht werden.</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="210"/>
+        <location filename="../src/setupcheck.cpp" line="215"/>
         <source>Could not talk to the sensor</source>
         <translation>Kommunikation mit dem Sensor fehlgeschlagen</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="211"/>
+        <location filename="../src/setupcheck.cpp" line="216"/>
         <source>The handshake did not get far enough to say why. Check the driver and permission steps above first.</source>
         <translation>Der Handshake kam nicht weit genug, um den Grund zu nennen. Prüfen Sie zuerst die Schritte „Treiber“ und „Berechtigungen“ oben.</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="224"/>
+        <location filename="../src/setupcheck.cpp" line="229"/>
         <source>The sensor already holds a usable key</source>
         <translation>Der Sensor besitzt bereits einen brauchbaren Schlüssel</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="230"/>
+        <location filename="../src/setupcheck.cpp" line="235"/>
         <source>The sensor needs the all-zero key written</source>
         <translation>Der Sensor benötigt das Schreiben des Nullschlüssels</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="231"/>
+        <location filename="../src/setupcheck.cpp" line="236"/>
         <source>This cannot be undone.
 
 The key the sensor holds now cannot be read back - what the protocol returns is a value derived from it, not the key - so there is no backup to restore afterwards.
@@ -213,82 +213,94 @@ Der Schlüssel, den der Sensor jetzt besitzt, kann nicht ausgelesen werden - was
 Die Windows-Fingerabdruckanmeldung wird auf diesem Gerät dauerhaft nicht mehr funktionieren. Wenn Sie Dual-Boot nutzen und es dort brauchen, brechen Sie hier ab.</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="238"/>
+        <location filename="../src/setupcheck.cpp" line="244"/>
         <source>Write the all-zero PSK to the sensor</source>
         <translation>Den Null-PSK auf den Sensor schreiben</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="265"/>
+        <location filename="../src/setupcheck.cpp" line="274"/>
         <source>Image quality has not been measured yet</source>
         <translation>Bildqualität wurde noch nicht gemessen</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="266"/>
-        <source>Present a finger on the next page and the reading will appear here.</source>
-        <translation>Legen Sie auf der nächsten Seite einen Finger auf, der Messwert erscheint dann hier.</translation>
+        <location filename="../src/setupcheck.cpp" line="275"/>
+        <source>Press the button below, then put your finger on the sensor and hold it there for a couple of seconds.</source>
+        <translation>Drücken Sie die Schaltfläche unten und legen Sie dann den Finger einige Sekunden auf den Sensor.</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="271"/>
+        <location filename="../src/setupcheck.cpp" line="278"/>
+        <source>Test a capture now</source>
+        <translation>Jetzt eine Aufnahme testen</translation>
+    </message>
+    <message>
+        <location filename="../src/setupcheck.cpp" line="282"/>
         <source>Coverage %1%  ·  sharpness %2</source>
         <translation>Abdeckung %1%  ·  Schärfe %2</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="280"/>
+        <location filename="../src/setupcheck.cpp" line="291"/>
         <source>Below about 24, matching tends to fail even though the driver accepts the frame. Dry fingertips and a sensor that has been busy both do this; a few minutes&apos; rest and a little moisture usually fix it.</source>
         <translation>Unter etwa 24 schlägt der Abgleich meist fehl, obwohl der Treiber das Bild annimmt. Trockene Fingerspitzen und ein stark beanspruchter Sensor verursachen das beide; ein paar Minuten Pause und etwas Feuchtigkeit beheben es meist.</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="296"/>
+        <location filename="../src/setupcheck.cpp" line="295"/>
+        <source>Try again</source>
+        <translation>Erneut versuchen</translation>
+    </message>
+    <message>
+        <location filename="../src/setupcheck.cpp" line="308"/>
         <source>A finger is enrolled with fprintd</source>
         <translation>Ein Finger ist bei fprintd registriert</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="302"/>
+        <location filename="../src/setupcheck.cpp" line="314"/>
         <source>No finger is enrolled with fprintd</source>
         <translation>Kein Finger ist bei fprintd registriert</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="303"/>
+        <location filename="../src/setupcheck.cpp" line="315"/>
         <source>This program keeps its own enrolments separately, and system authentication does not see those. Enrolling again through fprintd is what makes the fingerprint usable for unlocking.</source>
         <translation>Dieses Programm führt seine eigenen Registrierungen separat, und die Systemauthentifizierung sieht diese nicht. Erneutes Registrieren über fprintd macht den Fingerabdruck zum Entsperren nutzbar.</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="307"/>
+        <location filename="../src/setupcheck.cpp" line="319"/>
         <source>Enrol a finger with fprintd</source>
         <translation>Einen Finger bei fprintd registrieren</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="312"/>
+        <location filename="../src/setupcheck.cpp" line="324"/>
         <source>fprintd is not answering</source>
         <translation>fprintd antwortet nicht</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="313"/>
+        <location filename="../src/setupcheck.cpp" line="325"/>
         <source>The daemon could not be reached. It is usually started on demand; installing it may be all that is missing.</source>
         <translation>Der Dienst war nicht erreichbar. Er wird normalerweise bei Bedarf gestartet; ihn zu installieren ist oft alles, was fehlt.</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="329"/>
+        <location filename="../src/setupcheck.cpp" line="341"/>
         <source>polkit accepts a fingerprint</source>
         <translation>polkit akzeptiert einen Fingerabdruck</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="337"/>
+        <location filename="../src/setupcheck.cpp" line="349"/>
+        <location filename="../src/setupcheck.cpp" line="390"/>
         <source>pam_fprintd is not installed</source>
         <translation>pam_fprintd ist nicht installiert</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="338"/>
+        <location filename="../src/setupcheck.cpp" line="350"/>
+        <location filename="../src/setupcheck.cpp" line="391"/>
         <source>The PAM module that lets authentication use a fingerprint is missing. It usually ships with fprintd.</source>
         <translation>Das PAM-Modul, das Authentifizierung per Fingerabdruck ermöglicht, fehlt. Es wird meist mit fprintd ausgeliefert.</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="345"/>
+        <location filename="../src/setupcheck.cpp" line="357"/>
         <source>polkit still asks for a password</source>
         <translation>polkit fragt weiterhin nach einem Passwort</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="346"/>
+        <location filename="../src/setupcheck.cpp" line="358"/>
         <source>This adds one line to the stack polkit uses, so pkexec and the desktop&apos;s authentication dialog try the fingerprint first.
 
 Login and sudo are deliberately left alone, so a sensor that stops working can never lock you out of the machine. The line is &apos;sufficient&apos;: if the fingerprint fails for any reason, you are asked for the password exactly as before.</source>
@@ -297,52 +309,81 @@ Login and sudo are deliberately left alone, so a sensor that stops working can n
 Anmeldung und sudo bleiben absichtlich unangetastet, damit ein ausfallender Sensor Sie niemals aus dem System aussperren kann. Die Zeile ist 'sufficient': Schlägt der Fingerabdruck aus irgendeinem Grund fehl, werden Sie genau wie zuvor nach dem Passwort gefragt.</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="353"/>
+        <location filename="../src/setupcheck.cpp" line="366"/>
         <source>Let polkit accept a fingerprint</source>
         <translation>polkit einen Fingerabdruck akzeptieren lassen</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="378"/>
+        <location filename="../src/setupcheck.cpp" line="382"/>
+        <source>sudo accepts a fingerprint</source>
+        <translation>sudo akzeptiert einen Fingerabdruck</translation>
+    </message>
+    <message>
+        <location filename="../src/setupcheck.cpp" line="402"/>
+        <source>Terminal sudo still asks for a password only</source>
+        <translation>Terminal-sudo verlangt weiterhin nur ein Passwort</translation>
+    </message>
+    <message>
+        <location filename="../src/setupcheck.cpp" line="403"/>
+        <source>Optional, and a step further than the polkit rule above: sudo is usually the way back in when something else on the machine is broken, so extending fingerprint auth to it is worth doing deliberately rather than by default.
+
+The safety net is the same either way. The line added is &apos;sufficient&apos;, so a failing fingerprint falls back to the password exactly as before. sudo itself never stops working - only the fingerprint shortcut can.</source>
+        <translation>Optional, und ein Schritt weiter als die obige polkit-Regel: sudo ist meist der Weg zurück, wenn etwas anderes auf dem Rechner kaputt ist, daher sollte man die Fingerabdruck-Authentifizierung darauf bewusst und nicht standardmäßig ausweiten.
+
+Das Sicherheitsnetz ist in jedem Fall dasselbe. Die hinzugefügte Zeile ist 'sufficient', sodass ein fehlschlagender Fingerabdruck genau wie zuvor auf das Passwort zurückfällt. sudo selbst hört nie auf zu funktionieren - nur die Fingerabdruck-Abkürzung kann das.</translation>
+    </message>
+    <message>
+        <location filename="../src/setupcheck.cpp" line="413"/>
+        <source>Let sudo accept a fingerprint</source>
+        <translation>sudo einen Fingerabdruck akzeptieren lassen</translation>
+    </message>
+    <message>
+        <location filename="../src/setupcheck.cpp" line="440"/>
         <source>Sensor</source>
         <translation>Sensor</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="379"/>
+        <location filename="../src/setupcheck.cpp" line="441"/>
         <source>Driver</source>
         <translation>Treiber</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="380"/>
+        <location filename="../src/setupcheck.cpp" line="442"/>
         <source>Permissions</source>
         <translation>Berechtigungen</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="381"/>
+        <location filename="../src/setupcheck.cpp" line="443"/>
         <source>Secure channel</source>
         <translation>Sicherer Kanal</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="382"/>
+        <location filename="../src/setupcheck.cpp" line="444"/>
         <source>Sensor key</source>
         <translation>Sensorschlüssel</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="383"/>
+        <location filename="../src/setupcheck.cpp" line="445"/>
         <source>Image quality</source>
         <translation>Bildqualität</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="384"/>
+        <location filename="../src/setupcheck.cpp" line="446"/>
         <source>Enrolment</source>
         <translation>Registrierung</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="385"/>
+        <location filename="../src/setupcheck.cpp" line="447"/>
         <source>Unlocking</source>
         <translation>Entsperren</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="404"/>
+        <location filename="../src/setupcheck.cpp" line="448"/>
+        <source>Terminal sudo (optional)</source>
+        <translation>Terminal-sudo (optional)</translation>
+    </message>
+    <message>
+        <location filename="../src/setupcheck.cpp" line="467"/>
         <source>Not checked - no sensor</source>
         <translation>Nicht geprüft - kein Sensor</translation>
     </message>
@@ -661,64 +702,84 @@ Rohaufnahme: %5</translation>
 <context>
     <name>fpstudio::SetupWizard</name>
     <message>
-        <location filename="../src/setupwizard.cpp" line="65"/>
+        <location filename="../src/setupwizard.cpp" line="67"/>
         <source>The command did not finish in time</source>
         <translation>Der Befehl wurde nicht rechtzeitig beendet</translation>
     </message>
     <message>
-        <location filename="../src/setupwizard.cpp" line="73"/>
+        <location filename="../src/setupwizard.cpp" line="75"/>
         <source>Authentication was cancelled or refused</source>
         <translation>Authentifizierung abgebrochen oder verweigert</translation>
     </message>
     <message>
-        <location filename="../src/setupwizard.cpp" line="74"/>
-        <location filename="../src/setupwizard.cpp" line="273"/>
-        <location filename="../src/setupwizard.cpp" line="332"/>
+        <location filename="../src/setupwizard.cpp" line="76"/>
+        <location filename="../src/setupwizard.cpp" line="347"/>
+        <location filename="../src/setupwizard.cpp" line="443"/>
         <source>Failed — %1</source>
         <translation>Fehlgeschlagen — %1</translation>
     </message>
     <message>
-        <location filename="../src/setupwizard.cpp" line="99"/>
+        <location filename="../src/setupwizard.cpp" line="114"/>
         <source>Set up fingerprint unlock</source>
         <translation>Fingerabdruck-Entsperrung einrichten</translation>
     </message>
     <message>
-        <location filename="../src/setupwizard.cpp" line="130"/>
+        <location filename="../src/setupwizard.cpp" line="145"/>
         <source>Skip</source>
         <translation>Überspringen</translation>
     </message>
     <message>
-        <location filename="../src/setupwizard.cpp" line="131"/>
+        <location filename="../src/setupwizard.cpp" line="146"/>
         <source>Re-check</source>
         <translation>Erneut prüfen</translation>
     </message>
     <message>
-        <location filename="../src/setupwizard.cpp" line="166"/>
+        <location filename="../src/setupwizard.cpp" line="157"/>
+        <source>Fingerprint unlock is ready.</source>
+        <translation>Fingerabdruck-Entsperrung ist bereit.</translation>
+    </message>
+    <message>
+        <location filename="../src/setupwizard.cpp" line="159"/>
+        <source>Finish</source>
+        <translation>Fertigstellen</translation>
+    </message>
+    <message>
+        <location filename="../src/setupwizard.cpp" line="194"/>
+        <source>Open diagnostics tool</source>
+        <translation>Diagnosewerkzeug öffnen</translation>
+    </message>
+    <message>
+        <location filename="../src/setupwizard.cpp" line="197"/>
+        <source>Live capture preview, the driver log, and MCP status - for a closer look once the checklist here is done.</source>
+        <translation>Live-Aufnahmevorschau, Treiberprotokoll und MCP-Status - für einen genaueren Blick, sobald diese Liste erledigt ist.</translation>
+    </message>
+    <message>
+        <location filename="../src/setupwizard.cpp" line="229"/>
         <source>Checking…</source>
         <translation>Wird geprüft…</translation>
     </message>
     <message>
-        <location filename="../src/setupwizard.cpp" line="226"/>
+        <location filename="../src/setupwizard.cpp" line="294"/>
         <source>This step cannot be undone.</source>
         <translation>Dieser Schritt kann nicht rückgängig gemacht werden.</translation>
     </message>
     <message>
-        <location filename="../src/setupwizard.cpp" line="239"/>
+        <location filename="../src/setupwizard.cpp" line="310"/>
         <source>This will ask for your password.</source>
         <translation>Dies fragt nach Ihrem Passwort.</translation>
     </message>
     <message>
-        <location filename="../src/setupwizard.cpp" line="251"/>
+        <location filename="../src/setupwizard.cpp" line="322"/>
         <source>WRITE</source>
         <translation>WRITE</translation>
     </message>
     <message>
-        <location filename="../src/setupwizard.cpp" line="253"/>
+        <location filename="../src/setupwizard.cpp" line="324"/>
         <source>Sensor key</source>
         <translation>Sensorschlüssel</translation>
     </message>
     <message>
-        <location filename="../src/setupwizard.cpp" line="254"/>
+        <location filename="../src/setupwizard.cpp" line="325"/>
         <source>%1
 
 Type %2 to confirm.</source>
@@ -727,17 +788,22 @@ Type %2 to confirm.</source>
 Geben Sie %2 ein, um zu bestätigen.</translation>
     </message>
     <message>
-        <location filename="../src/setupwizard.cpp" line="274"/>
+        <location filename="../src/setupwizard.cpp" line="348"/>
         <source>The enrolment helper was not found</source>
         <translation>Registrierungshelfer wurde nicht gefunden</translation>
     </message>
     <message>
-        <location filename="../src/setupwizard.cpp" line="280"/>
+        <location filename="../src/setupwizard.cpp" line="354"/>
         <source>Enrolling — press and lift your finger repeatedly</source>
         <translation>Registrierung läuft — Finger wiederholt auflegen und abheben</translation>
     </message>
     <message>
-        <location filename="../src/setupwizard.cpp" line="316"/>
+        <location filename="../src/setupwizard.cpp" line="378"/>
+        <source>Put your finger on the sensor and hold it there</source>
+        <translation>Finger auf den Sensor legen und dort halten</translation>
+    </message>
+    <message>
+        <location filename="../src/setupwizard.cpp" line="427"/>
         <source>in progress…</source>
         <translation>läuft…</translation>
     </message>

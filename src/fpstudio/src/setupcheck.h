@@ -32,6 +32,7 @@ enum class StepId {
     Capture,       // does a capture produce a usable image
     Enrolment,     // is a finger enrolled with fprintd
     PamPolkit,     // does polkit accept a fingerprint
+    PamSudo,       // does terminal sudo accept a fingerprint (opt-in)
 };
 
 enum class StepState {
@@ -81,6 +82,26 @@ QVector<StepResult> probeAll();
 
 // One step, for re-checking after a fix without redoing the rest.
 StepResult probe(StepId id);
+
+// Whether unlocking works end to end - so gated on the sensor, the driver,
+// the secure channel, the sensor's key, enrolment and PAM, but not on the
+// udev rule (a convenience: skipping it only costs more password prompts) or
+// image quality (a reading, not something to configure). One definition of
+// "done" shared by the wizard's completion banner and `--cli setup`'s "ready"
+// field, so the two can never disagree about it.
+bool allReady(const QVector<StepResult> &steps);
+
+// Runs a real, longer capture attempt and reports what it measured. Used by
+// the wizard's "test now" action - the two-second window probeAll() uses is
+// enough to tell whether the handshake still works, but not long enough for a
+// person to read an instruction and then act on it.
+StepResult testCapture(int timeoutSecs = 8);
+
+// Turns one capture attempt's stdout into a result, without running anything.
+// Shared by the passive probe above and by the wizard, which runs its own
+// asynchronous process for the "test now" button rather than blocking the UI
+// thread the way testCapture() does.
+StepResult parseCaptureOutput(const QString &output);
 
 // Stable names for the CLI and for JSON. Not translated: these are keys.
 QString stepKey(StepId id);

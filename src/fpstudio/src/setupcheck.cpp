@@ -163,10 +163,15 @@ StepResult udevRule()
               "single-user laptop that is the same person who could already do "
               "it through pkexec; on a shared machine it is not. Skipping this "
               "is safe - it only means more prompts.");
-    r.action = QCoreApplication::translate("fpstudio", "Install the udev rule and reload");
-    r.commands = {QStringLiteral("install -Dm644 %1 %2").arg(rule, installed),
-                  QStringLiteral("udevadm control --reload"),
-                  QStringLiteral("udevadm trigger --attr-match=idVendor=27c6")};
+    // Only when there is a script to run - a Manual result with a populated
+    // action would show a button (or a CLI "action" field) that promises
+    // something this copy of the program cannot actually do.
+    if (r.state == StepState::Missing) {
+        r.action = QCoreApplication::translate("fpstudio", "Install the udev rule and reload");
+        r.commands = {QStringLiteral("install -Dm644 %1 %2").arg(rule, installed),
+                      QStringLiteral("udevadm control --reload"),
+                      QStringLiteral("udevadm trigger --attr-match=idVendor=27c6")};
+    }
     return r;
 }
 
@@ -235,8 +240,10 @@ StepResult psk(const StepResult &tls)
                    "Windows fingerprint sign-in will stop working on this "
                    "machine, permanently. If you dual-boot and use it there, "
                    "stop here.");
-    r.action = QCoreApplication::translate("fpstudio", "Write the all-zero PSK to the sensor");
-    r.commands = {QStringLiteral("python %1").arg(script)};
+    if (r.state == StepState::Missing) {
+        r.action = QCoreApplication::translate("fpstudio", "Write the all-zero PSK to the sensor");
+        r.commands = {QStringLiteral("python %1").arg(script)};
+    }
     return r;
 }
 
@@ -258,13 +265,17 @@ StepResult capture(const QString &probe)
     }
 
     if (coverage < 0) {
-        // No finger was presented during the probe, which is the normal case -
-        // the probe uses a two-second timeout precisely so it does not demand
-        // one. Not a failure, just nothing measured yet.
+        // No finger was presented during this probe. During probeAll() that is
+        // the normal case - the probe uses a two-second timeout precisely so
+        // it does not demand one - but either way the person looking at this
+        // step needs a next action, not a description of why there is no
+        // number yet. testCapture() below is that action.
         r.state = StepState::Unknown;
         r.summary = QCoreApplication::translate("fpstudio", "Image quality has not been measured yet");
-        r.detail = QCoreApplication::translate("fpstudio", "Present a finger on the next page and the reading will "
-                       "appear here.");
+        r.detail = QCoreApplication::translate("fpstudio",
+                       "Press the button below, then put your finger on the "
+                       "sensor and hold it there for a couple of seconds.");
+        r.action = QCoreApplication::translate("fpstudio", "Test a capture now");
         return r;
     }
 
@@ -281,6 +292,7 @@ StepResult capture(const QString &probe)
                    "driver accepts the frame. Dry fingertips and a sensor that "
                    "has been busy both do this; a few minutes' rest and a "
                    "little moisture usually fix it.");
+    r.action = QCoreApplication::translate("fpstudio", "Try again");
     return r;
 }
 
@@ -350,8 +362,57 @@ StepResult pamPolkit()
                    "that stops working can never lock you out of the machine. "
                    "The line is 'sufficient': if the fingerprint fails for any "
                    "reason, you are asked for the password exactly as before.");
-    r.action = QCoreApplication::translate("fpstudio", "Let polkit accept a fingerprint");
-    r.commands = {QStringLiteral("install -Dm644 %1 %2").arg(stack, installed)};
+    if (r.state == StepState::Missing) {
+        r.action = QCoreApplication::translate("fpstudio", "Let polkit accept a fingerprint");
+        r.commands = {QStringLiteral("install -Dm644 %1 %2").arg(stack, installed)};
+    }
+    return r;
+}
+
+StepResult pamSudo()
+{
+    StepResult r{StepId::PamSudo};
+    r.needsRoot = true;
+
+    QFile f(QStringLiteral("/etc/pam.d/sudo"));
+    if (f.open(QIODevice::ReadOnly)) {
+        const QString text = QString::fromUtf8(f.readAll());
+        if (text.contains(QStringLiteral("pam_fprintd"))) {
+            r.state = StepState::Ok;
+            r.summary = QCoreApplication::translate("fpstudio", "sudo accepts a fingerprint");
+            return r;
+        }
+    }
+
+    if (!QFileInfo::exists(QStringLiteral("/usr/lib/security/pam_fprintd.so")) &&
+        !QFileInfo::exists(QStringLiteral("/lib/x86_64-linux-gnu/security/pam_fprintd.so"))) {
+        r.state = StepState::Manual;
+        r.summary = QCoreApplication::translate("fpstudio", "pam_fprintd is not installed");
+        r.detail = QCoreApplication::translate("fpstudio", "The PAM module that lets authentication use a "
+                       "fingerprint is missing. It usually ships with fprintd.");
+        return r;
+    }
+
+    // Opt-in and deliberately excluded from allReady() - sudo is usually the
+    // way back in when something else on the machine breaks, so this asks
+    // rather than assumes. See the detail text below for why extending
+    // fingerprint auth to it is still safe.
+    const QString stack = repoFile(QStringLiteral("pam/sudo"));
+    r.state = stack.isEmpty() ? StepState::Manual : StepState::Missing;
+    r.summary = QCoreApplication::translate("fpstudio", "Terminal sudo still asks for a password only");
+    r.detail = QCoreApplication::translate("fpstudio", "Optional, and a step further than the polkit rule "
+                   "above: sudo is usually the way back in when something "
+                   "else on the machine is broken, so extending fingerprint "
+                   "auth to it is worth doing deliberately rather than by "
+                   "default.\n\n"
+                   "The safety net is the same either way. The line added is "
+                   "'sufficient', so a failing fingerprint falls back to the "
+                   "password exactly as before. sudo itself never stops "
+                   "working - only the fingerprint shortcut can.");
+    if (r.state == StepState::Missing) {
+        r.action = QCoreApplication::translate("fpstudio", "Let sudo accept a fingerprint");
+        r.commands = {QStringLiteral("install -Dm644 %1 /etc/pam.d/sudo").arg(stack)};
+    }
     return r;
 }
 
@@ -368,6 +429,7 @@ QString stepKey(StepId id)
     case StepId::Capture:    return QStringLiteral("capture");
     case StepId::Enrolment:  return QStringLiteral("enrolment");
     case StepId::PamPolkit:  return QStringLiteral("pam");
+    case StepId::PamSudo:    return QStringLiteral("pam_sudo");
     }
     return QString();
 }
@@ -383,6 +445,7 @@ QString stepTitle(StepId id)
     case StepId::Capture:    return QCoreApplication::translate("fpstudio", "Image quality");
     case StepId::Enrolment:  return QCoreApplication::translate("fpstudio", "Enrolment");
     case StepId::PamPolkit:  return QCoreApplication::translate("fpstudio", "Unlocking");
+    case StepId::PamSudo:    return QCoreApplication::translate("fpstudio", "Terminal sudo (optional)");
     }
     return QString();
 }
@@ -398,7 +461,7 @@ QVector<StepResult> probeAll()
     if (dev.state != StepState::Ok) {
         for (StepId id : {StepId::Driver, StepId::UdevRule, StepId::TlsSession,
                           StepId::Psk, StepId::Capture, StepId::Enrolment,
-                          StepId::PamPolkit}) {
+                          StepId::PamPolkit, StepId::PamSudo}) {
             StepResult r{id};
             r.state = StepState::Unknown;
             r.summary = QCoreApplication::translate("fpstudio", "Not checked - no sensor");
@@ -419,7 +482,37 @@ QVector<StepResult> probeAll()
     out << capture(probe);
     out << enrolment();
     out << pamPolkit();
+    out << pamSudo();
     return out;
+}
+
+// Turns one capture attempt's stdout into a result. Shared by the passive,
+// short probe inside probeAll() and by the wizard's "test now" button, which
+// runs a longer attempt a person can actually act on - so a pass means the
+// same thing either way.
+StepResult parseCaptureOutput(const QString &output)
+{
+    return capture(output);
+}
+
+bool allReady(const QVector<StepResult> &steps)
+{
+    for (const StepResult &r : steps) {
+        if (r.id == StepId::UdevRule || r.id == StepId::Capture || r.id == StepId::PamSudo)
+            continue;
+        if (r.state != StepState::Ok && r.state != StepState::Skipped)
+            return false;
+    }
+    return true;
+}
+
+StepResult testCapture(int timeoutSecs)
+{
+    const QString out = ask(selfPath(),
+                            {QStringLiteral("--cli"), QStringLiteral("capture"),
+                             QStringLiteral("--timeout"), QString::number(timeoutSecs)},
+                            (timeoutSecs + 5) * 1000);
+    return capture(out);
 }
 
 StepResult probe(StepId id)
@@ -430,6 +523,7 @@ StepResult probe(StepId id)
     case StepId::UdevRule: return udevRule();
     case StepId::Enrolment: return enrolment();
     case StepId::PamPolkit: return pamPolkit();
+    case StepId::PamSudo: return pamSudo();
     case StepId::TlsSession: return tlsSession(handshakeProbe());
     case StepId::Psk: {
         const QString p = handshakeProbe();

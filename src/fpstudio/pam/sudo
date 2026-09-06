@@ -1,0 +1,48 @@
+#%PAM-1.0
+#
+# Let sudo accept a fingerprint, falling back to the password.
+#
+# This file shadows the system's /etc/pam.d/sudo, which is the same three
+# lines here without the fingerprint one. Overriding in /etc means a system
+# update cannot silently drop the change, and reverting is deleting one file.
+#
+# max-tries=20, timeout=90: the module's own defaults are 3 tries and 30
+# seconds, which is tuned for a reliable reader, not this one. Measured over
+# seven verify attempts on this sensor, five matched (scores 77-2920 against a
+# threshold of 72) and two did not (0, 7) - about a 70% chance per touch, most
+# of the miss being a placement that does not overlap any enrolled sample
+# rather than a bad reading. Independent tries compound fast: at 70% per try,
+# the chance every one of twenty fails is 0.3^20, on the order of 1 in
+# 30,000,000. Raising the try count is what actually fixes the practical
+# success rate here - the per-touch odds do not change, but the number of
+# chances to clear them does. 90 seconds covers 20 tries comfortably even with
+# a few retry-scan prompts mixed in; a lower number would cut tries short
+# before they were used.
+# `sufficient` is what makes this safe: if pam_fprintd fails for any reason -
+# sensor unplugged, driver broken, no finger enrolled - PAM falls through to
+# system-auth and asks for the password exactly as before. sudo itself never
+# stops working; only the fingerprint shortcut can.
+#
+# This is a step further than the polkit rule this project installs by
+# default. polkit failing leaves the desktop's own password dialog and a TTY
+# login as ways back in; sudo IS one of those ways back in, so it is worth
+# being more deliberate about extending fingerprint auth to it. The
+# `sufficient` fallback is the same safety net either way - a broken sensor
+# degrades to a password prompt, never to a lockout - but sudo is the last
+# resort if something else on the machine is broken, which is why this file
+# is a separate, opt-in step rather than bundled into the default one.
+#
+# Install:
+#   sudo install -Dm644 sudo /etc/pam.d/sudo
+#
+# Remove:
+#   sudo rm /etc/pam.d/sudo
+#   (or restore the original three lines by hand)
+#
+# No daemon restart is needed; PAM reads the stack per authentication.
+
+auth		sufficient	pam_fprintd.so max-tries=20 timeout=90
+auth		include		system-auth
+account		include		system-auth
+session		include		system-auth
+session		optional	pam_systemd.so class=none

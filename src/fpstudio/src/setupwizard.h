@@ -44,8 +44,10 @@ private slots:
     void rescan();
     void runCurrentFix();
     void runEnrolment();
+    void runCaptureTest();
     void skipCurrent();
     void selectRow(int row);
+    void openDiagnostics();
 
 private:
     void render();
@@ -65,6 +67,21 @@ private:
     QPushButton    *m_rescan  = nullptr;
     QLabel         *m_verdict = nullptr;
     QProgressBar   *m_busy    = nullptr;
+
+    // Only present when this wizard is the application's own top-level window
+    // rather than something MainWindow opened over itself - opened from
+    // diagnostics, offering a way back into diagnostics would just be a second
+    // way to reach the window already open behind it.
+    QPushButton    *m_diagnostics = nullptr;
+
+    // Shown above the step list once every gating step is Ok or Skipped -
+    // a wizard that ends by quietly leaving eight green checks on screen
+    // still leaves the person guessing whether they are done. This says so,
+    // and Finish is the deliberate way out rather than the window's own
+    // close button.
+    QWidget        *m_completion  = nullptr;
+    QLabel         *m_completionText = nullptr;
+    QPushButton    *m_finish      = nullptr;
 };
 
 } // namespace fpstudio

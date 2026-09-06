@@ -41,7 +41,7 @@
     </message>
     <message>
         <location filename="../src/engine.cpp" line="137"/>
-        <location filename="../src/setupcheck.cpp" line="195"/>
+        <location filename="../src/setupcheck.cpp" line="200"/>
         <source>Secure channel to the sensor established</source>
         <translation>已與感測器建立安全通道</translation>
     </message>
@@ -64,19 +64,19 @@
     </message>
     <message>
         <location filename="../src/headless.cpp" line="81"/>
-        <location filename="../src/headless.cpp" line="379"/>
+        <location filename="../src/headless.cpp" line="373"/>
         <source>Put your finger on the sensor and hold it there</source>
         <translation>請將手指放在感測器上並保持不動</translation>
     </message>
     <message>
         <location filename="../src/headless.cpp" line="83"/>
-        <location filename="../src/headless.cpp" line="380"/>
+        <location filename="../src/headless.cpp" line="374"/>
         <source>Enrolling — press and lift your finger repeatedly</source>
         <translation>正在註冊 — 請反覆按下並抬起手指</translation>
     </message>
     <message>
         <location filename="../src/headless.cpp" line="85"/>
-        <location filename="../src/headless.cpp" line="381"/>
+        <location filename="../src/headless.cpp" line="375"/>
         <source>Put the enrolled finger on the sensor</source>
         <translation>請將已註冊的手指放在感測器上</translation>
     </message>
@@ -165,42 +165,42 @@ This grants the wheel group read and write on the sensor. On a single-user lapto
 此規則授予 wheel 群組對感測器的讀寫權限。在單人筆電上，這與原本就能透過 pkexec 操作的人相同；在共用機器上則不同。略過此項是安全的——只是會多幾次密碼提示。</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="166"/>
+        <location filename="../src/setupcheck.cpp" line="170"/>
         <source>Install the udev rule and reload</source>
         <translation>安裝 udev 規則並重新載入</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="203"/>
+        <location filename="../src/setupcheck.cpp" line="208"/>
         <source>The sensor answered, but the handshake did not complete</source>
         <translation>感測器已回應，但交握未完成</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="204"/>
+        <location filename="../src/setupcheck.cpp" line="209"/>
         <source>The sensor holds a key this driver does not have. Writing the all-zero key is the next step, and it cannot be undone.</source>
         <translation>感測器持有的金鑰不是本驅動所擁有的。下一步是寫入全零金鑰，且此操作不可復原。</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="210"/>
+        <location filename="../src/setupcheck.cpp" line="215"/>
         <source>Could not talk to the sensor</source>
         <translation>無法與感測器通訊</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="211"/>
+        <location filename="../src/setupcheck.cpp" line="216"/>
         <source>The handshake did not get far enough to say why. Check the driver and permission steps above first.</source>
         <translation>交握過程未進展到足以說明原因。請先檢查上方的驅動與權限步驟。</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="224"/>
+        <location filename="../src/setupcheck.cpp" line="229"/>
         <source>The sensor already holds a usable key</source>
         <translation>感測器已持有可用金鑰</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="230"/>
+        <location filename="../src/setupcheck.cpp" line="235"/>
         <source>The sensor needs the all-zero key written</source>
         <translation>需要向感測器寫入全零金鑰</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="231"/>
+        <location filename="../src/setupcheck.cpp" line="236"/>
         <source>This cannot be undone.
 
 The key the sensor holds now cannot be read back - what the protocol returns is a value derived from it, not the key - so there is no backup to restore afterwards.
@@ -213,82 +213,94 @@ Windows fingerprint sign-in will stop working on this machine, permanently. If y
 本機上的 Windows 指紋登入將永久失效。若你雙系統在 Windows 上也使用它，請到此為止。</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="238"/>
+        <location filename="../src/setupcheck.cpp" line="244"/>
         <source>Write the all-zero PSK to the sensor</source>
         <translation>向感測器寫入全零 PSK</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="265"/>
+        <location filename="../src/setupcheck.cpp" line="274"/>
         <source>Image quality has not been measured yet</source>
         <translation>尚未測量影像品質</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="266"/>
-        <source>Present a finger on the next page and the reading will appear here.</source>
-        <translation>在下一頁放上手指後，讀數會顯示在這裡。</translation>
+        <location filename="../src/setupcheck.cpp" line="275"/>
+        <source>Press the button below, then put your finger on the sensor and hold it there for a couple of seconds.</source>
+        <translation>按下方按鈕，然後將手指放在感測器上並保持幾秒鐘。</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="271"/>
+        <location filename="../src/setupcheck.cpp" line="278"/>
+        <source>Test a capture now</source>
+        <translation>立即測試擷取</translation>
+    </message>
+    <message>
+        <location filename="../src/setupcheck.cpp" line="282"/>
         <source>Coverage %1%  ·  sharpness %2</source>
         <translation>接觸面 %1%  ·  清晰度 %2</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="280"/>
+        <location filename="../src/setupcheck.cpp" line="291"/>
         <source>Below about 24, matching tends to fail even though the driver accepts the frame. Dry fingertips and a sensor that has been busy both do this; a few minutes&apos; rest and a little moisture usually fix it.</source>
         <translation>低於 24 時，即使驅動接受該畫面，比對通常也會失敗。手指乾燥或感測器持續忙碌都會導致此情況；休息幾分鐘並稍微濕潤手指通常可解決。</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="296"/>
+        <location filename="../src/setupcheck.cpp" line="295"/>
+        <source>Try again</source>
+        <translation>重試</translation>
+    </message>
+    <message>
+        <location filename="../src/setupcheck.cpp" line="308"/>
         <source>A finger is enrolled with fprintd</source>
         <translation>fprintd 中已註冊手指</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="302"/>
+        <location filename="../src/setupcheck.cpp" line="314"/>
         <source>No finger is enrolled with fprintd</source>
         <translation>fprintd 中未註冊任何手指</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="303"/>
+        <location filename="../src/setupcheck.cpp" line="315"/>
         <source>This program keeps its own enrolments separately, and system authentication does not see those. Enrolling again through fprintd is what makes the fingerprint usable for unlocking.</source>
         <translation>本程式單獨保存自己的註冊資料，系統驗證看不到這些資料。透過 fprintd 重新註冊後，指紋才能用於解鎖。</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="307"/>
+        <location filename="../src/setupcheck.cpp" line="319"/>
         <source>Enrol a finger with fprintd</source>
         <translation>透過 fprintd 註冊手指</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="312"/>
+        <location filename="../src/setupcheck.cpp" line="324"/>
         <source>fprintd is not answering</source>
         <translation>fprintd 無回應</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="313"/>
+        <location filename="../src/setupcheck.cpp" line="325"/>
         <source>The daemon could not be reached. It is usually started on demand; installing it may be all that is missing.</source>
         <translation>無法連接到守護行程。它通常會依需求自動啟動，安裝它可能就是唯一缺少的步驟。</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="329"/>
+        <location filename="../src/setupcheck.cpp" line="341"/>
         <source>polkit accepts a fingerprint</source>
         <translation>polkit 接受指紋</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="337"/>
+        <location filename="../src/setupcheck.cpp" line="349"/>
+        <location filename="../src/setupcheck.cpp" line="390"/>
         <source>pam_fprintd is not installed</source>
         <translation>未安裝 pam_fprintd</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="338"/>
+        <location filename="../src/setupcheck.cpp" line="350"/>
+        <location filename="../src/setupcheck.cpp" line="391"/>
         <source>The PAM module that lets authentication use a fingerprint is missing. It usually ships with fprintd.</source>
         <translation>缺少讓身分驗證使用指紋的 PAM 模組。它通常隨 fprintd 一起提供。</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="345"/>
+        <location filename="../src/setupcheck.cpp" line="357"/>
         <source>polkit still asks for a password</source>
         <translation>polkit 仍要求輸入密碼</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="346"/>
+        <location filename="../src/setupcheck.cpp" line="358"/>
         <source>This adds one line to the stack polkit uses, so pkexec and the desktop&apos;s authentication dialog try the fingerprint first.
 
 Login and sudo are deliberately left alone, so a sensor that stops working can never lock you out of the machine. The line is &apos;sufficient&apos;: if the fingerprint fails for any reason, you are asked for the password exactly as before.</source>
@@ -297,52 +309,81 @@ Login and sudo are deliberately left alone, so a sensor that stops working can n
 登入和 sudo 刻意保持不變，這樣即使感測器停止運作也不會把你鎖在機器之外。這一行是 'sufficient'：若指紋因任何原因失敗，仍會像以前一樣要求輸入密碼。</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="353"/>
+        <location filename="../src/setupcheck.cpp" line="366"/>
         <source>Let polkit accept a fingerprint</source>
         <translation>讓 polkit 接受指紋</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="378"/>
+        <location filename="../src/setupcheck.cpp" line="382"/>
+        <source>sudo accepts a fingerprint</source>
+        <translation>sudo 接受指紋</translation>
+    </message>
+    <message>
+        <location filename="../src/setupcheck.cpp" line="402"/>
+        <source>Terminal sudo still asks for a password only</source>
+        <translation>終端機 sudo 目前仍只接受密碼</translation>
+    </message>
+    <message>
+        <location filename="../src/setupcheck.cpp" line="403"/>
+        <source>Optional, and a step further than the polkit rule above: sudo is usually the way back in when something else on the machine is broken, so extending fingerprint auth to it is worth doing deliberately rather than by default.
+
+The safety net is the same either way. The line added is &apos;sufficient&apos;, so a failing fingerprint falls back to the password exactly as before. sudo itself never stops working - only the fingerprint shortcut can.</source>
+        <translation>這是可選項，比上面的 polkit 規則更進一步：sudo 通常是機器上其他東西出問題時的退路，因此為其擴充指紋驗證值得慎重決定，而非預設開啟。
+
+安全網是一樣的。新增的一行是 'sufficient'，因此指紋失敗時會像以前一樣退回密碼。sudo 本身永遠不會失效——只有指紋這條捷徑可能失效。</translation>
+    </message>
+    <message>
+        <location filename="../src/setupcheck.cpp" line="413"/>
+        <source>Let sudo accept a fingerprint</source>
+        <translation>讓 sudo 接受指紋</translation>
+    </message>
+    <message>
+        <location filename="../src/setupcheck.cpp" line="440"/>
         <source>Sensor</source>
         <translation>感測器</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="379"/>
+        <location filename="../src/setupcheck.cpp" line="441"/>
         <source>Driver</source>
         <translation>驅動程式</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="380"/>
+        <location filename="../src/setupcheck.cpp" line="442"/>
         <source>Permissions</source>
         <translation>權限</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="381"/>
+        <location filename="../src/setupcheck.cpp" line="443"/>
         <source>Secure channel</source>
         <translation>安全通道</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="382"/>
+        <location filename="../src/setupcheck.cpp" line="444"/>
         <source>Sensor key</source>
         <translation>感測器金鑰</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="383"/>
+        <location filename="../src/setupcheck.cpp" line="445"/>
         <source>Image quality</source>
         <translation>影像品質</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="384"/>
+        <location filename="../src/setupcheck.cpp" line="446"/>
         <source>Enrolment</source>
         <translation>註冊</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="385"/>
+        <location filename="../src/setupcheck.cpp" line="447"/>
         <source>Unlocking</source>
         <translation>解鎖</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="404"/>
+        <location filename="../src/setupcheck.cpp" line="448"/>
+        <source>Terminal sudo (optional)</source>
+        <translation>終端機 sudo（可選）</translation>
+    </message>
+    <message>
+        <location filename="../src/setupcheck.cpp" line="467"/>
         <source>Not checked - no sensor</source>
         <translation>未檢查 — 無感測器</translation>
     </message>
@@ -661,64 +702,84 @@ ID: %2
 <context>
     <name>fpstudio::SetupWizard</name>
     <message>
-        <location filename="../src/setupwizard.cpp" line="65"/>
+        <location filename="../src/setupwizard.cpp" line="67"/>
         <source>The command did not finish in time</source>
         <translation>命令未在規定時間內完成</translation>
     </message>
     <message>
-        <location filename="../src/setupwizard.cpp" line="73"/>
+        <location filename="../src/setupwizard.cpp" line="75"/>
         <source>Authentication was cancelled or refused</source>
         <translation>驗證被取消或拒絕</translation>
     </message>
     <message>
-        <location filename="../src/setupwizard.cpp" line="74"/>
-        <location filename="../src/setupwizard.cpp" line="273"/>
-        <location filename="../src/setupwizard.cpp" line="332"/>
+        <location filename="../src/setupwizard.cpp" line="76"/>
+        <location filename="../src/setupwizard.cpp" line="347"/>
+        <location filename="../src/setupwizard.cpp" line="443"/>
         <source>Failed — %1</source>
         <translation>失敗 — %1</translation>
     </message>
     <message>
-        <location filename="../src/setupwizard.cpp" line="99"/>
+        <location filename="../src/setupwizard.cpp" line="114"/>
         <source>Set up fingerprint unlock</source>
         <translation>設定指紋解鎖</translation>
     </message>
     <message>
-        <location filename="../src/setupwizard.cpp" line="130"/>
+        <location filename="../src/setupwizard.cpp" line="145"/>
         <source>Skip</source>
         <translation>略過</translation>
     </message>
     <message>
-        <location filename="../src/setupwizard.cpp" line="131"/>
+        <location filename="../src/setupwizard.cpp" line="146"/>
         <source>Re-check</source>
         <translation>重新檢查</translation>
     </message>
     <message>
-        <location filename="../src/setupwizard.cpp" line="166"/>
+        <location filename="../src/setupwizard.cpp" line="157"/>
+        <source>Fingerprint unlock is ready.</source>
+        <translation>指紋解鎖已就緒。</translation>
+    </message>
+    <message>
+        <location filename="../src/setupwizard.cpp" line="159"/>
+        <source>Finish</source>
+        <translation>完成</translation>
+    </message>
+    <message>
+        <location filename="../src/setupwizard.cpp" line="194"/>
+        <source>Open diagnostics tool</source>
+        <translation>開啟診斷工具</translation>
+    </message>
+    <message>
+        <location filename="../src/setupwizard.cpp" line="197"/>
+        <source>Live capture preview, the driver log, and MCP status - for a closer look once the checklist here is done.</source>
+        <translation>提供即時擷取預覽、驅動記錄與 MCP 狀態——用於完成此清單後進一步深入查看。</translation>
+    </message>
+    <message>
+        <location filename="../src/setupwizard.cpp" line="229"/>
         <source>Checking…</source>
         <translation>正在檢查…</translation>
     </message>
     <message>
-        <location filename="../src/setupwizard.cpp" line="226"/>
+        <location filename="../src/setupwizard.cpp" line="294"/>
         <source>This step cannot be undone.</source>
         <translation>此步驟無法復原。</translation>
     </message>
     <message>
-        <location filename="../src/setupwizard.cpp" line="239"/>
+        <location filename="../src/setupwizard.cpp" line="310"/>
         <source>This will ask for your password.</source>
         <translation>這將要求輸入你的密碼。</translation>
     </message>
     <message>
-        <location filename="../src/setupwizard.cpp" line="251"/>
+        <location filename="../src/setupwizard.cpp" line="322"/>
         <source>WRITE</source>
         <translation>WRITE</translation>
     </message>
     <message>
-        <location filename="../src/setupwizard.cpp" line="253"/>
+        <location filename="../src/setupwizard.cpp" line="324"/>
         <source>Sensor key</source>
         <translation>感測器金鑰</translation>
     </message>
     <message>
-        <location filename="../src/setupwizard.cpp" line="254"/>
+        <location filename="../src/setupwizard.cpp" line="325"/>
         <source>%1
 
 Type %2 to confirm.</source>
@@ -727,17 +788,22 @@ Type %2 to confirm.</source>
 輸入 %2 以確認。</translation>
     </message>
     <message>
-        <location filename="../src/setupwizard.cpp" line="274"/>
+        <location filename="../src/setupwizard.cpp" line="348"/>
         <source>The enrolment helper was not found</source>
         <translation>找不到註冊輔助程式</translation>
     </message>
     <message>
-        <location filename="../src/setupwizard.cpp" line="280"/>
+        <location filename="../src/setupwizard.cpp" line="354"/>
         <source>Enrolling — press and lift your finger repeatedly</source>
         <translation>正在註冊 — 請反覆按下並抬起手指</translation>
     </message>
     <message>
-        <location filename="../src/setupwizard.cpp" line="316"/>
+        <location filename="../src/setupwizard.cpp" line="378"/>
+        <source>Put your finger on the sensor and hold it there</source>
+        <translation>請將手指放在感測器上並保持不動</translation>
+    </message>
+    <message>
+        <location filename="../src/setupwizard.cpp" line="427"/>
         <source>in progress…</source>
         <translation>進行中…</translation>
     </message>
