@@ -12,6 +12,18 @@
 # that stops working - a kernel update, a driver rebuild, an unplugged reader -
 # can never lock anyone out of the machine.
 #
+# max-tries=20, timeout=90: the module's own defaults are 3 tries and 30
+# seconds, which is tuned for a reliable reader, not this one. Measured over
+# seven verify attempts on this sensor, five matched (scores 77-2920 against a
+# threshold of 72) and two did not (0, 7) - about a 70% chance per touch, most
+# of the miss being a placement that does not overlap any enrolled sample
+# rather than a bad reading. Independent tries compound fast: at 70% per try,
+# the chance every one of twenty fails is 0.3^20, on the order of 1 in
+# 30,000,000. Raising the try count is what actually fixes the practical
+# success rate here - the per-touch odds do not change, but the number of
+# chances to clear them does. 90 seconds covers 20 tries comfortably even with
+# a few retry-scan prompts mixed in; a lower number would cut tries short
+# before they were used.
 # `sufficient` is what makes that safe here too: if pam_fprintd fails for any
 # reason, PAM carries on to system-auth and asks for the password exactly as
 # before. It never turns a working prompt into a broken one.
@@ -24,7 +36,7 @@
 #
 # No daemon restart is needed; PAM reads the stack per authentication.
 
-auth       sufficient   pam_fprintd.so
+auth       sufficient   pam_fprintd.so max-tries=20 timeout=90
 auth       include      system-auth
 account    include      system-auth
 password   include      system-auth

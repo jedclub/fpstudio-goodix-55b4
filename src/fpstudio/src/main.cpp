@@ -17,6 +17,7 @@
 #include "i18n.h"
 #include "headless.h"
 #include "mainwindow.h"
+#include "setupwizard.h"
 
 namespace {
 
@@ -25,9 +26,11 @@ void printUsage()
     std::fputs(
         "fpstudio — fingerprint sensor studio\n"
         "\n"
-        "  fpstudio                       GUI\n"
-        "  fpstudio --setup               setup wizard, straight away\n"
-        "  fpstudio --cli setup            what is configured, what is not\n"
+        "  fpstudio                       setup wizard - what most people want\n"
+        "  fpstudio --setup               same thing, spelled out\n"
+        "  fpstudio --diagnostics         the full tool: live capture, driver "
+        "log, MCP status\n"
+        "  fpstudio --cli setup           what is configured, what is not\n"
         "  fpstudio --cli devices\n"
         "  fpstudio --cli capture [--out FILE] [--timeout N]\n"
         "  fpstudio --cli enroll  [--user U] [--finger N]\n"
@@ -118,15 +121,25 @@ int main(int argc, char **argv)
     QApplication app(argc, argv);
     fpstudio::i18n::install(lang);
 
-    fpstudio::MainWindow w;
-    w.show();
-
-    // --setup goes straight to the wizard rather than waiting to be asked.
-    // Someone who has just installed this on a machine where nothing works
-    // wants the checklist, not the diagnostics window behind it.
-    if (args.contains(QStringLiteral("--setup")))
-        w.openSetupWizard();
-    else
-        w.maybeOfferSetup();
+    // Two different tools live in this one binary, and showing both windows
+    // together is what made them confusing to tell apart - a checklist for
+    // getting the sensor working, and a deep diagnostics window for capture
+    // images, the driver log, and MCP status. So only one opens by default.
+    //
+    // --diagnostics is the escape hatch for someone who already knows this
+    // tool and wants the window they are used to. Everyone else - including a
+    // bare `fpstudio`, which is what a desktop launcher runs - gets the
+    // wizard, and it has its own button into diagnostics for when the
+    // checklist is not enough.
+    if (args.contains(QStringLiteral("--diagnostics"))) {
+        fpstudio::MainWindow *w = new fpstudio::MainWindow;
+        w->setAttribute(Qt::WA_DeleteOnClose);
+        w->show();
+        w->maybeOfferSetup();
+    } else {
+        auto *wiz = new fpstudio::SetupWizard(nullptr);
+        wiz->setAttribute(Qt::WA_DeleteOnClose);
+        wiz->show();
+    }
     return app.exec();
 }

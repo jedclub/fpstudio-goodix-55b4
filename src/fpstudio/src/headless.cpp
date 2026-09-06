@@ -111,9 +111,10 @@ QJsonObject cmdSetup()
         {StepState::Skipped, QStringLiteral("skipped")},
     };
 
+    const QVector<StepResult> results = probeAll();
+
     QJsonArray steps;
-    bool ready = true;
-    for (const StepResult &r : probeAll()) {
+    for (const StepResult &r : results) {
         QJsonObject o{
             {QStringLiteral("step"),    stepKey(r.id)},
             {QStringLiteral("title"),   stepTitle(r.id)},
@@ -130,18 +131,11 @@ QJsonObject cmdSetup()
             o.insert(QStringLiteral("commands"), c);
         }
         steps.append(o);
-
-        // "Ready" means unlocking works, so only the steps on that path count.
-        // The udev rule is a convenience and image quality is a reading, not a
-        // configuration - neither should turn the answer to no.
-        const bool onPath = r.id != StepId::UdevRule && r.id != StepId::Capture;
-        if (onPath && r.state != StepState::Ok && r.state != StepState::Skipped)
-            ready = false;
     }
 
     return QJsonObject{
         {QStringLiteral("ok"), true},
-        {QStringLiteral("ready"), ready},
+        {QStringLiteral("ready"), allReady(results)},
         {QStringLiteral("steps"), steps},
     };
 }
