@@ -306,7 +306,7 @@ Windows fingerprint sign-in will stop working on this machine, permanently. If y
 Login and sudo are deliberately left alone, so a sensor that stops working can never lock you out of the machine. The line is &apos;sufficient&apos;: if the fingerprint fails for any reason, you are asked for the password exactly as before.</source>
         <translation>Это добавляет одну строку в стек, который использует polkit, чтобы pkexec и диалог аутентификации рабочего стола сначала пробовали отпечаток.
 
-Вход в систему и sudo намеренно оставлены без изменений, чтобы неисправный датчик никогда не мог заблокировать вам доступ к машине. Строка 'sufficient': если отпечаток по какой-либо причине не сработает, пароль будет запрошен точно так же, как раньше.</translation>
+Вход в систему и sudo намеренно оставлены без изменений, чтобы неисправный датчик никогда не мог заблокировать вам доступ к машине. Строка &apos;sufficient&apos;: если отпечаток по какой-либо причине не сработает, пароль будет запрошен точно так же, как раньше.</translation>
     </message>
     <message>
         <location filename="../src/setupcheck.cpp" line="366"/>
@@ -330,7 +330,7 @@ Login and sudo are deliberately left alone, so a sensor that stops working can n
 The safety net is the same either way. The line added is &apos;sufficient&apos;, so a failing fingerprint falls back to the password exactly as before. sudo itself never stops working - only the fingerprint shortcut can.</source>
         <translation>Необязательно, и это шаг дальше правила polkit выше: sudo обычно является путём назад, когда что-то ещё на машине сломано, поэтому расширение аутентификации по отпечатку на него стоит решать осознанно, а не по умолчанию.
 
-Страховка та же в любом случае. Добавленная строка - 'sufficient', поэтому неудачный отпечаток откатывается к паролю точно как раньше. Сам sudo никогда не перестаёт работать - может перестать работать только ярлык с отпечатком.</translation>
+Страховка та же в любом случае. Добавленная строка - &apos;sufficient&apos;, поэтому неудачный отпечаток откатывается к паролю точно как раньше. Сам sudo никогда не перестаёт работать - может перестать работать только ярлык с отпечатком.</translation>
     </message>
     <message>
         <location filename="../src/setupcheck.cpp" line="413"/>

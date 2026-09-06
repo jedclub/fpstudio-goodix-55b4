@@ -306,7 +306,7 @@ Die Windows-Fingerabdruckanmeldung wird auf diesem Gerät dauerhaft nicht mehr f
 Login and sudo are deliberately left alone, so a sensor that stops working can never lock you out of the machine. The line is &apos;sufficient&apos;: if the fingerprint fails for any reason, you are asked for the password exactly as before.</source>
         <translation>Dies fügt der von polkit verwendeten Stapelkonfiguration eine Zeile hinzu, damit pkexec und der Anmeldedialog der Desktop-Umgebung zuerst den Fingerabdruck versuchen.
 
-Anmeldung und sudo bleiben absichtlich unangetastet, damit ein ausfallender Sensor Sie niemals aus dem System aussperren kann. Die Zeile ist 'sufficient': Schlägt der Fingerabdruck aus irgendeinem Grund fehl, werden Sie genau wie zuvor nach dem Passwort gefragt.</translation>
+Anmeldung und sudo bleiben absichtlich unangetastet, damit ein ausfallender Sensor Sie niemals aus dem System aussperren kann. Die Zeile ist &apos;sufficient&apos;: Schlägt der Fingerabdruck aus irgendeinem Grund fehl, werden Sie genau wie zuvor nach dem Passwort gefragt.</translation>
     </message>
     <message>
         <location filename="../src/setupcheck.cpp" line="366"/>
@@ -330,7 +330,7 @@ Anmeldung und sudo bleiben absichtlich unangetastet, damit ein ausfallender Sens
 The safety net is the same either way. The line added is &apos;sufficient&apos;, so a failing fingerprint falls back to the password exactly as before. sudo itself never stops working - only the fingerprint shortcut can.</source>
         <translation>Optional, und ein Schritt weiter als die obige polkit-Regel: sudo ist meist der Weg zurück, wenn etwas anderes auf dem Rechner kaputt ist, daher sollte man die Fingerabdruck-Authentifizierung darauf bewusst und nicht standardmäßig ausweiten.
 
-Das Sicherheitsnetz ist in jedem Fall dasselbe. Die hinzugefügte Zeile ist 'sufficient', sodass ein fehlschlagender Fingerabdruck genau wie zuvor auf das Passwort zurückfällt. sudo selbst hört nie auf zu funktionieren - nur die Fingerabdruck-Abkürzung kann das.</translation>
+Das Sicherheitsnetz ist in jedem Fall dasselbe. Die hinzugefügte Zeile ist &apos;sufficient&apos;, sodass ein fehlschlagender Fingerabdruck genau wie zuvor auf das Passwort zurückfällt. sudo selbst hört nie auf zu funktionieren - nur die Fingerabdruck-Abkürzung kann das.</translation>
     </message>
     <message>
         <location filename="../src/setupcheck.cpp" line="413"/>

@@ -330,7 +330,7 @@ Login and sudo are deliberately left alone, so a sensor that stops working can n
 The safety net is the same either way. The line added is &apos;sufficient&apos;, so a failing fingerprint falls back to the password exactly as before. sudo itself never stops working - only the fingerprint shortcut can.</source>
         <translation>任意であり、上の polkit ルールよりもう一歩踏み込んだものです。sudo はマシンの他の何かが壊れたときの復旧経路であることが多いため、これに指紋認証を拡張するのは既定ではなく、慎重に判断すべきことです。
 
-安全策は同じです。追加される行は 'sufficient' なので、指紋が失敗すれば以前と同じようにパスワードに切り替わります。sudo 自体が止まることはありません — 止まり得るのは指紋という近道だけです。</translation>
+安全策は同じです。追加される行は &apos;sufficient&apos; なので、指紋が失敗すれば以前と同じようにパスワードに切り替わります。sudo 自体が止まることはありません — 止まり得るのは指紋という近道だけです。</translation>
     </message>
     <message>
         <location filename="../src/setupcheck.cpp" line="413"/>

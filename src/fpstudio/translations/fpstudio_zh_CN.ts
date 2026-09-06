@@ -306,7 +306,7 @@ Windows fingerprint sign-in will stop working on this machine, permanently. If y
 Login and sudo are deliberately left alone, so a sensor that stops working can never lock you out of the machine. The line is &apos;sufficient&apos;: if the fingerprint fails for any reason, you are asked for the password exactly as before.</source>
         <translation>这会在 polkit 使用的认证栈中添加一行，让 pkexec 和桌面认证对话框优先尝试指纹。
 
-登录和 sudo 特意保持不变，这样即使传感器停止工作也不会把你锁在机器之外。这一行是 'sufficient'：如果指纹因任何原因失败，仍会像以前一样要求输入密码。</translation>
+登录和 sudo 特意保持不变，这样即使传感器停止工作也不会把你锁在机器之外。这一行是 &apos;sufficient&apos;：如果指纹因任何原因失败，仍会像以前一样要求输入密码。</translation>
     </message>
     <message>
         <location filename="../src/setupcheck.cpp" line="366"/>
@@ -330,7 +330,7 @@ Login and sudo are deliberately left alone, so a sensor that stops working can n
 The safety net is the same either way. The line added is &apos;sufficient&apos;, so a failing fingerprint falls back to the password exactly as before. sudo itself never stops working - only the fingerprint shortcut can.</source>
         <translation>这是可选项，比上面的 polkit 规则更进一步：sudo 通常是机器上其他东西出问题时的退路，因此为其扩展指纹认证值得慎重决定，而非默认开启。
 
-安全网是一样的。新增的一行是 'sufficient'，因此指纹失败时会像以前一样回退到密码。sudo 本身永远不会失效——只有指纹这条捷径可能失效。</translation>
+安全网是一样的。新增的一行是 &apos;sufficient&apos;，因此指纹失败时会像以前一样回退到密码。sudo 本身永远不会失效——只有指纹这条捷径可能失效。</translation>
     </message>
     <message>
         <location filename="../src/setupcheck.cpp" line="413"/>

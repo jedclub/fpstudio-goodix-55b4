@@ -21,7 +21,7 @@
     <message>
         <location filename="../src/engine.cpp" line="102"/>
         <source>The ridges are faint — press a little harder</source>
-        <translation>Le creste sono deboli — premi un po' più forte</translation>
+        <translation>Le creste sono deboli — premi un po&apos; più forte</translation>
     </message>
     <message>
         <location filename="../src/engine.cpp" line="107"/>
@@ -37,7 +37,7 @@
     <message>
         <location filename="../src/engine.cpp" line="132"/>
         <source>Matching against the enrolled print…</source>
-        <translation>Confronto con l'impronta registrata…</translation>
+        <translation>Confronto con l&apos;impronta registrata…</translation>
     </message>
     <message>
         <location filename="../src/engine.cpp" line="137"/>
@@ -172,7 +172,7 @@ Questo concede al gruppo wheel lettura e scrittura sul sensore. Su un portatile 
     <message>
         <location filename="../src/setupcheck.cpp" line="208"/>
         <source>The sensor answered, but the handshake did not complete</source>
-        <translation>Il sensore ha risposto, ma l'handshake non si è completato</translation>
+        <translation>Il sensore ha risposto, ma l&apos;handshake non si è completato</translation>
     </message>
     <message>
         <location filename="../src/setupcheck.cpp" line="209"/>
@@ -187,7 +187,7 @@ Questo concede al gruppo wheel lettura e scrittura sul sensore. Su un portatile 
     <message>
         <location filename="../src/setupcheck.cpp" line="216"/>
         <source>The handshake did not get far enough to say why. Check the driver and permission steps above first.</source>
-        <translation>L'handshake non è arrivato abbastanza lontano da spiegarne il motivo. Controlla prima i passaggi Driver e Permessi sopra.</translation>
+        <translation>L&apos;handshake non è arrivato abbastanza lontano da spiegarne il motivo. Controlla prima i passaggi Driver e Permessi sopra.</translation>
     </message>
     <message>
         <location filename="../src/setupcheck.cpp" line="229"/>
@@ -208,9 +208,9 @@ The key the sensor holds now cannot be read back - what the protocol returns is 
 Windows fingerprint sign-in will stop working on this machine, permanently. If you dual-boot and use it there, stop here.</source>
         <translation>Questa operazione è irreversibile.
 
-La chiave attualmente posseduta dal sensore non può essere riletta - ciò che il protocollo restituisce è un valore derivato da essa, non la chiave stessa - quindi non c'è backup da ripristinare in seguito.
+La chiave attualmente posseduta dal sensore non può essere riletta - ciò che il protocollo restituisce è un valore derivato da essa, non la chiave stessa - quindi non c&apos;è backup da ripristinare in seguito.
 
-L'accesso con impronta di Windows smetterà di funzionare su questa macchina, permanentemente. Se usi il dual boot e lo utilizzi lì, fermati qui.</translation>
+L&apos;accesso con impronta di Windows smetterà di funzionare su questa macchina, permanentemente. Se usi il dual boot e lo utilizzi lì, fermati qui.</translation>
     </message>
     <message>
         <location filename="../src/setupcheck.cpp" line="244"/>
@@ -220,7 +220,7 @@ L'accesso con impronta di Windows smetterà di funzionare su questa macchina, pe
     <message>
         <location filename="../src/setupcheck.cpp" line="274"/>
         <source>Image quality has not been measured yet</source>
-        <translation>La qualità dell'immagine non è ancora stata misurata</translation>
+        <translation>La qualità dell&apos;immagine non è ancora stata misurata</translation>
     </message>
     <message>
         <location filename="../src/setupcheck.cpp" line="275"/>
@@ -230,7 +230,7 @@ L'accesso con impronta di Windows smetterà di funzionare su questa macchina, pe
     <message>
         <location filename="../src/setupcheck.cpp" line="278"/>
         <source>Test a capture now</source>
-        <translation>Prova un'acquisizione ora</translation>
+        <translation>Prova un&apos;acquisizione ora</translation>
     </message>
     <message>
         <location filename="../src/setupcheck.cpp" line="282"/>
@@ -240,7 +240,7 @@ L'accesso con impronta di Windows smetterà di funzionare su questa macchina, pe
     <message>
         <location filename="../src/setupcheck.cpp" line="291"/>
         <source>Below about 24, matching tends to fail even though the driver accepts the frame. Dry fingertips and a sensor that has been busy both do this; a few minutes&apos; rest and a little moisture usually fix it.</source>
-        <translation>Sotto circa 24, la corrispondenza tende a fallire anche se il driver accetta il frame. Polpastrelli asciutti e un sensore sotto sforzo ne sono entrambi la causa; qualche minuto di riposo e un po' di umidità di solito risolvono.</translation>
+        <translation>Sotto circa 24, la corrispondenza tende a fallire anche se il driver accetta il frame. Polpastrelli asciutti e un sensore sotto sforzo ne sono entrambi la causa; qualche minuto di riposo e un po&apos; di umidità di solito risolvono.</translation>
     </message>
     <message>
         <location filename="../src/setupcheck.cpp" line="295"/>
@@ -260,7 +260,7 @@ L'accesso con impronta di Windows smetterà di funzionare su questa macchina, pe
     <message>
         <location filename="../src/setupcheck.cpp" line="315"/>
         <source>This program keeps its own enrolments separately, and system authentication does not see those. Enrolling again through fprintd is what makes the fingerprint usable for unlocking.</source>
-        <translation>Questo programma mantiene le proprie registrazioni separatamente, e l'autenticazione di sistema non le vede. Registrarsi di nuovo tramite fprintd è ciò che rende l'impronta utilizzabile per lo sblocco.</translation>
+        <translation>Questo programma mantiene le proprie registrazioni separatamente, e l&apos;autenticazione di sistema non le vede. Registrarsi di nuovo tramite fprintd è ciò che rende l&apos;impronta utilizzabile per lo sblocco.</translation>
     </message>
     <message>
         <location filename="../src/setupcheck.cpp" line="319"/>
@@ -275,12 +275,12 @@ L'accesso con impronta di Windows smetterà di funzionare su questa macchina, pe
     <message>
         <location filename="../src/setupcheck.cpp" line="325"/>
         <source>The daemon could not be reached. It is usually started on demand; installing it may be all that is missing.</source>
-        <translation>Impossibile contattare il demone. Di solito si avvia su richiesta; installarlo potrebbe essere l'unica cosa mancante.</translation>
+        <translation>Impossibile contattare il demone. Di solito si avvia su richiesta; installarlo potrebbe essere l&apos;unica cosa mancante.</translation>
     </message>
     <message>
         <location filename="../src/setupcheck.cpp" line="341"/>
         <source>polkit accepts a fingerprint</source>
-        <translation>polkit accetta un'impronta</translation>
+        <translation>polkit accetta un&apos;impronta</translation>
     </message>
     <message>
         <location filename="../src/setupcheck.cpp" line="349"/>
@@ -292,7 +292,7 @@ L'accesso con impronta di Windows smetterà di funzionare su questa macchina, pe
         <location filename="../src/setupcheck.cpp" line="350"/>
         <location filename="../src/setupcheck.cpp" line="391"/>
         <source>The PAM module that lets authentication use a fingerprint is missing. It usually ships with fprintd.</source>
-        <translation>Manca il modulo PAM che permette all'autenticazione di usare un'impronta. Di solito è incluso con fprintd.</translation>
+        <translation>Manca il modulo PAM che permette all&apos;autenticazione di usare un&apos;impronta. Di solito è incluso con fprintd.</translation>
     </message>
     <message>
         <location filename="../src/setupcheck.cpp" line="357"/>
@@ -304,19 +304,19 @@ L'accesso con impronta di Windows smetterà di funzionare su questa macchina, pe
         <source>This adds one line to the stack polkit uses, so pkexec and the desktop&apos;s authentication dialog try the fingerprint first.
 
 Login and sudo are deliberately left alone, so a sensor that stops working can never lock you out of the machine. The line is &apos;sufficient&apos;: if the fingerprint fails for any reason, you are asked for the password exactly as before.</source>
-        <translation>Questo aggiunge una riga allo stack usato da polkit, così pkexec e la finestra di autenticazione del desktop provano prima l'impronta.
+        <translation>Questo aggiunge una riga allo stack usato da polkit, così pkexec e la finestra di autenticazione del desktop provano prima l&apos;impronta.
 
-Login e sudo restano volutamente invariati, così un sensore che smette di funzionare non può mai bloccarti fuori dalla macchina. La riga è 'sufficient': se l'impronta fallisce per qualsiasi motivo, ti verrà chiesta la password esattamente come prima.</translation>
+Login e sudo restano volutamente invariati, così un sensore che smette di funzionare non può mai bloccarti fuori dalla macchina. La riga è &apos;sufficient&apos;: se l&apos;impronta fallisce per qualsiasi motivo, ti verrà chiesta la password esattamente come prima.</translation>
     </message>
     <message>
         <location filename="../src/setupcheck.cpp" line="366"/>
         <source>Let polkit accept a fingerprint</source>
-        <translation>Consenti a polkit di accettare un'impronta</translation>
+        <translation>Consenti a polkit di accettare un&apos;impronta</translation>
     </message>
     <message>
         <location filename="../src/setupcheck.cpp" line="382"/>
         <source>sudo accepts a fingerprint</source>
-        <translation>sudo accetta un'impronta</translation>
+        <translation>sudo accetta un&apos;impronta</translation>
     </message>
     <message>
         <location filename="../src/setupcheck.cpp" line="402"/>
@@ -328,14 +328,14 @@ Login e sudo restano volutamente invariati, così un sensore che smette di funzi
         <source>Optional, and a step further than the polkit rule above: sudo is usually the way back in when something else on the machine is broken, so extending fingerprint auth to it is worth doing deliberately rather than by default.
 
 The safety net is the same either way. The line added is &apos;sufficient&apos;, so a failing fingerprint falls back to the password exactly as before. sudo itself never stops working - only the fingerprint shortcut can.</source>
-        <translation>Facoltativo, e un passo oltre la regola polkit sopra: sudo è di solito la via di ritorno quando qualcos'altro sulla macchina è rotto, quindi estendere l'autenticazione con impronta ad esso merita di essere deciso deliberatamente, non di default.
+        <translation>Facoltativo, e un passo oltre la regola polkit sopra: sudo è di solito la via di ritorno quando qualcos&apos;altro sulla macchina è rotto, quindi estendere l&apos;autenticazione con impronta ad esso merita di essere deciso deliberatamente, non di default.
 
-La rete di sicurezza è la stessa in ogni caso. La riga aggiunta è 'sufficient', quindi un'impronta fallita ripiega sulla password esattamente come prima. sudo stesso non smette mai di funzionare - solo la scorciatoia dell'impronta può farlo.</translation>
+La rete di sicurezza è la stessa in ogni caso. La riga aggiunta è &apos;sufficient&apos;, quindi un&apos;impronta fallita ripiega sulla password esattamente come prima. sudo stesso non smette mai di funzionare - solo la scorciatoia dell&apos;impronta può farlo.</translation>
     </message>
     <message>
         <location filename="../src/setupcheck.cpp" line="413"/>
         <source>Let sudo accept a fingerprint</source>
-        <translation>Consenti a sudo di accettare un'impronta</translation>
+        <translation>Consenti a sudo di accettare un&apos;impronta</translation>
     </message>
     <message>
         <location filename="../src/setupcheck.cpp" line="440"/>
@@ -365,7 +365,7 @@ La rete di sicurezza è la stessa in ogni caso. La riga aggiunta è 'sufficient'
     <message>
         <location filename="../src/setupcheck.cpp" line="445"/>
         <source>Image quality</source>
-        <translation>Qualità dell'immagine</translation>
+        <translation>Qualità dell&apos;immagine</translation>
     </message>
     <message>
         <location filename="../src/setupcheck.cpp" line="446"/>
@@ -397,7 +397,7 @@ La rete di sicurezza è la stessa in ogni caso. La riga aggiunta è 'sufficient'
 Use Capture to pull an image from the sensor</source>
         <translation>Nessun frame
 
-Usa Acquisisci per ottenere un'immagine dal sensore</translation>
+Usa Acquisisci per ottenere un&apos;immagine dal sensore</translation>
     </message>
 </context>
 <context>
@@ -633,7 +633,7 @@ Acquisizione grezza: %5</translation>
     <message>
         <location filename="../src/mainwindow.cpp" line="528"/>
         <source>Coverage %1%  ·  sharpness %2  —  faint. Press a little harder</source>
-        <translation>Copertura %1%  ·  nitidezza %2  —  debole. Premi un po' più forte</translation>
+        <translation>Copertura %1%  ·  nitidezza %2  —  debole. Premi un po&apos; più forte</translation>
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="530"/>
@@ -643,7 +643,7 @@ Acquisizione grezza: %5</translation>
     <message>
         <location filename="../src/mainwindow.cpp" line="598"/>
         <source>Agent request</source>
-        <translation>Richiesta dell'agente</translation>
+        <translation>Richiesta dell&apos;agente</translation>
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="599"/>
@@ -676,7 +676,7 @@ Acquisizione grezza: %5</translation>
     <message>
         <location filename="../src/privrunner.cpp" line="31"/>
         <source>The operation terminated abnormally</source>
-        <translation>L'operazione è terminata in modo anomalo</translation>
+        <translation>L&apos;operazione è terminata in modo anomalo</translation>
     </message>
     <message>
         <location filename="../src/privrunner.cpp" line="38"/>
@@ -691,7 +691,7 @@ Acquisizione grezza: %5</translation>
     <message>
         <location filename="../src/privrunner.cpp" line="108"/>
         <source>An operation is already running</source>
-        <translation>Un'operazione è già in corso</translation>
+        <translation>Un&apos;operazione è già in corso</translation>
     </message>
     <message>
         <location filename="../src/privrunner.cpp" line="112"/>
@@ -751,7 +751,7 @@ Acquisizione grezza: %5</translation>
     <message>
         <location filename="../src/setupwizard.cpp" line="197"/>
         <source>Live capture preview, the driver log, and MCP status - for a closer look once the checklist here is done.</source>
-        <translation>Anteprima dell'acquisizione dal vivo, log del driver e stato MCP - per un'analisi più approfondita una volta completato questo elenco.</translation>
+        <translation>Anteprima dell&apos;acquisizione dal vivo, log del driver e stato MCP - per un&apos;analisi più approfondita una volta completato questo elenco.</translation>
     </message>
     <message>
         <location filename="../src/setupwizard.cpp" line="229"/>
