@@ -1,0 +1,19 @@
+--- a/libfprint/drivers/goodixtls/goodixtls.c
++++ b/libfprint/drivers/goodixtls/goodixtls.c
+@@ -47,7 +47,15 @@
+   err->code = code;
+   const char *msg = ERR_reason_error_string (code);
+ 
+-  err->message = malloc (strlen (msg));
++  /* ERR_reason_error_string returns NULL for a code it does not know. */
++  if (msg == NULL)
++    msg = "unknown SSL error";
++
++  /* +1 for the terminating NUL: strcpy writes strlen(msg)+1 bytes, so
++   * allocating only strlen(msg) puts the NUL one byte past the end and
++   * _FORTIFY_SOURCE aborts the process. That turned every reportable SSL
++   * failure into an unexplained "buffer overflow detected" crash. */
++  err->message = malloc (strlen (msg) + 1);
+   strcpy (err->message, msg);
+   return err;
+ }

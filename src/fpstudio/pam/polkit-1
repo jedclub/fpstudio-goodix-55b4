@@ -1,0 +1,31 @@
+#%PAM-1.0
+#
+# Let polkit accept a fingerprint, falling back to the password.
+#
+# This file shadows the one polkit ships at /usr/lib/pam.d/polkit-1, which is
+# the same four `include system-auth` lines without the first one here.
+# Overriding in /etc means a polkit update cannot silently drop the change, and
+# reverting is deleting one file.
+#
+# Scoped to polkit on purpose. The password prompts worth removing are the ones
+# pkexec and the KDE agent raise; login and sudo are left alone, so a sensor
+# that stops working - a kernel update, a driver rebuild, an unplugged reader -
+# can never lock anyone out of the machine.
+#
+# `sufficient` is what makes that safe here too: if pam_fprintd fails for any
+# reason, PAM carries on to system-auth and asks for the password exactly as
+# before. It never turns a working prompt into a broken one.
+#
+# Install:
+#   sudo install -Dm644 polkit-1 /etc/pam.d/polkit-1
+#
+# Remove:
+#   sudo rm /etc/pam.d/polkit-1
+#
+# No daemon restart is needed; PAM reads the stack per authentication.
+
+auth       sufficient   pam_fprintd.so
+auth       include      system-auth
+account    include      system-auth
+password   include      system-auth
+session    include      system-auth

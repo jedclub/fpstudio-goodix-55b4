@@ -1,0 +1,98 @@
+--- a/libfprint/drivers/goodixtls/goodix55x4.c
++++ b/libfprint/drivers/goodixtls/goodix55x4.c
+@@ -92,6 +92,7 @@
+   FpiDeviceGoodixTls parent;
+ 
+   guint8 *otp;
++  guint16 otp_len;
+ 
+   GSList *frames;
+   guint poll_attempts;
+@@ -117,6 +118,7 @@
+   ACTIVATE_CHECK_PSK,
+   ACTIVATE_RESET,
+   ACTIVATE_SET_MCU_IDLE,
++  ACTIVATE_READ_OTP,
+   ACTIVATE_SET_MCU_CONFIG,
+   ACTIVATE_NUM_STATES,
+ };
+@@ -291,6 +293,67 @@
+   }
+ }
+ 
++/* Read the sensor's one-time-programmable area and log it.
++ *
++ * Why this exists: the driver uploads a fixed 256-byte MCU config and never
++ * asks the chip about itself. That config is the GF3268's - it is a near-copy
++ * of a constant in the vendor's Wbdi.dll - and it carries the analog operating
++ * point for a different die. The symptom on a GF3208 is a capture that has no
++ * fingerprint in it: a touched frame correlates 0.96 with the stored empty
++ * frame and differs from it by a near-uniform DC step (594/724/848 at the
++ * quartiles), i.e. the array sees that something is there but resolves no
++ * ridges. Autocorrelation of the difference shows no ridge period in either
++ * axis, so nothing downstream - geometry, assembly, the matcher - can help.
++ *
++ * The vendor's driver does what is missing here. Wbdi.dll carries
++ * milan_hu_series_update_dac_register_from_otp and log formats naming exactly
++ * the per-chip values involved:
++ *
++ *   [otp info]tcode: 0x%x, diff: 0x%x, touch_diff: 0x%x, fdt_tcode: 0x%x
++ *   [otp info]DACH: 0x%x : 0x%x : 0x%x : 0x%x
++ *   [otp info]DACL: 0x%x : 0x%x : 0x%x : 0x%x
++ *
++ * The DAC pair sets the readout bias; the tcodes set integration. Those are
++ * the knobs whose being wrong produces the flat frames measured above.
++ *
++ * This state only reads and logs. The transport was already implemented
++ * (GOODIX_CMD_READ_OTP, goodix_send_read_otp) and only the callback was
++ * missing - upstream left the call site commented out. Nothing is written to
++ * the sensor, and the OTP layout is not decoded yet: the bytes are printed so
++ * the mapping into the config blob can be worked out against real hardware
++ * rather than guessed. A read failure is not fatal for the same reason - the
++ * driver behaves exactly as before, minus the log line. */
++static void read_otp_callback(FpDevice *dev, guint8 *data, guint16 length,
++                              gpointer user_data, GError *error) {
++  FpiDeviceGoodixTls55X4 *self = FPI_DEVICE_GOODIXTLS55X4(dev);
++  FpiSsm *ssm = user_data;
++
++  if (error) {
++    g_print("goodix55x4: OTP read failed: %s\n", error->message);
++    g_error_free(error);
++    fpi_ssm_next_state(ssm);
++    return;
++  }
++
++  g_clear_pointer(&self->otp, g_free);
++  self->otp_len = 0;
++
++  if (data && length) {
++    GString *hex = g_string_new(NULL);
++    for (guint16 i = 0; i < length; i++)
++      g_string_append_printf(hex, "%02x", data[i]);
++    g_print("goodix55x4: OTP %u bytes: %s\n", length, hex->str);
++    g_string_free(hex, TRUE);
++
++    self->otp = g_memdup2(data, length);
++    self->otp_len = length;
++  } else {
++    g_print("goodix55x4: OTP read returned nothing\n");
++  }
++
++  fpi_ssm_next_state(ssm);
++}
++
+ static void activate_run_state(FpiSsm *ssm, FpDevice *dev) {
+ 
+   switch (fpi_ssm_get_cur_state(ssm)) {
+@@ -337,6 +400,11 @@
+     //     goodix_send_read_otp(dev, read_otp_callback, ssm);
+     //     break;
+ 
++  case ACTIVATE_READ_OTP:
++    g_print("Reading OTP\n");
++    goodix_send_read_otp(dev, read_otp_callback, ssm);
++    break;
++
+   case ACTIVATE_SET_MCU_CONFIG:
+     g_print("Uploading Device Config\n");
+     goodix_send_upload_config_mcu(dev, goodix_55x4_config,

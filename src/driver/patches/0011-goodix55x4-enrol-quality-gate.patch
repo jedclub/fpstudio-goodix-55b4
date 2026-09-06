@@ -1,0 +1,126 @@
+--- a/libfprint/drivers/goodixtls/goodix55x4.c
++++ b/libfprint/drivers/goodixtls/goodix55x4.c
+@@ -691,6 +691,92 @@
+   fp_dbg("dumped %s", path);
+ }
+ 
++/* Whether a captured image is worth spending an enrolment stage on.
++ *
++ * Every accepted scan becomes one more sample in the template, and verify
++ * walks those samples until one passes. A scan where the finger only half
++ * landed still consumes a slot and then contributes nothing: it has too little
++ * in common with any later probe to ever be the one that matches. So the slot
++ * is worse than wasted, and on a 108x88 window - roughly 5.5 x 4.5 mm - there
++ * are not many slots to waste.
++ *
++ * Both measurements are taken after squash_frame_linear, which matters more
++ * than it sounds. An earlier version of this gate was calibrated against
++ * captures saved before the percentile stretch landed and set the coverage
++ * floor at 85%; on the stretched image every single scan came in at 73-79% and
++ * the gate rejected eight in a row. The stretch clips roughly the darkest 17%
++ * of the frame to zero by construction, so coverage measured here cannot
++ * exceed about 83% however well the finger lands. Numbers from one
++ * normalisation say nothing about another.
++ *
++ * So these are calibrated against the stretched image, over ~30 scans from a
++ * single enrolment attempt:
++ *
++ *   coverage    73-79%   (ceiling ~83%, set by the stretch itself)
++ *   sharpness   24-35
++ *
++ * Those are all ordinary touches - the run had no deliberate bad samples in
++ * it, so what is known is where normal sits, not where the boundary is. The
++ * thresholds are therefore placed well below the observed floor rather than
++ * fitted to it: the aim is to catch a scan that is obviously not a fingerprint
++ * while never arguing with one that is. Both numbers are logged on every
++ * capture, so they can be tightened later against real rejects instead of
++ * guesses.
++ *
++ * Coverage is the fraction of pixels above the dead floor - how much of the
++ * window the finger reached, within the ceiling noted above. Sharpness is the
++ * mean absolute Laplacian, which answers a different question: whether what
++ * was touched has ridge structure at all rather than being a flat smear. A
++ * firmly pressed smudge passes the first and fails the second. */
++#define GOODIX55X4_QUALITY_DEAD_FLOOR 24    /* below this a pixel is untouched */
++#define GOODIX55X4_QUALITY_MIN_COVERAGE 62  /* percent; observed floor 73 */
++#define GOODIX55X4_QUALITY_MIN_SHARPNESS 16 /* mean |Laplacian|; observed 24 */
++
++typedef enum {
++  GOODIX55X4_QUALITY_OK,
++  GOODIX55X4_QUALITY_PARTIAL, /* too little of the window was touched */
++  GOODIX55X4_QUALITY_SMEARED, /* touched, but with no ridge structure */
++} Goodix55X4Quality;
++
++/* metrics_out receives {coverage percent, sharpness}. The caller logs them on
++ * every capture, which is the only way these thresholds get retuned later -
++ * against this sensor's real distribution, or against different hardware. */
++static Goodix55X4Quality assess_image(const guint8 *px, guint metrics_out[2]) {
++  guint live = 0;
++
++  for (int i = 0; i != GOODIX55X4_FRAME_SIZE; ++i)
++    if (px[i] > GOODIX55X4_QUALITY_DEAD_FLOOR)
++      live++;
++
++  const guint coverage = live * 100 / GOODIX55X4_FRAME_SIZE;
++
++  /* Interior only; stepping off the edge would wrap onto the opposite side of
++   * the previous row and read as detail that is not there. */
++  guint64 sum = 0;
++  guint n = 0;
++  for (int y = 1; y < GOODIX55X4_HEIGHT - 1; ++y) {
++    for (int x = 1; x < GOODIX55X4_WIDTH - 1; ++x) {
++      const int lap = 4 * px[y * GOODIX55X4_WIDTH + x] -
++                      px[y * GOODIX55X4_WIDTH + x - 1] -
++                      px[y * GOODIX55X4_WIDTH + x + 1] -
++                      px[(y - 1) * GOODIX55X4_WIDTH + x] -
++                      px[(y + 1) * GOODIX55X4_WIDTH + x];
++      sum += ABS(lap);
++      n++;
++    }
++  }
++  const guint sharpness = n ? (guint)(sum / n) : 0;
++
++  metrics_out[0] = coverage;
++  metrics_out[1] = sharpness;
++
++  if (coverage < GOODIX55X4_QUALITY_MIN_COVERAGE)
++    return GOODIX55X4_QUALITY_PARTIAL;
++  if (sharpness < GOODIX55X4_QUALITY_MIN_SHARPNESS)
++    return GOODIX55X4_QUALITY_SMEARED;
++  return GOODIX55X4_QUALITY_OK;
++}
++
+ static void process_frame(Goodix55X4Pix *raw_frame,
+                           frame_processing_info *info) {
+   struct fpi_frame *frame =
+@@ -775,6 +861,30 @@
+     g_slist_free_full(self->frames, g_free);
+     self->frames = g_slist_alloc();
+ 
++    guint metrics[2] = {0, 0};
++    const Goodix55X4Quality q = assess_image(img->data, metrics);
++    /* g_message, not g_print: the GUI reads the driver through GLib's log
++     * writer, and g_print bypasses it entirely - these lines would be
++     * invisible to it. */
++    g_message("Image quality: coverage %u%%, sharpness %u", metrics[0],
++              metrics[1]);
++
++    if (q != GOODIX55X4_QUALITY_OK) {
++      /* Hand the frame back rather than spend a stage on it. The retry reason
++       * is what libfprint passes up to the UI, so pick the one that says what
++       * the person should do differently. */
++      g_message(q == GOODIX55X4_QUALITY_PARTIAL
++                    ? "Image rejected: partial contact"
++                    : "Image rejected: no ridge detail");
++      g_object_unref(img);
++      fpi_image_device_retry_scan(img_dev, q == GOODIX55X4_QUALITY_PARTIAL
++                                               ? FP_DEVICE_RETRY_CENTER_FINGER
++                                               : FP_DEVICE_RETRY_GENERAL);
++      g_print("Next State\n");
++      fpi_ssm_next_state(ssm);
++      return;
++    }
++
+     g_print("Signal IMG Capture\n");
+     fpi_image_device_image_captured(img_dev, img);
+     // save_image_to_pgm(img, "finger.pgm");

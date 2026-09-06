@@ -1,0 +1,31 @@
+# Give the wheel group read/write on the Goodix 55b4 sensor.
+#
+# Without a rule the node is crw-rw-r-- root:root, so libusb - which needs
+# write access - fails for anyone but root, and every capture has to go through
+# pkexec. That is one authentication prompt per operation, which makes the tool
+# genuinely unpleasant to use during a debugging session.
+#
+# TAG+="uaccess" is the tidier mechanism and is what this should use: it hands
+# the device to whoever is logged in at the seat and takes it back at logout.
+# It did not work here - the rule matched (CURRENT_TAGS=:uaccess: confirmed via
+# udevadm test), the session was local and active on seat0, and a real
+# unbind/bind add event was generated, but systemd-logind never applied the
+# ACL. Rather than ship a rule that quietly does nothing, this grants the group
+# instead.
+#
+# What this means, stated plainly: any process running as a wheel member can
+# then drive the fingerprint sensor directly - read frames, and on this driver
+# also write the PSK. On a single-user laptop that is the same person who could
+# already do it through pkexec; on a shared machine it is not. Prefer uaccess
+# if it works on your system, and skip this file entirely if you only use the
+# CLI or MCP modes under pkexec.
+#
+# Install:
+#   sudo install -Dm644 99-fpstudio-goodix.rules \
+#        /etc/udev/rules.d/99-fpstudio-goodix.rules
+#   sudo udevadm control --reload
+#   sudo udevadm trigger --attr-match=idVendor=27c6
+#
+# Remove: delete the file, reload, and replug or reboot.
+
+SUBSYSTEM=="usb", ATTR{idVendor}=="27c6", ATTR{idProduct}=="55b4", MODE="0660", GROUP="wheel"

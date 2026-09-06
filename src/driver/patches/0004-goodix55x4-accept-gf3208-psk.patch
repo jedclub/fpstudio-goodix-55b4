@@ -1,0 +1,42 @@
+--- a/libfprint/drivers/goodixtls/goodix55x4.h
++++ b/libfprint/drivers/goodixtls/goodix55x4.h
+@@ -49,6 +49,26 @@
+     0x18, 0x2c, 0xd0, 0x10, 0x19, 0x94, 0x5e, 0xe5, 0x03, 0x61
+ };
+ 
++/* This is not the TLS key. The handshake always uses 32 zero bytes (see
++ * tls_server_psk_server_callback in goodixtls.c); what PRESET_PSK_READ
++ * returns is a value the sensor derives from the PSK it holds, and the
++ * derivation is per-model - the 511 driver expects ba1a8603..., the 55x4
++ * driver 81b8ff49..., both for that same all-zero key. A GF3208 (ThinkPad
++ * L15 Gen 1) answers b0685213..., which is consistent with it holding the
++ * same zero key under a third derivation.
++ *
++ * So this list is a device-identity check, not a secret. Accepting another
++ * entry writes nothing to the sensor: if the guess is wrong and the sensor
++ * really holds a different key, the TLS handshake a few states later fails
++ * on its own. Nothing here re-provisions the device - deliberately, because
++ * PRESET_PSK_WRITE would overwrite persistent sensor state we cannot read
++ * back and therefore could not restore. */
++const guint8 goodix_55x4_psk_0_gf3208[] = {
++    0xb0, 0x68, 0x52, 0x13, 0x28, 0xbc, 0xe2, 0x75, 0x06, 0xad, 0x66,
++    0xed, 0x57, 0x43, 0x88, 0x76, 0x71, 0x36, 0x9e, 0x35, 0x51, 0xc1,
++    0x99, 0x95, 0xa9, 0x9f, 0x9f, 0x4f, 0xec, 0x71, 0x8d, 0x84
++};
++
+ guint8 goodix_55x4_config[] = {
+     0x60, 0x11, 0x60, 0x71, 0x24, 0x95, 0x2c, 0xc1, 0x14, 0xd5, 0x10,
+     0xe5, 0x00, 0xe5, 0x14, 0xf9, 0x03, 0x04, 0x02, 0x00, 0x00, 0x08,
+--- a/libfprint/drivers/goodixtls/goodix55x4.c
++++ b/libfprint/drivers/goodixtls/goodix55x4.c
+@@ -197,7 +197,9 @@
+     return;
+   }
+ 
+-  if (memcmp(psk, goodix_55x4_psk_0, sizeof(goodix_55x4_psk_0))) {
++  if (memcmp(psk, goodix_55x4_psk_0, sizeof(goodix_55x4_psk_0)) &&
++      memcmp(psk, goodix_55x4_psk_0_gf3208,
++             sizeof(goodix_55x4_psk_0_gf3208))) {
+     g_set_error(&error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA,
+                 "Invalid device PSK: 0x%s", psk_str);
+     fpi_ssm_mark_failed(user_data, error);

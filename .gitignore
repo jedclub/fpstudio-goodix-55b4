@@ -1,0 +1,48 @@
+# Build output
+build/
+src/fpstudio/build/
+*.o
+*.so
+*.so.*
+*.a
+
+# Compiled translations. The .ts sources are committed and reviewable; the .qm
+# are binary and are produced by lrelease during the build.
+*.qm
+
+# Arch packaging leftovers. makepkg extracts sources into src/ and stages the
+# package in pkg/, both inside the driver directory - neither belongs in git,
+# and src/ in particular is a full libfprint checkout.
+src/driver/src/
+src/driver/pkg/
+*.pkg.tar.zst
+*.pkg.tar.xz
+*.log
+
+# Captures. Anything the sensor actually produced is biometric data and must
+# not be committed - not a frame, not a template, not a debug dump. The
+# synthetic illustrations in captures/ are committed by name, so a real capture
+# written there with any other name is ignored by default rather than by
+# remembering to.
+# The order matters: a negation cannot rescue a file whose directory was
+# excluded, so the directory itself is never excluded - only its contents, and
+# then the three names that belong here are put back.
+captures/**
+!captures/README.md
+!captures/ridges-correct-geometry.png
+!captures/ridges-wrong-geometry.png
+!captures/normalisation-minmax.png
+!captures/normalisation-percentile.png
+*.pgm
+
+# Enrolment templates, wherever they land. Same reason, more so - a template is
+# derived directly from the finger.
+*.fp
+
+# Editor and tooling droppings
+.cache/
+.vscode/
+.idea/
+compile_commands.json
+*.swp
+*~

@@ -1,0 +1,19 @@
+# 이 노트북의 지문 센서 실측값 (2026-09-05)
+
+## USB
+Bus 001 Device 006: ID 27c6:55b4 Shenzhen Goodix Technology Co.,Ltd. Fingerprint Reader
+  idVendor           0x27c6 Shenzhen Goodix Technology Co.,Ltd.
+  idProduct          0x55b4 Fingerprint Reader
+  bcdDevice            1.00
+  iProduct                2 Goodix FingerPrint Device
+      bInterfaceClass       255 Vendor Specific Class
+
+## 장치 조회 응답
+firmware_version : GF3208_RTSEC_APP_10042   (11회 연속 일관)
+get_iap_version  : MILAN_RTSEC_IAP_10027
+preset_psk_read  : <redacted - per-device factory PSK hash>
+read_firmware    : 타임아웃 - 리드백 차단됨
+
+## OTP (32 bytes)
+0000  <redacted - per-device OTP, see local notes>
+0010  <redacted>

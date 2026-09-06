@@ -1,0 +1,34 @@
+--- a/libfprint/drivers/goodixtls/goodix55x4.c
++++ b/libfprint/drivers/goodixtls/goodix55x4.c
+@@ -1092,7 +1092,30 @@
+   dev_class->full_name = "Goodix TLS Fingerprint Sensor 55X4";
+   dev_class->type = FP_DEVICE_TYPE_USB;
+   dev_class->id_table = id_table;
+-  dev_class->nr_enroll_stages = 10;
++  /* 20 rather than 10, because coverage is what this sensor is short of.
++   *
++   * The window is 108x88 - about 5.5 x 4.5 mm - so one touch sees a small
++   * patch of the finger, and a verify only succeeds if the probe overlaps one
++   * of the stored samples well enough. Measured over seven attempts against a
++   * 10-stage enrolment, five matched; the two failures scored 0 and 7 against
++   * a threshold of 72, which is what a miss looks like here rather than a
++   * weak match - sigfm_match_score returns exactly 0 unless five descriptor
++   * matches survive and five of their pairs agree on length. The successes
++   * meanwhile ran 77 to 2920. So the failures are placements that landed
++   * away from all ten samples, not marginal image quality.
++   *
++   * Each stage appends one more sample (fpi_print_add_print), and verify
++   * walks them until one passes, so raising the count raises the area the
++   * template covers. The costs are proportional and small: the stored print
++   * goes from roughly 590 KB to 880 KB, and a failing verify does half again
++   * matching work - milliseconds either way against a SIFT descriptor set
++   * this size. A succeeding verify usually stops early regardless.
++   *
++   * The price is paid by the person enrolling, who now has to present the
++   * finger fifteen times. That is the trade this constant makes; libfprint
++   * imposes no limit either way (fpi_device_set_nr_enroll_stages only
++   * requires > 0, and the image-device default is 5). */
++  dev_class->nr_enroll_stages = 15;
+   dev_class->scan_type = FP_SCAN_TYPE_PRESS;
+ 
+   // TODO

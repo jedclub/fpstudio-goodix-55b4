@@ -1,0 +1,47 @@
+--- a/libfprint/drivers/goodixtls/goodix55x4.c
++++ b/libfprint/drivers/goodixtls/goodix55x4.c
+@@ -534,11 +534,44 @@
+ 
+ } frame_processing_info;
+ 
++/* Writes a 12-bit frame as a binary PGM. Only active when
++ * GOODIX55X4_DUMP_DIR is set, because the interesting question - is the
++ * striping already in the sensor data, or does the background subtraction
++ * create it - cannot be answered from the finished image alone. */
++static void dump_frame_pgm(const char *name, const Goodix55X4Pix *frame) {
++  const char *dir = g_getenv("GOODIX55X4_DUMP_DIR");
++  if (!dir)
++    return;
++
++  g_autofree gchar *path = g_strdup_printf("%s/%s.pgm", dir, name);
++  FILE *fd = fopen(path, "wb");
++  if (!fd) {
++    fp_warn("cannot write %s", path);
++    return;
++  }
++  /* maxval 4095: keep the raw 12-bit range rather than squashing here, so a
++   * reader sees exactly what the driver saw. */
++  fprintf(fd, "P5\n%d %d\n4095\n", GOODIX55X4_WIDTH, GOODIX55X4_HEIGHT);
++  for (int i = 0; i != GOODIX55X4_FRAME_SIZE; ++i) {
++    const guint16 v = frame[i] > 4095 ? 4095 : frame[i];
++    fputc((v >> 8) & 0xff, fd);   /* PGM is big-endian above maxval 255 */
++    fputc(v & 0xff, fd);
++  }
++  fclose(fd);
++  fp_dbg("dumped %s", path);
++}
++
+ static void process_frame(Goodix55X4Pix *raw_frame,
+                           frame_processing_info *info) {
+   struct fpi_frame *frame =
+       g_malloc(GOODIX55X4_FRAME_SIZE + sizeof(struct fpi_frame));
++
++  dump_frame_pgm("1-raw", raw_frame);
++  dump_frame_pgm("2-background", info->dev->empty_img);
++
+   postprocess_frame(raw_frame, info->dev->empty_img);
++  dump_frame_pgm("3-after-subtract", raw_frame);
++
+   squash_frame_linear(raw_frame, frame->data);
+ 
+   *(info->frames) = g_slist_append(*(info->frames), frame);

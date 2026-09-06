@@ -1,0 +1,123 @@
+# Maintainer: Swapnil Devesh <me@sidevesh.com>
+# Contributor: Alireza S.N. <alireza6677@gmail.com>
+# Based on libfprint-goodixtls-55x4 with host-side finger detection fix
+
+pkgname="libfprint-goodixtls-55x4-fixed"
+_pkgbase="libfprint-goodixtls-55x4"
+pkgdesc="libfprint fork for goodixtls 55x4 devices with host-side finger detection fix (MCU FDT-down reply doesn't block on this firmware) and opencv5 build fix"
+pkgver=r1805.c1937b9
+pkgrel=1
+arch=('x86_64')
+license=("LGPL2")
+# Local: keep symbols so the config-upload crash can be located precisely.
+# !strip leaves the debug info in place; debug alone would split it into a
+# separate -debug package that also has to be installed to be useful.
+options=('!strip' 'debug')
+makedepends=("git" "meson" "pkgconf" "gobject-introspection" "gtk-doc" "doctest" "glib2-devel")
+provides=("libfprint" "libfprint-2.so=2-64" "${_pkgbase}")
+conflicts=("libfprint" "${_pkgbase}")
+depends=('libgusb' 'openssl' 'pixman' 'nss' 'libgudev' 'opencv')
+optdepends=('fprintd: D-Bus daemon for managing readers')
+source=("${_pkgbase}::git+https://github.com/TheWeirdDev/libfprint.git"
+        "0001-goodix55x4-host-side-finger-detect.patch"
+        "0002-sigfm-opencv-pkgconfig-fallback.patch"
+        "0003-goodix55x4-accept-gf3208-firmware.patch"
+        "0004-goodix55x4-accept-gf3208-psk.patch"
+        "0005-err-from-ssl-nul-terminator.patch"
+        "0006-goodix55x4-correct-sensor-geometry.patch"
+        "0007-debug-frame-dump.patch"
+        "0008-goodix55x4-read-otp.patch"
+        "0009-goodix55x4-percentile-normalisation.patch"
+        "0010-goodix55x4-more-enroll-stages.patch"
+        "0011-goodix55x4-enrol-quality-gate.patch"
+        "0012-goodix55x4-sensor-register-sweep.patch")
+md5sums=('SKIP'
+         'SKIP'
+         'SKIP'
+         'SKIP'
+         'SKIP'
+         'SKIP'
+         'SKIP'
+         'SKIP'
+         'SKIP'
+         'SKIP'
+         'SKIP'
+         'SKIP'
+         'SKIP')
+
+pkgver() {
+  cd "${_pkgbase}"
+  printf "r%s.%s" "$(git rev-list --count HEAD)" "$(git rev-parse --short HEAD)"
+}
+
+prepare() {
+    cd "${srcdir}/${_pkgbase}"
+    mkdir -p build
+    git switch '55b4-experimental'
+    git pull -f origin 55b4-experimental
+    patch -Np1 -i "${srcdir}/0001-goodix55x4-host-side-finger-detect.patch"
+    patch -Np1 -i "${srcdir}/0002-sigfm-opencv-pkgconfig-fallback.patch"
+    # Local: this ThinkPad's 55b4 carries a GF3208 die, not the GF3268 the
+    # driver was written against. The version check is a plain string compare
+    # with no side effects, so this only widens the accept list.
+    patch -Np1 -i "${srcdir}/0003-goodix55x4-accept-gf3208-firmware.patch"
+    # Local: the GF3208 derives a different value from the same all-zero TLS
+    # PSK, so the identity check needs its answer in the accept list too.
+    # Read-only, like the firmware check - nothing is written to the sensor.
+    patch -Np1 -i "${srcdir}/0004-goodix55x4-accept-gf3208-psk.patch"
+    # Upstream bug, not device-specific: err_from_ssl() under-allocates by one
+    # byte, so reporting any SSL failure aborts the process before the reason
+    # is ever printed. Fixing it is what makes the real TLS error visible.
+    patch -Np1 -i "${srcdir}/0005-err-from-ssl-nul-terminator.patch"
+    # Keeps the row length at 108 and records why. The die is a GF3208 whose
+    # native geometry is 88x108, but the config blob uploaded at activation is
+    # the GF3268's and the scan window lives in that blob, so the sensor emits
+    # 108-wide rows. Measured over a raw frame: 108 scores 309.5 mean vertical
+    # neighbour difference against 411.6 for 88. Comment only, no code change.
+    patch -Np1 -i "${srcdir}/0006-goodix55x4-correct-sensor-geometry.patch"
+    patch -Np1 -i "${srcdir}/0007-debug-frame-dump.patch"
+    # Reads the chip's OTP and logs it. Upstream left the call commented out
+    # and never wrote the callback, so the per-die DAC/tcode calibration the
+    # vendor driver applies is simply absent here - which is why a touched
+    # frame correlates 0.96 with the empty one and carries no ridge signal.
+    # Read-only and non-fatal; the bytes are logged so the layout can be
+    # decoded against real hardware instead of guessed.
+    patch -Np1 -i "${srcdir}/0008-goodix55x4-read-otp.patch"
+    # squash_frame_linear used min/max, so the untouched part of the window
+    # pinned the black point and the ridges were compressed into the top half
+    # of the range. Stretching the 2nd-98th percentile of the live area instead
+    # took the SIGFM score on two overlapping captures from 5 to 63 (threshold
+    # 72) with nothing else changed.
+    patch -Np1 -i "${srcdir}/0009-goodix55x4-percentile-normalisation.patch"
+    # 10 enrol stages left too little of the finger covered for a 5.5 x 4.5 mm
+    # window: five of seven verifies matched, and the two failures scored 0 and
+    # 7 against a threshold of 72 - misses, not weak matches. Each stage stores
+    # one more sample and verify walks them all, so 20 doubles the covered area
+    # at the cost of ten more touches during enrolment.
+    patch -Np1 -i "${srcdir}/0010-goodix55x4-more-enroll-stages.patch"
+    # A half-landed scan still consumed an enrol stage and then matched
+    # nothing, which on a window this small is a slot that cannot be spared.
+    # Measures coverage and mean |Laplacian| - calibrated against five real
+    # captures, where full contact ran 93-96% / 15-16 and partial contact
+    # 67-77% / 11-12 - and asks for the finger again instead.
+    patch -Np1 -i "${srcdir}/0011-goodix55x4-enrol-quality-gate.patch"
+    # Diagnostic only, off unless GOODIX55X4_SWEEP is set - it costs ~12s per
+    # activation. Command 0xa6 returns 32 bytes here, which is the MCU's own
+    # OTP, not the one holding the analog calibration; this swept 0-0x8000 of
+    # sensor register space looking for that one and found seven non-empty
+    # windows, all below 0x0240 and all live configuration. The calibration OTP
+    # is not reachable this way.
+    patch -Np1 -i "${srcdir}/0012-goodix55x4-sensor-register-sweep.patch"
+}
+
+build() {
+    cd "${srcdir}/${_pkgbase}/build"
+    meson ..
+    meson configure --buildtype=release --prefix=/usr -D doc=false
+    meson build ..
+}
+
+package() {
+    cd "${srcdir}/${_pkgbase}/build"
+    meson install --destdir="${pkgdir}"
+}

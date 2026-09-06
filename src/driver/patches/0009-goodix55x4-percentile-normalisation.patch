@@ -1,0 +1,90 @@
+--- a/libfprint/drivers/goodixtls/goodix55x4.c
++++ b/libfprint/drivers/goodixtls/goodix55x4.c
+@@ -541,25 +541,81 @@
+  * @param squashed
+  */
+ static void squash_frame_linear(Goodix55X4Pix *frame, guint8 *squashed) {
++  /* Percentile stretch rather than min/max.
++   *
++   * A touch never covers the whole 108x88 window - the corners and whatever
++   * the finger misses stay near zero after background subtraction. Min/max
++   * therefore pins the black point to that untouched area, and the ridges
++   * end up compressed into the top half of the range. Measured over five
++   * captures the output spanned 0-255 nominally, but the 1st percentile was
++   * 0 in every one while the median sat at 122-189: roughly half the range
++   * was spent on dead area.
++   *
++   * That costs matches. SIFT's DoG detector drops low-contrast extrema, so
++   * squeezing the ridges halves the keypoints worth having. Re-scoring two
++   * overlapping captures with this stretch instead of min/max took the SIGFM
++   * score from 5 to 63 against a threshold of 72 - same images, same matcher,
++   * only the normalisation changed.
++   *
++   * So: drop the darkest DEAD_FRACTION of pixels as untouched, then stretch
++   * the 2nd-98th percentile of what remains. Clipping at the ends is
++   * deliberate; the clipped pixels are dead area and saturated ridge tops,
++   * neither of which carries detail. Falls back to the old min/max behaviour
++   * whenever the percentiles collapse, so a uniform frame cannot divide by
++   * zero or invert. */
++#define GOODIX55X4_DEAD_FRACTION 15 /* percent of the frame assumed untouched */
++
++  guint32 hist[65536] = {0};
+   Goodix55X4Pix min = 0xffff;
+   Goodix55X4Pix max = 0;
+ 
+   for (int i = 0; i != GOODIX55X4_FRAME_SIZE; ++i) {
+     const Goodix55X4Pix pix = frame[i];
+-    if (pix < min) {
++    hist[pix]++;
++    if (pix < min)
+       min = pix;
+-    }
+-    if (pix > max) {
++    if (pix > max)
+       max = pix;
++  }
++
++  /* Walk the histogram to the two cut points. base skips the dead area; lo
++   * and hi are the 2nd and 98th percentile of everything above it. */
++  const int base = GOODIX55X4_FRAME_SIZE * GOODIX55X4_DEAD_FRACTION / 100;
++  const int live = GOODIX55X4_FRAME_SIZE - base;
++  const int lo_rank = base + live * 2 / 100;
++  const int hi_rank = base + live * 98 / 100;
++
++  int lo = min, hi = max, seen = 0;
++  gboolean got_lo = FALSE;
++  for (int v = 0; v < 65536; ++v) {
++    if (hist[v] == 0)
++      continue;
++    seen += hist[v];
++    if (!got_lo && seen > lo_rank) {
++      lo = v;
++      got_lo = TRUE;
+     }
++    if (seen > hi_rank) {
++      hi = v;
++      break;
++    }
++  }
++
++  if (hi <= lo) {
++    lo = min;
++    hi = max;
+   }
+ 
+   for (int i = 0; i != GOODIX55X4_FRAME_SIZE; ++i) {
+-    const Goodix55X4Pix pix = frame[i];
+-    if (pix - min == 0 || max - min == 0) {
++    const int pix = frame[i];
++    if (hi <= lo) {
++      squashed[i] = 0;
++    } else if (pix <= lo) {
+       squashed[i] = 0;
++    } else if (pix >= hi) {
++      squashed[i] = 0xff;
+     } else {
+-      squashed[i] = (pix - min) * 0xff / (max - min);
++      squashed[i] = (pix - lo) * 0xff / (hi - lo);
+     }
+   }
+ }

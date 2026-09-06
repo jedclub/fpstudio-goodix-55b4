@@ -1,0 +1,70 @@
+--- a/libfprint/drivers/goodixtls/goodix55x4.h
++++ b/libfprint/drivers/goodixtls/goodix55x4.h
+@@ -26,6 +26,19 @@
+ 
+ #define GOODIX_55X4_FIRMWARE_VERSION ("GF3268_RTSEC_APP_10041")
+ 
++/* The 55b4 USB id covers more than one sensor die, and the driver was written
++ * against a GF3268. A ThinkPad L15 Gen 1 reports GF3208_RTSEC_APP_10042 -
++ * same 55b4 product id, same RTSEC_APP firmware line, one die revision apart.
++ * The version check is a plain string compare with no side effects, so listing
++ * the other revision here only lets the state machine continue; it changes
++ * nothing that is sent to the device. If the die geometry turned out to differ
++ * the captured frames would simply be garbage and enrolment would fail. */
++static const gchar *const goodix_55x4_known_firmware[] = {
++    "GF3268_RTSEC_APP_10041", /* GF3268 - upstream author's hardware */
++    "GF3208_RTSEC_APP_10042", /* GF3208 - ThinkPad L15 Gen 1 */
++    NULL,
++};
++
+ #define GOODIX_55X4_PSK_FLAGS (0xbb020007)
+ 
+ #define GOODIX_55X4_RESET_NUMBER (1024)
+--- a/libfprint/drivers/goodixtls/goodix55x4.c
++++ b/libfprint/drivers/goodixtls/goodix55x4.c
+@@ -119,7 +119,15 @@
+   fp_dbg("Device firmware: \"%s\"", firmware);
+   g_print("%s\n", firmware);
+ 
+-  if (strcmp(firmware, GOODIX_55X4_FIRMWARE_VERSION)) {
++  gboolean known = FALSE;
++  for (const gchar *const *v = goodix_55x4_known_firmware; *v != NULL; v++) {
++    if (!strcmp(firmware, *v)) {
++      known = TRUE;
++      break;
++    }
++  }
++
++  if (!known) {
+     g_set_error(&error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA,
+                 "Invalid device firmware: \"%s\"", firmware);
+     fpi_ssm_mark_failed(user_data, error);
+--- a/libfprint/drivers/goodixtls/goodix55x4.h
++++ b/libfprint/drivers/goodixtls/goodix55x4.h
+@@ -34,11 +34,24 @@
+  * nothing that is sent to the device. If the die geometry turned out to differ
+  * the captured frames would simply be garbage and enrolment would fail. */
+ static const gchar *const goodix_55x4_known_firmware[] = {
+-    "GF3268_RTSEC_APP_10041", /* GF3268 - upstream author's hardware */
+-    "GF3208_RTSEC_APP_10042", /* GF3208 - ThinkPad L15 Gen 1 */
++    "GF3268_RTSEC_APP_10041", /* upstream author's hardware */
++    "GF3268_RTSEC_APP_10042", /* same die, one revision newer */
++    "GF3208_RTSEC_APP_10042", /* what this sensor sometimes answers instead */
+     NULL,
+ };
+ 
++/* On this ThinkPad the sensor does not answer with one fixed string: it
++ * reports GF3268_RTSEC_APP_10042 for long stretches and GF3208_RTSEC_APP_10042
++ * for others, stable within a stretch and flipping between them. Both answers
++ * pass the protocol checksum (goodix-fp-dump verifies it; libfprint's decoder
++ * has "TODO implement checksum" and does not), so this is not a corrupted
++ * transfer - the device really does report two different identities.
++ *
++ * Every observed combination is listed rather than guessing which is the true
++ * die. The version check has no side effects, so a wrong guess here costs
++ * nothing: the TLS handshake a few states later is what actually validates
++ * that we are talking to hardware this driver understands. */
++
+ #define GOODIX_55X4_PSK_FLAGS (0xbb020007)
+ 
+ #define GOODIX_55X4_RESET_NUMBER (1024)

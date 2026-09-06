@@ -1,0 +1,30 @@
+--- a/libfprint/drivers/goodixtls/goodix55x4.c
++++ b/libfprint/drivers/goodixtls/goodix55x4.c
+@@ -43,6 +43,27 @@
+ 
+ #include <math.h>
+ 
++/* Keep the row length at 108 even though this die is a GF3208, whose native
++ * geometry is 88x108 - goodix-fp-dump declares SENSOR_WIDTH 88 / SENSOR_HEIGHT
++ * 108 and the vendor's Wbdi.dll parameter table has (800 dpi, 88, 108) for it.
++ *
++ * Those describe the sensor. They do not describe what it emits here, because
++ * the 256-byte blob uploaded in ACTIVATE_SET_MCU_CONFIG is the GF3268's - it
++ * is a near-copy of a constant in the vendor's own Wbdi.dll, 251 of 256 bytes
++ * identical - and the scan window is part of that blob. The sensor answers
++ * with the geometry it was told to scan, not its own.
++ *
++ * Measured rather than assumed: over a raw 9504-pixel frame, the mean absolute
++ * difference between vertically adjacent pixels - which is minimised at the
++ * true row length - comes out
++ *
++ *     108 x  88   309.5      <- shipped value, best
++ *     216 x  44   400.0
++ *      88 x 108   411.6      <- the die's native geometry
++ *
++ * So 108 stays until the config blob is replaced with a GF3208 one; the two
++ * have to change together. The pixel count is the same either way (9504), so
++ * no transfer length depends on this. */
+ #define GOODIX55X4_WIDTH 108
+ #define GOODIX55X4_HEIGHT 88
+ #define GOODIX55X4_SCAN_WIDTH 108
