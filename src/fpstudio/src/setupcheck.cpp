@@ -11,8 +11,6 @@
 namespace fpstudio {
 namespace {
 
-QString tr_(const char *s) { return QCoreApplication::translate("fpstudio", s); }
-
 // Runs a command and returns stdout, or an empty string if it could not run.
 // Used only for probing, never for changing anything - every call here is a
 // question, so a failure means "unknown", not "broken".
@@ -57,7 +55,7 @@ StepResult device()
 
     if (out.contains(QStringLiteral("27c6:55b4"))) {
         r.state = StepState::Ok;
-        r.summary = tr_("Goodix 27c6:55b4 found");
+        r.summary = QCoreApplication::translate("fpstudio", "Goodix 27c6:55b4 found");
         return r;
     }
     if (out.contains(QStringLiteral("27c6:"))) {
@@ -66,15 +64,15 @@ StepResult device()
         static const QRegularExpression re(QStringLiteral("27c6:([0-9a-f]{4})"));
         const auto m = re.match(out);
         r.state = StepState::Failed;
-        r.summary = tr_("A different Goodix sensor is present");
-        r.detail = tr_("This build only covers 27c6:55b4. Found 27c6:%1.")
+        r.summary = QCoreApplication::translate("fpstudio", "A different Goodix sensor is present");
+        r.detail = QCoreApplication::translate("fpstudio", "This build only covers 27c6:55b4. Found 27c6:%1.")
                        .arg(m.hasMatch() ? m.captured(1) : QStringLiteral("????"));
         return r;
     }
 
     r.state = StepState::Failed;
-    r.summary = tr_("No Goodix fingerprint sensor found");
-    r.detail = tr_("Nothing on the USB bus answers to vendor 27c6. If the "
+    r.summary = QCoreApplication::translate("fpstudio", "No Goodix fingerprint sensor found");
+    r.detail = QCoreApplication::translate("fpstudio", "Nothing on the USB bus answers to vendor 27c6. If the "
                    "machine has a reader, it may be disabled in firmware "
                    "settings, or it may be a different make.");
     return r;
@@ -93,28 +91,28 @@ StepResult driver()
 
     if (out.contains(QStringLiteral("goodixtls55x4"))) {
         r.state = StepState::Ok;
-        r.summary = tr_("Patched driver is active");
+        r.summary = QCoreApplication::translate("fpstudio", "Patched driver is active");
         return r;
     }
 
     const QString pkgbuild = repoFile(QStringLiteral("../driver/PKGBUILD"));
     if (pkgbuild.isEmpty()) {
         r.state = StepState::Manual;
-        r.summary = tr_("Patched driver is not installed");
-        r.detail = tr_("libfprint does not recognise this sensor. The patched "
+        r.summary = QCoreApplication::translate("fpstudio", "Patched driver is not installed");
+        r.detail = QCoreApplication::translate("fpstudio", "libfprint does not recognise this sensor. The patched "
                        "fork has to be built and installed; this copy of the "
                        "program does not ship the sources to do it.");
         return r;
     }
 
     r.state = StepState::Missing;
-    r.summary = tr_("Patched driver is not installed");
-    r.detail = tr_("libfprint does not recognise this sensor. The patched fork "
+    r.summary = QCoreApplication::translate("fpstudio", "Patched driver is not installed");
+    r.detail = QCoreApplication::translate("fpstudio", "libfprint does not recognise this sensor. The patched fork "
                    "adds it. Building takes a few minutes and replaces the "
                    "system libfprint, which is why it needs a password.\n\n"
                    "Install fprintd afterwards, not before: installing it "
                    "first pulls in the stock libfprint and undoes this.");
-    r.action = tr_("Build and install the patched libfprint");
+    r.action = QCoreApplication::translate("fpstudio", "Build and install the patched libfprint");
     r.commands = {QStringLiteral("makepkg -f -D %1").arg(QFileInfo(pkgbuild).absolutePath()),
                   QStringLiteral("pacman -U <built package>")};
     return r;
@@ -147,25 +145,25 @@ StepResult udevRule()
 
     if (writable) {
         r.state = StepState::Ok;
-        r.summary = tr_("Sensor is reachable without a password");
+        r.summary = QCoreApplication::translate("fpstudio", "Sensor is reachable without a password");
         return r;
     }
 
     const QString rule = repoFile(QStringLiteral("99-fpstudio-goodix.rules"));
     r.state = rule.isEmpty() ? StepState::Manual : StepState::Missing;
-    r.summary = present ? tr_("udev rule is installed but has not taken effect")
-                        : tr_("Every sensor operation will ask for a password");
+    r.summary = present ? QCoreApplication::translate("fpstudio", "udev rule is installed but has not taken effect")
+                        : QCoreApplication::translate("fpstudio", "Every sensor operation will ask for a password");
     r.detail = present
-        ? tr_("The rule file is in place but the device node still belongs to "
+        ? QCoreApplication::translate("fpstudio", "The rule file is in place but the device node still belongs to "
               "root. It applies on the next add event; replugging the reader "
               "or reloading udev will do it.")
-        : tr_("Without a rule, libusb cannot open the sensor except as root, "
+        : QCoreApplication::translate("fpstudio", "Without a rule, libusb cannot open the sensor except as root, "
               "so every capture goes through a password prompt.\n\n"
               "This grants the wheel group read and write on the sensor. On a "
               "single-user laptop that is the same person who could already do "
               "it through pkexec; on a shared machine it is not. Skipping this "
               "is safe - it only means more prompts.");
-    r.action = tr_("Install the udev rule and reload");
+    r.action = QCoreApplication::translate("fpstudio", "Install the udev rule and reload");
     r.commands = {QStringLiteral("install -Dm644 %1 %2").arg(rule, installed),
                   QStringLiteral("udevadm control --reload"),
                   QStringLiteral("udevadm trigger --attr-match=idVendor=27c6")};
@@ -194,7 +192,7 @@ StepResult tlsSession(const QString &probe)
     if (probe.contains(QStringLiteral("SWITCH TO FDT MODE")) ||
         probe.contains(QStringLiteral("HANDSHAKE DONE"))) {
         r.state = StepState::Ok;
-        r.summary = tr_("Secure channel to the sensor established");
+        r.summary = QCoreApplication::translate("fpstudio", "Secure channel to the sensor established");
         return r;
     }
     // Activation got as far as reading the sensor's key-derived value and
@@ -202,15 +200,15 @@ StepResult tlsSession(const QString &probe)
     if (probe.contains(QStringLiteral("Checking PSK")) ||
         probe.contains(QStringLiteral("Device PSK"))) {
         r.state = StepState::Failed;
-        r.summary = tr_("The sensor answered, but the handshake did not complete");
-        r.detail = tr_("The sensor holds a key this driver does not have. "
+        r.summary = QCoreApplication::translate("fpstudio", "The sensor answered, but the handshake did not complete");
+        r.detail = QCoreApplication::translate("fpstudio", "The sensor holds a key this driver does not have. "
                        "Writing the all-zero key is the next step, and it "
                        "cannot be undone.");
         return r;
     }
     r.state = StepState::Failed;
-    r.summary = tr_("Could not talk to the sensor");
-    r.detail = tr_("The handshake did not get far enough to say why. Check the "
+    r.summary = QCoreApplication::translate("fpstudio", "Could not talk to the sensor");
+    r.detail = QCoreApplication::translate("fpstudio", "The handshake did not get far enough to say why. Check the "
                    "driver and permission steps above first.");
     return r;
 }
@@ -223,21 +221,21 @@ StepResult psk(const StepResult &tls)
 
     if (tls.state == StepState::Ok) {
         r.state = StepState::Ok;
-        r.summary = tr_("The sensor already holds a usable key");
+        r.summary = QCoreApplication::translate("fpstudio", "The sensor already holds a usable key");
         return r;
     }
 
     const QString script = repoFile(QStringLiteral("../firmware/probes/write_psk_only.py"));
     r.state = script.isEmpty() ? StepState::Manual : StepState::Missing;
-    r.summary = tr_("The sensor needs the all-zero key written");
-    r.detail = tr_("This cannot be undone.\n\n"
+    r.summary = QCoreApplication::translate("fpstudio", "The sensor needs the all-zero key written");
+    r.detail = QCoreApplication::translate("fpstudio", "This cannot be undone.\n\n"
                    "The key the sensor holds now cannot be read back - what "
                    "the protocol returns is a value derived from it, not the "
                    "key - so there is no backup to restore afterwards.\n\n"
                    "Windows fingerprint sign-in will stop working on this "
                    "machine, permanently. If you dual-boot and use it there, "
                    "stop here.");
-    r.action = tr_("Write the all-zero PSK to the sensor");
+    r.action = QCoreApplication::translate("fpstudio", "Write the all-zero PSK to the sensor");
     r.commands = {QStringLiteral("python %1").arg(script)};
     return r;
 }
@@ -264,13 +262,13 @@ StepResult capture(const QString &probe)
         // the probe uses a two-second timeout precisely so it does not demand
         // one. Not a failure, just nothing measured yet.
         r.state = StepState::Unknown;
-        r.summary = tr_("Image quality has not been measured yet");
-        r.detail = tr_("Present a finger on the next page and the reading will "
+        r.summary = QCoreApplication::translate("fpstudio", "Image quality has not been measured yet");
+        r.detail = QCoreApplication::translate("fpstudio", "Present a finger on the next page and the reading will "
                        "appear here.");
         return r;
     }
 
-    r.summary = tr_("Coverage %1%  ·  sharpness %2").arg(coverage).arg(sharpness);
+    r.summary = QCoreApplication::translate("fpstudio", "Coverage %1%  ·  sharpness %2").arg(coverage).arg(sharpness);
     if (sharpness >= 24) {
         r.state = StepState::Ok;
         return r;
@@ -279,7 +277,7 @@ StepResult capture(const QString &probe)
     // succeed: measured, a sharpness of 21 scored 23 against a threshold of
     // 72, while 28 and 30 scored 1349 and 1686.
     r.state = StepState::Failed;
-    r.detail = tr_("Below about 24, matching tends to fail even though the "
+    r.detail = QCoreApplication::translate("fpstudio", "Below about 24, matching tends to fail even though the "
                    "driver accepts the frame. Dry fingertips and a sensor that "
                    "has been busy both do this; a few minutes' rest and a "
                    "little moisture usually fix it.");
@@ -295,24 +293,24 @@ StepResult enrolment()
 
     if (out.contains(QStringLiteral("-finger"))) {
         r.state = StepState::Ok;
-        r.summary = tr_("A finger is enrolled with fprintd");
+        r.summary = QCoreApplication::translate("fpstudio", "A finger is enrolled with fprintd");
         return r;
     }
     if (out.contains(QStringLiteral("no fingers enrolled")) ||
         out.contains(QStringLiteral("found 1 device"))) {
         r.state = StepState::Missing;
-        r.summary = tr_("No finger is enrolled with fprintd");
-        r.detail = tr_("This program keeps its own enrolments separately, and "
+        r.summary = QCoreApplication::translate("fpstudio", "No finger is enrolled with fprintd");
+        r.detail = QCoreApplication::translate("fpstudio", "This program keeps its own enrolments separately, and "
                        "system authentication does not see those. Enrolling "
                        "again through fprintd is what makes the fingerprint "
                        "usable for unlocking.");
-        r.action = tr_("Enrol a finger with fprintd");
+        r.action = QCoreApplication::translate("fpstudio", "Enrol a finger with fprintd");
         return r;
     }
 
     r.state = StepState::Failed;
-    r.summary = tr_("fprintd is not answering");
-    r.detail = tr_("The daemon could not be reached. It is usually started on "
+    r.summary = QCoreApplication::translate("fpstudio", "fprintd is not answering");
+    r.detail = QCoreApplication::translate("fpstudio", "The daemon could not be reached. It is usually started on "
                    "demand; installing it may be all that is missing.");
     return r;
 }
@@ -328,7 +326,7 @@ StepResult pamPolkit()
         const QString text = QString::fromUtf8(f.readAll());
         if (text.contains(QStringLiteral("pam_fprintd"))) {
             r.state = StepState::Ok;
-            r.summary = tr_("polkit accepts a fingerprint");
+            r.summary = QCoreApplication::translate("fpstudio", "polkit accepts a fingerprint");
             return r;
         }
     }
@@ -336,23 +334,23 @@ StepResult pamPolkit()
     if (!QFileInfo::exists(QStringLiteral("/usr/lib/security/pam_fprintd.so")) &&
         !QFileInfo::exists(QStringLiteral("/lib/x86_64-linux-gnu/security/pam_fprintd.so"))) {
         r.state = StepState::Manual;
-        r.summary = tr_("pam_fprintd is not installed");
-        r.detail = tr_("The PAM module that lets authentication use a "
+        r.summary = QCoreApplication::translate("fpstudio", "pam_fprintd is not installed");
+        r.detail = QCoreApplication::translate("fpstudio", "The PAM module that lets authentication use a "
                        "fingerprint is missing. It usually ships with fprintd.");
         return r;
     }
 
     const QString stack = repoFile(QStringLiteral("pam/polkit-1"));
     r.state = stack.isEmpty() ? StepState::Manual : StepState::Missing;
-    r.summary = tr_("polkit still asks for a password");
-    r.detail = tr_("This adds one line to the stack polkit uses, so pkexec and "
+    r.summary = QCoreApplication::translate("fpstudio", "polkit still asks for a password");
+    r.detail = QCoreApplication::translate("fpstudio", "This adds one line to the stack polkit uses, so pkexec and "
                    "the desktop's authentication dialog try the fingerprint "
                    "first.\n\n"
                    "Login and sudo are deliberately left alone, so a sensor "
                    "that stops working can never lock you out of the machine. "
                    "The line is 'sufficient': if the fingerprint fails for any "
                    "reason, you are asked for the password exactly as before.");
-    r.action = tr_("Let polkit accept a fingerprint");
+    r.action = QCoreApplication::translate("fpstudio", "Let polkit accept a fingerprint");
     r.commands = {QStringLiteral("install -Dm644 %1 %2").arg(stack, installed)};
     return r;
 }
@@ -377,14 +375,14 @@ QString stepKey(StepId id)
 QString stepTitle(StepId id)
 {
     switch (id) {
-    case StepId::Device:     return tr_("Sensor");
-    case StepId::Driver:     return tr_("Driver");
-    case StepId::UdevRule:   return tr_("Permissions");
-    case StepId::TlsSession: return tr_("Secure channel");
-    case StepId::Psk:        return tr_("Sensor key");
-    case StepId::Capture:    return tr_("Image quality");
-    case StepId::Enrolment:  return tr_("Enrolment");
-    case StepId::PamPolkit:  return tr_("Unlocking");
+    case StepId::Device:     return QCoreApplication::translate("fpstudio", "Sensor");
+    case StepId::Driver:     return QCoreApplication::translate("fpstudio", "Driver");
+    case StepId::UdevRule:   return QCoreApplication::translate("fpstudio", "Permissions");
+    case StepId::TlsSession: return QCoreApplication::translate("fpstudio", "Secure channel");
+    case StepId::Psk:        return QCoreApplication::translate("fpstudio", "Sensor key");
+    case StepId::Capture:    return QCoreApplication::translate("fpstudio", "Image quality");
+    case StepId::Enrolment:  return QCoreApplication::translate("fpstudio", "Enrolment");
+    case StepId::PamPolkit:  return QCoreApplication::translate("fpstudio", "Unlocking");
     }
     return QString();
 }
@@ -403,7 +401,7 @@ QVector<StepResult> probeAll()
                           StepId::PamPolkit}) {
             StepResult r{id};
             r.state = StepState::Unknown;
-            r.summary = tr_("Not checked - no sensor");
+            r.summary = QCoreApplication::translate("fpstudio", "Not checked - no sensor");
             out << r;
         }
         return out;

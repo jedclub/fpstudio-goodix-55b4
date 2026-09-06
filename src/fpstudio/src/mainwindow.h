@@ -34,6 +34,9 @@ public:
     // hung at the moment someone starts it.
     void maybeOfferSetup();
 
+    // Opens the checklist on demand - the Setup menu, and `--setup`.
+    void openSetupWizard();
+
 private slots:
     void onFinished(const QJsonObject &result);
     void onFailed(const QString &error);
@@ -43,7 +46,6 @@ private slots:
 private:
     void buildUi();
     void buildLanguageMenu();
-    void openSetupWizard();
     void wireActions();
     void setBusy(bool busy, const QString &what = {});
     void appendLog(const QString &text);

@@ -26,6 +26,7 @@ void printUsage()
         "fpstudio — fingerprint sensor studio\n"
         "\n"
         "  fpstudio                       GUI\n"
+        "  fpstudio --setup               setup wizard, straight away\n"
         "  fpstudio --cli setup            what is configured, what is not\n"
         "  fpstudio --cli devices\n"
         "  fpstudio --cli capture [--out FILE] [--timeout N]\n"
@@ -119,6 +120,13 @@ int main(int argc, char **argv)
 
     fpstudio::MainWindow w;
     w.show();
-    w.maybeOfferSetup();
+
+    // --setup goes straight to the wizard rather than waiting to be asked.
+    // Someone who has just installed this on a machine where nothing works
+    // wants the checklist, not the diagnostics window behind it.
+    if (args.contains(QStringLiteral("--setup")))
+        w.openSetupWizard();
+    else
+        w.maybeOfferSetup();
     return app.exec();
 }
