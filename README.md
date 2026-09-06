@@ -1,9 +1,12 @@
 # goodix-55b4-linux
 
-Getting a Goodix `27c6:55b4` fingerprint sensor working on Linux, and the
-tooling built along the way to make that possible to debug at all.
+Fingerprint unlock on Linux for the **Goodix 27c6:55b4** sensor — the reader in
+the ThinkPad L14/L15 Gen 1, which upstream `libfprint` does not support.
 
-Hardware: **ThinkPad L15 Gen 1 (20U7)**, CachyOS / KDE Plasma 6 (Wayland).
+A patched driver, and one application that installs it, checks it, enrols a
+finger, and wires it into `polkit`, `sudo`, and the lock screen.
+
+![The setup wizard](docs/images/setup-wizard.png)
 
 ---
 
@@ -12,157 +15,168 @@ Hardware: **ThinkPad L15 Gen 1 (20U7)**, CachyOS / KDE Plasma 6 (Wayland).
 | | |
 |---|---|
 | Device recognised | ✅ `Goodix TLS Fingerprint Sensor 55X4`, driver `goodixtls55x4` |
-| TLS session established | ✅ after writing the all-zero PSK |
-| MCU config upload | ✅ after fixing an unrelated crash in the driver |
-| Raw image capture | ✅ 108×88, 8-bit, real ridge detail |
-| Enrolment | ✅ 15 stages, with a quality gate that hands poor scans back instead of spending one |
-| **Verification** | ✅ **works** — passing scores 77 to 2920 against a threshold of 72 |
-| Capture quality | ✅ clean ridge detail once patch `0006` was reverted |
+| TLS session | ✅ after writing the all-zero PSK (irreversible — see below) |
+| Raw capture | ✅ 108×88, 8-bit, clean ridge detail |
+| Enrolment | ✅ 15 stages, with a quality gate that rejects half-landed scans |
+| Verification | ✅ passing scores 77–2920 against a threshold of 72 |
+| Unlocking | ✅ `pkexec` / desktop prompts, `sudo`, lock screen |
 
-The sensor enrols and verifies. Getting there took undoing one of this repo's
-own patches and then fixing a second thing underneath it.
+Measured over seven verify attempts on real hardware: five matched. The two
+misses scored 0 and 7 — placements that did not overlap any enrolled sample,
+not weak readings. The PAM stacks this ships allow 20 tries, which is what
+makes that per-touch rate usable in practice.
 
-**The row length.** Patch `0006` had changed it from 108 to 88, on the strength
-of two sources that agree — `goodix-fp-dump` and the vendor's `Wbdi.dll` table —
-but that both describe the die's *physical* geometry. The sensor emits whatever
-the uploaded MCU config asks it to scan, and that config is the GF3268's (251 of
-its 256 bytes are identical to a constant inside `Wbdi.dll`). Reverting the patch
-took the row/column deviation ratio from 11:1 to about 1:1 and produced clean
-diagonal ridge detail.
+## Requirements
 
-**The normalisation.** That alone still scored 0/72. `squash_frame_linear`
-stretched min-to-max, so the part of the window the finger never touched pinned
-the black point and the ridges were squeezed into the top half of the range —
-every capture had a 1st percentile of 0 and a median of 122-189. SIFT's detector
-drops low-contrast extrema, so that was a direct loss of usable keypoints.
-Stretching the 2nd-98th percentile of the live area instead (patch `0009`) took
-the score on two overlapping captures from 5 to 63, and made real verification
-work.
-
-Measured over seven attempts: five matched. Passing scores ran 77 to 2920
-against a threshold of 72, while the two failures scored 0 and 7 — the matcher
-counts agreeing pairs of pairs, so it either finds the overlap decisively or not
-at all. The failures are placement misses: the window is about 5.5 x 4.5 mm, and
-a print that lands away from all ten enrolled samples has nothing to agree with.
-
-See [docs/05-geometry-regression.md](docs/05-geometry-regression.md) for the
-measurement trail, including the wrong theory chased first, and
-[docs/01-investigation.md](docs/01-investigation.md) for how the device was
-identified.
-
----
-
-## What is here
-
-```
-docs/          how the device was identified, what was tried, what was ruled out
-  evidence/    facts extracted from the vendor's Windows driver (not the files themselves)
-src/
-  fpstudio/    C++/Qt6 tool: GUI, JSON CLI, and an MCP server over one engine
-    pam/       a polkit stack that accepts a fingerprint, password still the fallback
-  driver/      patches against the libfprint goodixtls fork, plus a PKGBUILD
-  firmware/    read-only probes and the one write (PSK) this needed
-captures/      a frame straight off the sensor
-```
-
-### `src/fpstudio` — the instrument
-
-Debugging this by reading `journalctl` and guessing was the real bottleneck.
-`fpstudio` links libfprint directly and surfaces what the driver knows:
-
-- the captured frame, drawn unsmoothed so ridge detail survives
-- each activation stage as the driver reaches it
-- every SIGFM score, next to the threshold it is judged against
-- the driver's own log, live
-
-One binary, three front ends. The GUI stays unprivileged and runs its own
-`--cli` mode under `pkexec` for the operations that touch the device, so the
-window and the agent see identical results:
-
-```bash
-fpstudio                                  # Qt window
-fpstudio --cli capture --out frame.png    # one JSON object on stdout
-fpstudio --mcp                            # JSON-RPC over stdio, for an agent
-```
-
-The CLI and MCP modes need no display, so they work over ssh and inside a tool
-call.
-
-**An MCP request shows up on screen.** When an agent asks for a capture, the
-running window raises a banner saying who asked and what the sensor needs —
-so the person at the machine follows the screen rather than the transcript.
-See [docs/04-fpstudio.md](docs/04-fpstudio.md).
-
-### `src/driver` — five patches
-
-Two come from the AUR fork, one is device-specific, and two are plain bugs
-that anyone on this driver hits:
-
-| | |
-|---|---|
-| `0001` | host-side finger detection (from the AUR fork) |
-| `0002` | opencv5 build fix (from the AUR fork) |
-| `0003` | accept this sensor's firmware strings |
-| `0005` | **`err_from_ssl()` off-by-one** — under-allocates by one byte, so reporting *any* SSL failure aborts the process before the reason is printed |
-| `0006` | **sensor geometry 108×88 → 88×108** — the row length was wrong |
-
-`0005` is worth calling out. It turned every diagnosable TLS failure into
-`*** buffer overflow detected ***` with no detail, which is what made this look
-like a hardware incompatibility for most of the investigation.
-
-### `src/firmware` — probes
-
-Read-only unless the filename says otherwise. `write_psk_only.py` is the single
-write this project performs, and it deliberately avoids
-`driver_55x4.main()`, whose firmware-string branch would erase the sensor's
-firmware on this device.
-
----
+- Arch Linux or a derivative (the driver ships as a `PKGBUILD`)
+- A Goodix `27c6:55b4` sensor — check with `lsusb -d 27c6:`
+- `fprintd`, and Qt 6 to build the tool
 
 ## Quick start
 
 ```bash
-# build the tool
-cd src/fpstudio && cmake -S . -B build -G Ninja && cmake --build build
+git clone <this repo> && cd goodix-55b4-linux
 
-# see what the sensor is
-./build/fpstudio --cli devices
+# 1. Driver (replaces the system libfprint)
+cd src/driver && makepkg -f
+sudo pacman -U libfprint-goodixtls-55x4-fixed-*.pkg.tar.zst
+sudo pacman -S fprintd          # after the driver, never before
 
-# get a frame (needs USB access, hence pkexec)
-pkexec ./build/fpstudio --cli capture --out /tmp/frame.png
+# 2. The tool
+cmake -S src/fpstudio -B build && cmake --build build
+
+# 3. Everything else
+./build/fpstudio
 ```
 
-To rebuild the patched driver, see [docs/03-driver.md](docs/03-driver.md).
+The wizard checks nine things, fixes what it can, and says plainly what it
+cannot do for you. It shows the exact commands before running any of them.
 
----
+> **`fprintd` must be installed after the driver.** Installing it first pulls
+> in the stock `libfprint` and undoes step 1.
 
-## Requirements
+## The tool
 
-- `libfprint` built from the goodixtls 55x4 fork with the patches in `src/driver`
-- Qt 6.5+, CMake 3.21+, a C++20 compiler
-- `pyusb crcmod python-periphery spidev pycryptodome crccheck` for the probes,
-  plus a checkout of [goodix-fp-dump](https://github.com/goodix-fp-linux-dev/goodix-fp-dump)
+One binary, four front ends over the same engine:
 
----
+```
+fpstudio                setup wizard - the default
+fpstudio --diagnostics  live capture, driver log, match scores
+fpstudio --cli setup    what is configured, as JSON
+fpstudio --mcp          MCP server, for an agent
+```
 
-## A warning about the PSK
+![The diagnostics window](docs/images/diagnostics.png)
 
-This sensor ships with a factory PSK. libfprint's TLS uses an all-zero key, so
-the two cannot negotiate until the device is re-provisioned. `write_psk_only.py`
-does that, and **it cannot be undone**: the read side returns a hash, the write
-side takes a differently formatted blob, so the original key can be neither
-captured beforehand nor restored after.
+Available in 11 languages — English, 한국어, 日本語, 简体中文, 繁體中文,
+Español, Deutsch, Français, Русский, Italiano, Português. It follows the
+system locale and falls back to English; `--lang` overrides it.
 
-Firmware is untouched, so the device keeps working either way — but a Windows
-Goodix driver will no longer authenticate against it. Only do this on a machine
-you do not intend to run Windows fingerprint auth on.
+## What was wrong, and what fixed it
 
----
+Three findings did the work. All three are documented with the measurements
+behind them in [`docs/05-geometry-regression.md`](docs/05-geometry-regression.md).
+
+**A one-byte allocation bug upstream** (`0005`). `err_from_ssl()` allocated
+`strlen(msg)` instead of `strlen(msg) + 1`, so the process died the moment it
+tried to report *any* SSL failure. Fixing it is what made the real errors
+visible at all.
+
+**The row length** (`0006`). `goodix-fp-dump` and the vendor's own `Wbdi.dll`
+table both say this die is 88×108, and both are right — about the die. The
+sensor emits whatever window the uploaded MCU config asks it to scan, and that
+config is the GF3268's, so it emits 108-wide rows. Cutting at 88 sheared the
+image a little further every row.
+
+| Cut at 108 (correct) | Cut at 88 |
+|---|---|
+| ![correct](captures/ridges-correct-geometry.png) | ![wrong](captures/ridges-wrong-geometry.png) |
+
+**The normalisation** (`0009`). `squash_frame_linear` stretched min-to-max, so
+the part of the window the finger never touched pinned the black point and the
+ridges were squeezed into the top of the range — every capture had a 1st
+percentile of 0 and a median of 122–189. Stretching the 2nd–98th percentile of
+the live area instead took the match score on two overlapping captures from 5
+to 63, against a threshold of 72.
+
+| min/max (before) | percentile (after) |
+|---|---|
+| ![before](captures/normalisation-minmax.png) | ![after](captures/normalisation-percentile.png) |
+
+*(Those four images are synthetic — a generated ridge field put through the
+same two failures. No real fingerprint is committed to this repository.)*
+
+## Repository layout
+
+```
+docs/            how the device was identified, what was tried, what was ruled out
+  00-setup.md      the whole procedure, start to finish
+  05-geometry...   what the 0/72 failure actually was
+  evidence/        facts extracted from the vendor's Windows driver
+src/
+  driver/        12 patches against the libfprint goodixtls fork, plus a PKGBUILD
+  fpstudio/      the C++/Qt6 application
+    pam/         polkit, sudo and lock-screen stacks
+  firmware/      read-only probes, and the one write (PSK) this needed
+captures/        synthetic illustrations only
+```
+
+## Before you start: the irreversible step
+
+If the TLS handshake fails, the sensor needs the all-zero PSK written to it.
+**This cannot be undone.** The key the sensor currently holds cannot be read
+back — the protocol returns a value derived from it, not the key — so there is
+no backup to restore, and **Windows fingerprint sign-in stops working on that
+machine permanently.**
+
+If you dual-boot and use it there, stop before that step. The wizard makes you
+type the word `WRITE` rather than click past it.
+
+## What this does to your system's authentication
+
+Three PAM stacks, each installed separately and each reversible by deleting one
+file:
+
+| File | Effect | Default |
+|---|---|---|
+| `/etc/pam.d/polkit-1` | `pkexec` and desktop prompts accept a fingerprint | installed by the wizard |
+| `/etc/pam.d/kde-fingerprint` | lock screen retries 20× instead of 3× | optional |
+| `/etc/pam.d/sudo` | terminal `sudo` accepts a fingerprint | **opt-in** |
+
+Every one uses `sufficient`, so a fingerprint that fails for any reason —
+unplugged sensor, broken driver, no enrolment — falls through to the password
+prompt exactly as before. Login is deliberately never touched: a sensor that
+stops working can never lock you out of the machine.
+
+`sudo` is opt-in and separate because it is itself the way back in when
+something else breaks.
+
+## Known limits
+
+- **About 70% per touch.** The window is roughly 5.5 × 4.5 mm, so a placement
+  that misses every enrolled sample scores nothing. Twenty retries is what
+  makes this a non-issue in practice, not a better matcher.
+- **Image quality is not calibrated per die.** The driver uploads one fixed MCU
+  config and never reads the chip's OTP, where the DAC and tcode values live.
+  Command `0xa6` returns 32 bytes — the MCU's own OTP, not that one — and
+  sweeping the sensor's register space to `0x8000` did not find the other.
+  Reaching it means decoding the vendor's bit-banged SPI sequence.
+- **Terminal prompts have no progress indication.** `pam_fprintd` prints a line
+  per failed scan and nothing while it waits. That module is the distribution's,
+  not this project's.
+
+## Documentation
+
+| | |
+|---|---|
+| [`00-setup.md`](docs/00-setup.md) | the whole procedure, and what to check at each step |
+| [`01-investigation.md`](docs/01-investigation.md) | how the device was identified |
+| [`02-device.md`](docs/02-device.md) | measured values from this hardware |
+| [`03-driver.md`](docs/03-driver.md) | the patches, and how to rebuild |
+| [`04-fpstudio.md`](docs/04-fpstudio.md) | the tool's design |
+| [`05-geometry-regression.md`](docs/05-geometry-regression.md) | the `0/72` failure, measured |
+| [`06-system-integration.md`](docs/06-system-integration.md) | fprintd, PAM, and why they are separate |
 
 ## Licence
 
-The patches under `src/driver/patches` are derived from libfprint and the
-goodixtls fork and inherit **LGPL-2.1**. `src/fpstudio` and the probes are
-**MIT** — see [LICENSE](LICENSE).
-
-Not affiliated with or endorsed by Shenzhen Goodix Technology or Lenovo.
+LGPL-2.1, matching `libfprint`. See [`LICENSE`](LICENSE).
