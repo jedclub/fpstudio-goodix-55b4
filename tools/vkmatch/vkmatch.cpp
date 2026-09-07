@@ -4,6 +4,7 @@
 #include <array>
 #include <chrono>
 #include <cmath>
+#include <cstdlib>
 #include <cstring>
 #include <fstream>
 #include <limits>
@@ -126,15 +127,24 @@ struct Matcher::Impl {
         uint32_t count=0; check(vkEnumeratePhysicalDevices(instance,&count,nullptr),"vkEnumeratePhysicalDevices");
         if(!count) throw std::runtime_error("No Vulkan GPU found");
         std::vector<VkPhysicalDevice> devices(count); check(vkEnumeratePhysicalDevices(instance,&count,devices.data()),"vkEnumeratePhysicalDevices");
+        // Production matching deliberately requires physical graphics hardware.
+        // CI can opt into Lavapipe for deterministic shader/CPU-parity coverage;
+        // the opt-in is explicit so a software device is never selected by
+        // ordinary desktop or authentication-adjacent execution.
+        const char* softwareVulkan=std::getenv("FPSTUDIO_ALLOW_SOFTWARE_VULKAN");
+        const bool allowSoftware=softwareVulkan&&std::strcmp(softwareVulkan,"1")==0;
         int best=-1;
         for(auto candidate:devices) {
             VkPhysicalDeviceProperties props{}; vkGetPhysicalDeviceProperties(candidate,&props);
-            if(props.deviceType!=VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU && props.deviceType!=VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU) continue;
+            const bool graphicsHardware=props.deviceType==VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU || props.deviceType==VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU;
+            const bool ciSoftwareDevice=allowSoftware&&props.deviceType==VK_PHYSICAL_DEVICE_TYPE_CPU;
+            if(!graphicsHardware&&!ciSoftwareDevice) continue;
             if(props.apiVersion<VK_API_VERSION_1_1 || props.limits.maxComputeWorkGroupInvocations<128 || props.limits.maxComputeWorkGroupSize[0]<128 || props.limits.maxComputeSharedMemorySize<10*128*sizeof(float)) continue;
             uint32_t n=0; vkGetPhysicalDeviceQueueFamilyProperties(candidate,&n,nullptr);
             std::vector<VkQueueFamilyProperties> families(n); vkGetPhysicalDeviceQueueFamilyProperties(candidate,&n,families.data());
             for(uint32_t f=0;f<n;++f) if(families[f].queueCount && (families[f].queueFlags&VK_QUEUE_COMPUTE_BIT)) {
-                int rank=(props.deviceType==VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU?10:5)+((families[f].queueFlags&VK_QUEUE_GRAPHICS_BIT)?0:1);
+                const int typeRank=props.deviceType==VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU?10:(props.deviceType==VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU?5:1);
+                int rank=typeRank+((families[f].queueFlags&VK_QUEUE_GRAPHICS_BIT)?0:1);
                 if(rank>best) { best=rank; physical=candidate; properties=props; family=f; timestampBits=families[f].timestampValidBits; }
             }
         }

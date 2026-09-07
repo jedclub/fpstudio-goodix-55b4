@@ -24,6 +24,7 @@ jobs:
       - name: Configure, build and test
         env:
           QT_QPA_PLATFORM: offscreen
+          FPSTUDIO_ALLOW_SOFTWARE_VULKAN: "1"
         run: |
           export VK_DRIVER_FILES="$(find /usr/share/vulkan/icd.d -maxdepth 1 -type f -name 'lvp_icd*.json' -print -quit)"
           test -n "$VK_DRIVER_FILES"
