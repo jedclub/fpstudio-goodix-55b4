@@ -1,0 +1,135 @@
+--- a/libfprint/drivers/goodixtls/goodix55x4.c
++++ b/libfprint/drivers/goodixtls/goodix55x4.c
+@@ -40,6 +40,7 @@
+ #include "goodix.h"
+ #include "goodix55x4.h"
+ #include "goodix_proto.h"
++#include "preview_state.h"
+
+ #include <math.h>
+
+@@ -924,6 +925,17 @@
+   fpi_ssm_jump_to_state(user_data, SCAN_STAGE_GET_IMG);
+ }
+
++static gboolean preview_raw_file(const char *path, const Goodix55X4Pix *pixels,
++                                 gint64 stamp, GError **error) {
++  g_autofree char *header=g_strdup_printf("P5\n# %" G_GINT64_FORMAT "\n108 88\n4095\n",stamp);
++  gsize h=strlen(header),size=h+2*GOODIX55X4_FRAME_SIZE;
++  g_autofree char *packet=g_malloc(size);memcpy(packet,header,h);
++  for(int i=0;i<GOODIX55X4_FRAME_SIZE;++i) {
++    packet[h+2*i]=(pixels[i]>>8)&255;packet[h+2*i+1]=pixels[i]&255;
++  }
++  return g_file_set_contents_full(path,packet,size,G_FILE_SET_CONTENTS_CONSISTENT,0600,error);
++}
++
+ /* Opt-in diagnostic stream. Never used by normal enrollment/authentication.
+  * One atomically replaced private PGM, no growing biometric video archive.
+  * Reuse the established FDT/read sequence and the same empty calibration. */
+@@ -948,19 +960,41 @@
+   }
+   Goodix55X4Pix corrected[GOODIX55X4_FRAME_SIZE];
+   guint8 pixels[GOODIX55X4_FRAME_SIZE];
++  GoodixPreviewState *preview=g_object_get_data(G_OBJECT(dev),"preview-calibration");
++  if(!preview) {
++    preview=g_new0(GoodixPreviewState,1);
++    g_object_set_data_full(G_OBJECT(dev),"preview-calibration",preview,g_free);
++  }
++  const gboolean was_ready=preview->ready;
++  const int was_touching=preview->touching;
++  gp_update(preview,candidate);
++  FpiDeviceGoodixTls55X4 *self=FPI_DEVICE_GOODIXTLS55X4(dev);
++  if(preview->ready&&!was_ready)
++    for(int i=0;i<GOODIX55X4_FRAME_SIZE;++i)self->empty_img[i]=(Goodix55X4Pix)preview->background[i];
++  const gint64 stamp=g_get_monotonic_time();
++  GError *error=NULL;
++  /* Private raw/background evidence, not an unbounded image archive. */
++  g_autofree char *raw_path=g_strconcat(path,".raw.pgm",NULL);
++  g_autofree char *background_path=g_strconcat(path,".background.pgm",NULL);
++  if(!preview_raw_file(raw_path,candidate,stamp,&error) ||
++     (preview->ready&&!was_ready&&!preview_raw_file(background_path,self->empty_img,stamp,&error))) {
++    fpi_ssm_mark_completed(ssm);fpi_image_device_session_error(FP_IMAGE_DEVICE(dev),error);return TRUE;
++  }
+   memcpy(corrected, candidate, sizeof(corrected));
+-  postprocess_frame(corrected, FPI_DEVICE_GOODIXTLS55X4(dev)->empty_img);
++  postprocess_frame(corrected, self->empty_img);
+   squash_frame_linear(corrected, pixels);
++  if(!preview->ready)memset(pixels,128,sizeof(pixels));
+   guint metrics[2];
+   assess_image(pixels, metrics);
+-  g_autofree char *header = g_strdup_printf("P5\n# %" G_GINT64_FORMAT " %.1f %u %u\n%d %d\n255\n",
+-      g_get_monotonic_time(), diff, metrics[0], metrics[1],
++  if(was_touching!=preview->touching || was_ready!=preview->ready)
++    g_message("Preview state ready=%d touch=%d raw=%.1f centered=%.1f noise=%.1f",preview->ready,preview->touching,preview->raw_diff,preview->signal,preview->noise);
++  g_autofree char *header = g_strdup_printf("P5\n# %" G_GINT64_FORMAT " %.1f %u %u %.1f %d %d %.2f\n%d %d\n255\n",
++      stamp, preview->signal, metrics[0], metrics[1],preview->raw_diff,preview->ready,preview->touching,preview->noise,
+       GOODIX55X4_WIDTH, GOODIX55X4_HEIGHT);
+   gsize size = strlen(header) + sizeof(pixels);
+   g_autofree char *packet = g_malloc(size);
+   memcpy(packet, header, strlen(header));
+   memcpy(packet + strlen(header), pixels, sizeof(pixels));
+-  GError *error = NULL;
+   if (!g_file_set_contents_full(path, packet, size,
+                                G_FILE_SET_CONTENTS_CONSISTENT, 0600, &error)) {
+     fpi_ssm_mark_completed(ssm);
+--- /dev/null
++++ b/libfprint/drivers/goodixtls/preview_state.h
+@@ -0,0 +1,58 @@
++/* Research preview only. Not a hardware finger-presence or identity proof. */
++#ifndef GOODIX_PREVIEW_STATE_H
++#define GOODIX_PREVIEW_STATE_H
++#include <stdint.h>
++#include <math.h>
++#include <string.h>
++#define GP_PIXELS (108 * 88)
++typedef struct {
++  double background[GP_PIXELS], noise, signal, raw_diff, offset;
++  uint16_t previous[GP_PIXELS];
++  unsigned frames, stable, on_count, off_count;
++  int ready, touching;
++} GoodixPreviewState;
++static inline void gp_update(GoodixPreviewState *p, const uint16_t *raw) {
++  double mean=0, motion=0;
++  for(int i=0;i<GP_PIXELS;++i)mean+=(double)raw[i]-p->previous[i];
++  mean/=GP_PIXELS;
++  if(p->frames)for(int i=0;i<GP_PIXELS;++i)
++    motion+=fabs((double)raw[i]-p->previous[i]-mean)/GP_PIXELS;
++  memcpy(p->previous,raw,sizeof(p->previous));
++  ++p->frames;
++  if(!p->ready) {
++    /* Let the continuous acquisition settle, then average 40 stable frames.
++     * The UI must explicitly instruct the user to keep the sensor empty.
++     * Stability alone cannot establish that a finger is absent. */
++    if(p->frames<=20 || motion>20) {
++      p->stable=0;p->noise=0;
++      memset(p->background,0,sizeof(p->background));
++      return;
++    }
++    ++p->stable;
++    for(int i=0;i<GP_PIXELS;++i)p->background[i]+=(raw[i]-p->background[i])/p->stable;
++    p->noise+=(motion-p->noise)/p->stable;
++    if(p->stable<40)return;
++    p->ready=1;
++  }
++  p->offset=0;p->raw_diff=0;p->signal=0;
++  for(int i=0;i<GP_PIXELS;++i) {
++    const double d=raw[i]-p->background[i];
++    p->offset+=d/GP_PIXELS;p->raw_diff+=fabs(d)/GP_PIXELS;
++  }
++  /* Remove common-mode brightness drift only for presence estimation.
++   * Never fold it into, or automatically replace, the calibrated background. */
++  for(int i=0;i<GP_PIXELS;++i)
++    p->signal+=fabs(raw[i]-p->background[i]-p->offset)/GP_PIXELS;
++  const double high=fmax(40,8*p->noise),low=fmax(20,4*p->noise);
++  if(!p->touching) {
++    p->off_count=0;
++    p->on_count=p->signal>=high?p->on_count+1:0;
++    if(p->on_count>=3){p->touching=1;p->on_count=0;}
++  } else {
++    p->on_count=0;
++    p->off_count=p->signal<=low?p->off_count+1:0;
++    if(p->off_count>=3){p->touching=0;p->off_count=0;}
++  }
++}
++#endif
++

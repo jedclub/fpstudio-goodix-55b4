@@ -31,7 +31,7 @@
 +  guint32 hist[65536] = {0};
    Goodix55X4Pix min = 0xffff;
    Goodix55X4Pix max = 0;
- 
+
    for (int i = 0; i != GOODIX55X4_FRAME_SIZE; ++i) {
      const Goodix55X4Pix pix = frame[i];
 -    if (pix < min) {
@@ -71,7 +71,7 @@
 +    lo = min;
 +    hi = max;
    }
- 
+
    for (int i = 0; i != GOODIX55X4_FRAME_SIZE; ++i) {
 -    const Goodix55X4Pix pix = frame[i];
 -    if (pix - min == 0 || max - min == 0) {

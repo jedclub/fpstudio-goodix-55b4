@@ -3,7 +3,7 @@
 @@ -49,6 +49,26 @@
      0x18, 0x2c, 0xd0, 0x10, 0x19, 0x94, 0x5e, 0xe5, 0x03, 0x61
  };
- 
+
 +/* This is not the TLS key. The handshake always uses 32 zero bytes (see
 + * tls_server_psk_server_callback in goodixtls.c); what PRESET_PSK_READ
 + * returns is a value the sensor derives from the PSK it holds, and the
@@ -32,7 +32,7 @@
 @@ -197,7 +197,9 @@
      return;
    }
- 
+
 -  if (memcmp(psk, goodix_55x4_psk_0, sizeof(goodix_55x4_psk_0))) {
 +  if (memcmp(psk, goodix_55x4_psk_0, sizeof(goodix_55x4_psk_0)) &&
 +      memcmp(psk, goodix_55x4_psk_0_gf3208,

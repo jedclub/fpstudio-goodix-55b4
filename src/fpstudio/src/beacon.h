@@ -55,6 +55,7 @@ public:
     // coverage/sharpness pair is then meaningless, so pass -1 for both.
     static void quality(const QString &source, int coverage, int sharpness,
                         bool accepted);
+    static void preview(const QString &source, const QString &imagePath);
 
     // Called when a command finishes so a stale "press your finger" does not
     // linger on screen.

@@ -1,0 +1,71 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  verify-release:
+    name: Rebuild and test the tagged source
+    runs-on: ubuntu-latest
+    container: archlinux:base-devel
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install build and software-Vulkan dependencies
+        run: |
+          pacman -Syu --noconfirm --needed \
+            cmake ninja qt6-base qt6-tools pkgconf glib2 libfprint \
+            vulkan-headers vulkan-icd-loader vulkan-swrast glslang
+
+      - name: Configure, build and test
+        env:
+          QT_QPA_PLATFORM: offscreen
+          VK_DRIVER_FILES: /usr/share/vulkan/icd.d/lvp_icd.json
+        run: |
+          cmake -S src/fpstudio -B build -G Ninja -DBUILD_TESTING=ON
+          cmake --build build --parallel
+          ctest --test-dir build --output-on-failure
+
+  publish-source-release:
+    name: Publish source archive and checksum
+    runs-on: ubuntu-latest
+    needs: verify-release
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate the tag and release note
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          version="${TAG#v}"
+          test "$TAG" = "v$version"
+          test -n "$version"
+          test -f "docs/releases/${TAG}.md"
+          grep -Fq "project(fpstudio VERSION ${version}" src/fpstudio/CMakeLists.txt
+
+      - name: Build source archive and checksum
+        id: archive
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          version="${TAG#v}"
+          base="fpstudio-goodix-55b4-${version}"
+          git archive --format=tar.gz --prefix="${base}/" --output="${base}.tar.gz" "$TAG"
+          sha256sum "${base}.tar.gz" > SHA256SUMS
+          echo "archive=${base}.tar.gz" >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+          ARCHIVE: ${{ steps.archive.outputs.archive }}
+        run: |
+          gh release create "$TAG" "$ARCHIVE" SHA256SUMS \
+            --title "FPStudio $TAG" \
+            --notes-file "docs/releases/${TAG}.md"

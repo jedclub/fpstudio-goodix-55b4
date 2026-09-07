@@ -76,6 +76,7 @@ private:
     void showQuality(int coverage, int sharpness, bool accepted);
     qint64              m_startedAt   = 0;         // 비콘이 알려준 시작 시각
     QString             m_statusText;              // 경과를 뺀 상태 문구
+    QString             m_lastPreview;
 
     // Kept so the menu can re-check the right entry after a switch, and so
     // the whole window can be rebuilt in the new language without hunting for

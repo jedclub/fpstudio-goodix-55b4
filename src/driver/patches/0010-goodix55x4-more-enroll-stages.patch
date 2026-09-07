@@ -30,5 +30,5 @@
 +   * requires > 0, and the image-device default is 5). */
 +  dev_class->nr_enroll_stages = 15;
    dev_class->scan_type = FP_SCAN_TYPE_PRESS;
- 
+
    // TODO

@@ -16,3 +16,8 @@ innoextract -s r19gf02w.exe
 |---|---|
 | `Wbdi.dll-sensor-models.txt` | `Wbdi.dll`에서 뽑은 센서 모델·펌웨어 문자열 |
 | `device-readings.txt` | 이 기기의 조회 응답 (고유 식별자는 가림) |
+| `windows-driver-metadata.md` | 로컬 INF와 Lenovo 설명서에서 확인한 패키지 정보 |
+
+홈폴더의 이전 작업 자료를 통합한 내역은
+[`../08-local-materials.md`](../08-local-materials.md)에 기록했다.
+제조사 원본과 장치 고유 값은 Git에서 제외되는 `local-private/`에만 보관한다.

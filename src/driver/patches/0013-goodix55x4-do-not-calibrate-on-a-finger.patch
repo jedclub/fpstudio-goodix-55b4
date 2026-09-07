@@ -1,0 +1,100 @@
+--- a/libfprint/drivers/goodixtls/goodix55x4.c
++++ b/libfprint/drivers/goodixtls/goodix55x4.c
+@@ -86,6 +86,30 @@
+ // background noise sits around 4-5, a real touch around 750+.
+ #define GOODIX55X4_FINGER_DETECT_DIFF_THRESHOLD 100
+
++/* How close a freshly read frame has to be to the background already held
++ * before it is accepted as a new background.
++ *
++ * The scan state machine starts with a calibration read, and it runs once per
++ * scan - so once per verify attempt and once per enrol stage, not once per
++ * session. That read was unconditional. Whenever a scan began while a finger
++ * was still resting on the sensor, the finger became the background, and two
++ * things followed. Both are visible in the journal.
++ *
++ *  - Touch detection stops working, because the resting finger now differs
++ *    from the background by almost nothing. The scan polls for its full ten
++ *    seconds and gives up, which is why a retry appeared to need a lift before
++ *    it would trigger at all.
++ *  - Any frame captured afterwards has a fingerprint subtracted out of it. The
++ *    result still passes every local quality measure - one such capture
++ *    measured 73% coverage and sharpness 66, better than several that matched
++ *    - and corresponds to nothing. Over the captures recorded so far, every
++ *    one taken against a background diff below 320 scored exactly 0 against
++ *    all fifteen enrolled stages, and every match came from a diff above 700.
++ *
++ * Empty-sensor noise measures 4-5 and a real touch 700+, so this sits in the
++ * gap: loose enough to keep tracking slow thermal drift, far below a touch. */
++#define GOODIX55X4_BACKGROUND_ACCEPT_DIFF 60
++
+ typedef unsigned short Goodix55X4Pix;
+
+ struct _FpiDeviceGoodixTls55X4 {
+@@ -96,6 +120,7 @@
+
+   GSList *frames;
+   guint poll_attempts;
++  gboolean have_background;
+
+   Goodix55X4Pix empty_img[GOODIX55X4_FRAME_SIZE];
+ };
+@@ -913,6 +938,12 @@
+
+   if (diff < GOODIX55X4_FINGER_DETECT_DIFF_THRESHOLD) {
+     if (++self->poll_attempts >= GOODIX55X4_FINGER_DETECT_MAX_ATTEMPTS) {
++      /* Ten seconds of seeing nothing. Either nobody touched the sensor, or
++       * the background we are subtracting already contains whatever is on it -
++       * which is what happens if the very first calibration caught a finger.
++       * Discarding it makes the next scan calibrate from scratch, so that
++       * state cannot persist for the rest of the session. */
++      self->have_background = FALSE;
+       fpi_ssm_mark_failed(ssm,
+                          fpi_device_retry_new(FP_DEVICE_RETRY_GENERAL));
+       return;
+@@ -1056,10 +1087,31 @@
+     return;
+   }
+   FpiDeviceGoodixTls55X4 *self = FPI_DEVICE_GOODIXTLS55X4(dev);
+-  decode_frame(self->empty_img, data);
+-  // FpImage *bgk = fp_image_new(GOODIX55X4_WIDTH, GOODIX55X4_HEIGHT);
+-  // squash_frame(self->empty_img, bgk->data);
+-  // save_image_to_pgm(bgk, "./background.pgm");
++
++  Goodix55X4Pix candidate[GOODIX55X4_FRAME_SIZE];
++  decode_frame(candidate, data);
++
++  if (!self->have_background) {
++    /* Nothing to compare against yet. This is the read that follows
++     * activation, when the prompt has only just appeared and the sensor is
++     * almost certainly clear; if it is not, the poll-exhausted path below
++     * discards this background and tries again rather than staying wrong. */
++    memcpy(self->empty_img, candidate, sizeof(self->empty_img));
++    self->have_background = TRUE;
++  } else {
++    const double diff = frame_diff_score(candidate, self->empty_img);
++    if (diff < GOODIX55X4_BACKGROUND_ACCEPT_DIFF) {
++      memcpy(self->empty_img, candidate, sizeof(self->empty_img));
++    } else {
++      /* Something is on the sensor. Keeping the background we already have
++       * costs nothing - it was read from the same sensor minutes ago - while
++       * adopting this one would poison every capture until the next
++       * activation. */
++      g_message("Keeping previous background: sensor not clear (diff %.1f)",
++                diff);
++    }
++  }
++
+   fpi_ssm_next_state(ssm);
+ }
+ static void scan_empty_run(FpiSsm *ssm, FpDevice *dev) {
+@@ -1248,6 +1300,9 @@
+ }
+
+ static void dev_activate(FpImageDevice *img_dev) {
++  /* A session begins with no usable background: the device may have been
++   * unplugged, slept, or drifted since the last one. */
++  FPI_DEVICE_GOODIXTLS55X4(img_dev)->have_background = FALSE;
+   FpDevice *dev = FP_DEVICE(img_dev);
+
+   fpi_ssm_start(fpi_ssm_new(dev, activate_run_state, ACTIVATE_NUM_STATES),

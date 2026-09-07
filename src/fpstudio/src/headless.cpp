@@ -13,6 +13,12 @@
 #include <QTextStream>
 #include <QImage>
 #include <QHash>
+#include <QProcess>
+#include <QDir>
+#include <QDateTime>
+#include <QSaveFile>
+#include <QLockFile>
+#include <QStandardPaths>
 
 #include <iostream>
 
@@ -161,8 +167,11 @@ QJsonObject cmdCapture(int index, bool waitForFinger, const QString &savePath, i
 
     QImage img;
     QString msg;
-    if (!e.captureImage(waitForFinger, timeoutSecs, &img, &msg))
-        return fail(msg);
+    if (!e.captureImage(waitForFinger, timeoutSecs, &img, &msg)) {
+        QJsonObject result = fail(msg);
+        attachLog(&result, e);
+        return result;
+    }
 
     QJsonObject o{{QStringLiteral("ok"), true},
                   {QStringLiteral("width"), img.width()},
@@ -341,6 +350,19 @@ QJsonArray mcpTools()
             {QStringLiteral("description"), QStringLiteral("FpFinger value; 7 = right index")}}}};
 
     QJsonArray tools;
+    tools.append(toolDef(QStringLiteral("start_collection"),
+                         QStringLiteral("Open and automatically run the 14-sample research workflow, including finger-change countdowns. The only user button is Stop."), {}));
+    tools.append(toolDef(QStringLiteral("collection_status"),
+                         QStringLiteral("Read the research workflow state, saved sample paths and quality measurements."), {}));
+    tools.append(toolDef(QStringLiteral("stop_collection"),
+                         QStringLiteral("Stop the active research workflow, preserving captured samples."), {}));
+    tools.append(toolDef(QStringLiteral("resume_collection"),
+                         QStringLiteral("Resume a workflow paused after repeated capture errors, after diagnosing the cause."), {}));
+    tools.append(toolDef(QStringLiteral("show_guidance"),
+                         QStringLiteral("Show an instruction or result on the diagnostics banner until the next operation."),
+                         QJsonObject{{QStringLiteral("message"), QJsonObject{{QStringLiteral("type"), QStringLiteral("string")}}},
+                                     {QStringLiteral("image_path"), QJsonObject{{QStringLiteral("type"), QStringLiteral("string")}}}},
+                         QJsonArray{QStringLiteral("message")}));
     tools.append(toolDef(QStringLiteral("list_devices"),
                          QStringLiteral("Enumerate fingerprint devices and their capabilities."),
                          {}));
@@ -349,6 +371,8 @@ QJsonArray mcpTools()
                                         "or writes a file if save_path is given. This is the call that "
                                         "shows what the sensor actually sees."),
                          QJsonObject{
+                             {QStringLiteral("instruction"), QJsonObject{{QStringLiteral("type"), QStringLiteral("string")}}},
+                             {QStringLiteral("timeout_secs"), QJsonObject{{QStringLiteral("type"), QStringLiteral("integer")}}},
                              {QStringLiteral("wait_for_finger"), QJsonObject{{QStringLiteral("type"), QStringLiteral("boolean")}}},
                              {QStringLiteral("save_path"), QJsonObject{{QStringLiteral("type"), QStringLiteral("string")}}}}));
     tools.append(toolDef(QStringLiteral("enroll"),
@@ -367,6 +391,45 @@ QJsonArray mcpTools()
 
 QJsonObject mcpCall(const QString &name, const QJsonObject &a)
 {
+    static QString collectionDir;
+    if (name == QLatin1String("start_collection")) {
+        QLockFile gui(QStandardPaths::writableLocation(QStandardPaths::RuntimeLocation) + "/fpstudio-gui.lock");
+        if (!gui.tryLock()) return fail(QStringLiteral("A fpstudio GUI is already running. Use that window or close it before starting research."));
+        gui.unlock();
+        collectionDir = QDir::cleanPath(QStringLiteral(FPSTUDIO_SOURCE_DIR "/../../local-private/recognition/session-")
+                                        + QDateTime::currentDateTime().toString("yyyyMMdd-HHmmss-zzz"));
+        if (!QDir().mkpath(collectionDir)) return fail(QStringLiteral("Cannot create private session directory"));
+        QFile::setPermissions(collectionDir, QFileDevice::ReadOwner | QFileDevice::WriteOwner | QFileDevice::ExeOwner);
+        qint64 pid = 0;
+        if (!QProcess::startDetached(QCoreApplication::applicationFilePath(),
+                                     {"--research", "--lang", "ko", "--session-dir", collectionDir}, QString(), &pid))
+            return fail(QStringLiteral("Could not open research window"));
+        return QJsonObject{{"ok", true}, {"pid", pid}, {"session_dir", collectionDir}, {"state", "launching"}};
+    }
+    if (name == QLatin1String("collection_status") || name == QLatin1String("stop_collection") || name == QLatin1String("resume_collection")) {
+        if (collectionDir.isEmpty()) return fail(QStringLiteral("No collection was started by this MCP server"));
+        if (name == QLatin1String("stop_collection") || name == QLatin1String("resume_collection")) {
+            QSaveFile stop(collectionDir + (name == QLatin1String("stop_collection") ? "/stop" : "/resume"));
+            if (!stop.open(QIODevice::WriteOnly) || !stop.commit()) return fail(QStringLiteral("Cannot request stop"));
+            return QJsonObject{{"ok", true}};
+        }
+        QFile file(collectionDir + "/session.json");
+        if (!file.open(QIODevice::ReadOnly)) return QJsonObject{{"ok", true}, {"state", "launching"}, {"session_dir", collectionDir}};
+        QJsonObject status = QJsonDocument::fromJson(file.readAll()).object();
+        status.insert("ok", true); status.insert("session_dir", collectionDir);
+        return status;
+    }
+    if (name == QLatin1String("capture_image") || name == QLatin1String("enroll") || name == QLatin1String("verify")) {
+        QLockFile research(QStandardPaths::writableLocation(QStandardPaths::RuntimeLocation) + "/fpstudio-research.lock");
+        if (!research.tryLock()) return fail(QStringLiteral("Research workflow owns capture timing. Use collection_status or stop_collection."));
+    }
+    if (name == QLatin1String("show_guidance")) {
+        Beacon::begin(QStringLiteral("mcp"), QStringLiteral("guidance"),
+                      a.value(QStringLiteral("message")).toString());
+        const QString path = a.value(QStringLiteral("image_path")).toString();
+        if (!path.isEmpty()) Beacon::preview(QStringLiteral("mcp"), path);
+        return QJsonObject{{QStringLiteral("ok"), true}};
+    }
     // Everything an agent triggers is announced on screen, so the person at
     // the machine can follow the guide instead of the transcript.
     static const QHash<QString, QString> prompts{
@@ -374,7 +437,7 @@ QJsonObject mcpCall(const QString &name, const QJsonObject &a)
         {QStringLiteral("enroll"),        QCoreApplication::translate("fpstudio", "Enrolling — press and lift your finger repeatedly")},
         {QStringLiteral("verify"),        QCoreApplication::translate("fpstudio", "Put the enrolled finger on the sensor")},
     };
-    const QString prompt = prompts.value(name);
+    const QString prompt = a.value(QStringLiteral("instruction")).toString(prompts.value(name));
     if (!prompt.isEmpty()) {
         Beacon::begin(QStringLiteral("mcp"), name, prompt);
         Engine::setQualityHook([](int cov, int sharp, bool ok) {
@@ -386,23 +449,34 @@ QJsonObject mcpCall(const QString &name, const QJsonObject &a)
     }
     struct Clear {
         QString p;
+        bool keepResult;
         ~Clear() {
             if (p.isEmpty()) return;
             Engine::setProgressHook(nullptr);
             Engine::setQualityHook(nullptr);
-            Beacon::clear(QStringLiteral("mcp"));
+            if (!keepResult) Beacon::clear(QStringLiteral("mcp"));
         }
-    } clearer{prompt};
+    } clearer{prompt, name == QLatin1String("capture_image")};
 
     const QString user = a.value(QStringLiteral("username")).toString(
         qEnvironmentVariable("USER", QStringLiteral("user")));
     const int finger = a.value(QStringLiteral("finger")).toInt(7);
 
     if (name == QLatin1String("list_devices"))  return cmdDevices();
-    if (name == QLatin1String("capture_image"))
-        return cmdCapture(-1, a.value(QStringLiteral("wait_for_finger")).toBool(true),
+    if (name == QLatin1String("capture_image")) {
+        const QJsonObject result = cmdCapture(-1, a.value(QStringLiteral("wait_for_finger")).toBool(true),
                           a.value(QStringLiteral("save_path")).toString(),
                           a.value(QStringLiteral("timeout_secs")).toInt(45));
+        if (result.value(QStringLiteral("ok")).toBool() &&
+            !a.value(QStringLiteral("save_path")).toString().isEmpty())
+            Beacon::preview(QStringLiteral("mcp"), a.value(QStringLiteral("save_path")).toString());
+        Beacon::progress(QStringLiteral("mcp"),
+                         result.value(QStringLiteral("ok")).toBool() ? QStringLiteral("done") : QStringLiteral("failed"),
+                         result.value(QStringLiteral("ok")).toBool()
+                             ? QCoreApplication::translate("fpstudio", "Captured — now lift your finger")
+                             : result.value(QStringLiteral("error")).toString());
+        return result;
+    }
     if (name == QLatin1String("enroll"))
         return cmdEnroll(-1, user, finger, a.value(QStringLiteral("timeout_secs")).toInt(180));
     if (name == QLatin1String("verify"))
@@ -436,6 +510,7 @@ int runMcp()
 
         const QString method = req.value(QStringLiteral("method")).toString();
         const QJsonValue id  = req.value(QStringLiteral("id"));
+        if (!req.contains(QStringLiteral("id"))) continue; // JSON-RPC notifications have no response
 
         if (method == QLatin1String("initialize")) {
             reply(id, QJsonObject{
@@ -444,7 +519,7 @@ int runMcp()
                     {QStringLiteral("tools"), QJsonObject{}}}},
                 {QStringLiteral("serverInfo"), QJsonObject{
                     {QStringLiteral("name"), QStringLiteral("fpstudio")},
-                    {QStringLiteral("version"), QStringLiteral("0.1.0")}}}});
+                    {QStringLiteral("version"), QStringLiteral("0.2.0")}}}});
         } else if (method == QLatin1String("tools/list")) {
             reply(id, QJsonObject{{QStringLiteral("tools"), mcpTools()}});
         } else if (method == QLatin1String("tools/call")) {

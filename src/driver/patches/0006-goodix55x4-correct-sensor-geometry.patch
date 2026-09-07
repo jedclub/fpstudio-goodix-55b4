@@ -1,9 +1,9 @@
 --- a/libfprint/drivers/goodixtls/goodix55x4.c
 +++ b/libfprint/drivers/goodixtls/goodix55x4.c
 @@ -43,6 +43,27 @@
- 
+
  #include <math.h>
- 
+
 +/* Keep the row length at 108 even though this die is a GF3208, whose native
 + * geometry is 88x108 - goodix-fp-dump declares SENSOR_WIDTH 88 / SENSOR_HEIGHT
 + * 108 and the vendor's Wbdi.dll parameter table has (800 dpi, 88, 108) for it.

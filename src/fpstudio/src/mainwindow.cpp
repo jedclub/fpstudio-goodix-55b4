@@ -542,6 +542,15 @@ void MainWindow::onBeaconChanged()
         return;
     }
     const QJsonObject o = QJsonDocument::fromJson(f.readAll()).object();
+    const QString previewPath = o.value(QStringLiteral("image_path")).toString();
+    if (!previewPath.isEmpty() && previewPath != m_lastPreview) {
+        const QImage preview(previewPath);
+        if (!preview.isNull()) {
+            m_imageView->setImage(preview);
+            m_lastPreview = previewPath;
+            m_verdict->setText(tr("%1 × %2").arg(preview.width()).arg(preview.height()));
+        }
+    }
     showQuality(o.value(QStringLiteral("coverage")).toInt(-1),
                 o.value(QStringLiteral("sharpness")).toInt(-1),
                 o.value(QStringLiteral("quality_ok")).toBool(true));

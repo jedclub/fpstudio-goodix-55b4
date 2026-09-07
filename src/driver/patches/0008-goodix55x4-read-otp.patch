@@ -2,10 +2,10 @@
 +++ b/libfprint/drivers/goodixtls/goodix55x4.c
 @@ -92,6 +92,7 @@
    FpiDeviceGoodixTls parent;
- 
+
    guint8 *otp;
 +  guint16 otp_len;
- 
+
    GSList *frames;
    guint poll_attempts;
 @@ -117,6 +118,7 @@
@@ -19,7 +19,7 @@
 @@ -291,6 +293,67 @@
    }
  }
- 
+
 +/* Read the sensor's one-time-programmable area and log it.
 + *
 + * Why this exists: the driver uploads a fixed 256-byte MCU config and never
@@ -82,12 +82,12 @@
 +}
 +
  static void activate_run_state(FpiSsm *ssm, FpDevice *dev) {
- 
+
    switch (fpi_ssm_get_cur_state(ssm)) {
 @@ -337,6 +400,11 @@
      //     goodix_send_read_otp(dev, read_otp_callback, ssm);
      //     break;
- 
+
 +  case ACTIVATE_READ_OTP:
 +    g_print("Reading OTP\n");
 +    goodix_send_read_otp(dev, read_otp_callback, ssm);

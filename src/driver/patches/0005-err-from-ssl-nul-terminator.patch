@@ -3,7 +3,7 @@
 @@ -47,7 +47,15 @@
    err->code = code;
    const char *msg = ERR_reason_error_string (code);
- 
+
 -  err->message = malloc (strlen (msg));
 +  /* ERR_reason_error_string returns NULL for a code it does not know. */
 +  if (msg == NULL)

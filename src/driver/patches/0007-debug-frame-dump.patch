@@ -1,9 +1,9 @@
 --- a/libfprint/drivers/goodixtls/goodix55x4.c
 +++ b/libfprint/drivers/goodixtls/goodix55x4.c
 @@ -534,11 +534,44 @@
- 
+
  } frame_processing_info;
- 
+
 +/* Writes a 12-bit frame as a binary PGM. Only active when
 + * GOODIX55X4_DUMP_DIR is set, because the interesting question - is the
 + * striping already in the sensor data, or does the background subtraction
@@ -43,5 +43,5 @@
 +  dump_frame_pgm("3-after-subtract", raw_frame);
 +
    squash_frame_linear(raw_frame, frame->data);
- 
+
    *(info->frames) = g_slist_append(*(info->frames), frame);

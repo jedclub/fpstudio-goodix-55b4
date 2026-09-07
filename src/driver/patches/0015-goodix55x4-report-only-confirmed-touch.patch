@@ -1,0 +1,10 @@
+--- a/libfprint/drivers/goodixtls/goodix55x4.c
++++ b/libfprint/drivers/goodixtls/goodix55x4.c
+@@ -957,2 +957,4 @@
+   self->poll_attempts = 0;
++  /* Only a confirmed host-side touch may advance libfprint to CAPTURE. */
++  fpi_image_device_report_finger_status(FP_IMAGE_DEVICE(dev), TRUE);
+   save_frame(self, data);
+@@ -1176,2 +1178,1 @@
+     g_print("SWITCH TO GET IMAGE\n");
+-    fpi_image_device_report_finger_status(img_dev, TRUE);

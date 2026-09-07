@@ -1,182 +1,140 @@
-# goodix-55b4-linux
+# FPStudio for Goodix 27c6:55b4
 
-Fingerprint unlock on Linux for the **Goodix 27c6:55b4** sensor — the reader in
-the ThinkPad L14/L15 Gen 1, which upstream `libfprint` does not support.
+[![CI](https://github.com/jedclub/fpstudio-goodix-55b4/actions/workflows/ci.yml/badge.svg)](https://github.com/jedclub/fpstudio-goodix-55b4/actions/workflows/ci.yml)
+[![Latest release](https://img.shields.io/github/v/release/jedclub/fpstudio-goodix-55b4?display_name=tag)](https://github.com/jedclub/fpstudio-goodix-55b4/releases/latest)
+[![License: LGPL-2.1-or-later](https://img.shields.io/badge/License-LGPL--2.1--or--later-blue.svg)](LICENSE)
+[![Platform: Arch Linux](https://img.shields.io/badge/platform-Arch%20Linux-1793D1?logo=arch-linux&logoColor=white)](https://archlinux.org/)
+[![C++20](https://img.shields.io/badge/C%2B%2B-20-00599C?logo=c%2B%2B)](https://isocpp.org/)
 
-A patched driver, and one application that installs it, checks it, enrols a
-finger, and wires it into `polkit`, `sudo`, and the lock screen.
+**FPStudio** is a local-first Linux setup, diagnostics and fingerprint-research
+toolkit for the **Goodix 27c6:55b4** reader found in several ThinkPad L14/L15
+Gen 1 systems. It packages a patched `libfprint` build recipe alongside a Qt 6
+application that guides device checks, collection, enrolment and reversible
+authentication setup.
 
-![The setup wizard](docs/images/setup-wizard.png)
+> [!WARNING]
+> This is hardware-specific, experimental software. A failing fingerprint
+> attempt must always retain a password path. Never publish fingerprint images,
+> templates, device secrets, local research sessions or system-authentication
+> backups.
 
----
+## At a glance
 
-## Status
-
-| | |
+| Guided setup | Local diagnostics |
 |---|---|
-| Device recognised | ✅ `Goodix TLS Fingerprint Sensor 55X4`, driver `goodixtls55x4` |
-| TLS session | ✅ after writing the all-zero PSK (irreversible — see below) |
-| Raw capture | ✅ 108×88, 8-bit, clean ridge detail |
-| Enrolment | ✅ 15 stages, with a quality gate that rejects half-landed scans |
-| Verification | ✅ passing scores 77–2920 against a threshold of 72 |
-| Unlocking | ✅ `pkexec` / desktop prompts, `sudo`, lock screen |
+| <img src="docs/images/setup-wizard.png" alt="FPStudio fingerprint unlock setup wizard" width="430"> | <img src="docs/images/diagnostics.png" alt="FPStudio diagnostics window" width="500"> |
+| Check the sensor, patched driver, permissions and enrolment path step by step. | Inspect device state, invoke safe diagnostics and choose the UI language. |
 
-Measured over seven verify attempts on real hardware: five matched. The two
-misses scored 0 and 7 — placements that did not overlap any enrolled sample,
-not weak readings. The PAM stacks this ships allow 20 tries, which is what
-makes that per-touch rate usable in practice.
+The screenshots contain no biometric samples. Real capture data is deliberately
+kept outside version control.
+
+## What it provides
+
+- **One setup wizard** for sensor discovery, driver prerequisites, permissions,
+  standard enrolment and opt-in system integration.
+- **Live collection guidance** that derives stable candidates from the video
+  stream rather than treating one arbitrary frame as a result.
+- **Vulkan-assisted research matching** with contact anchors, ridge-region
+  checks, bounded rotation and ±5% uniform-scale search. The coloured preview
+  makes comparison evidence and uncertain alignment visible.
+- **Privacy-local research sessions**. Biometric frames and templates belong in
+  `local-private/`, which is excluded from Git.
+- **Eleven UI languages**: English, Korean, Japanese, Simplified/Traditional
+  Chinese, Spanish, German, French, Russian, Italian and Portuguese.
+- **Safe authentication boundary**: password fallback remains available;
+  GPU-assisted system authentication is experimental and must be explicitly
+  installed and verified by the machine owner.
 
 ## Requirements
 
-- Arch Linux or a derivative (the driver ships as a `PKGBUILD`)
-- A Goodix `27c6:55b4` sensor — check with `lsusb -d 27c6:`
-- `fprintd`, and Qt 6 to build the tool
+- Arch Linux or an Arch-derived distribution for the driver package recipe.
+- Goodix `27c6:55b4` hardware (`lsusb -d 27c6:`).
+- Qt 6.5+, CMake, Ninja, Vulkan headers/loader and `glslangValidator` to build
+  FPStudio.
+- A patched `libfprint` package from this repository; install `fprintd` only
+  after the driver package.
 
 ## Quick start
 
 ```bash
-git clone <this repo> && cd goodix-55b4-linux
+git clone https://github.com/jedclub/fpstudio-goodix-55b4.git
+cd fpstudio-goodix-55b4
 
-# 1. Driver (replaces the system libfprint)
-cd src/driver && makepkg -f
+# 1. Build and install the pinned, patched libfprint package.
+cd src/driver
+makepkg -s --needed -f
 sudo pacman -U libfprint-goodixtls-55x4-fixed-*.pkg.tar.zst
-sudo pacman -S fprintd          # after the driver, never before
+sudo pacman -S --needed fprintd
+cd ../..
 
-# 2. The tool
-cmake -S src/fpstudio -B build && cmake --build build
+# 2. Build FPStudio and run its test suite.
+cmake -S src/fpstudio -B build -G Ninja
+cmake --build build
+ctest --test-dir build --output-on-failure
 
-# 3. Everything else
+# 3. Open the setup wizard.
 ./build/fpstudio
 ```
 
-The wizard checks nine things, fixes what it can, and says plainly what it
-cannot do for you. It shows the exact commands before running any of them.
+The GUI resolves its language from `--lang`, a remembered user choice, then
+the system locale. For example, start in English with:
 
-> **`fprintd` must be installed after the driver.** Installing it first pulls
-> in the stock `libfprint` and undoes step 1.
-
-## The tool
-
-One binary, four front ends over the same engine:
-
-```
-fpstudio                setup wizard - the default
-fpstudio --diagnostics  live capture, driver log, match scores
-fpstudio --cli setup    what is configured, as JSON
-fpstudio --mcp          MCP server, for an agent
+```bash
+./build/fpstudio --lang en
 ```
 
-![The diagnostics window](docs/images/diagnostics.png)
+## Security and privacy model
 
-Available in 11 languages — English, 한국어, 日本語, 简体中文, 繁體中文,
-Español, Deutsch, Français, Русский, Italiano, Português. It follows the
-system locale and falls back to English; `--lang` overrides it.
+- **No biometrics in this repository or release assets.** The ignore rules
+  exclude local research material, PGM frames, fingerprint templates, build
+  trees, credentials and local coding-agent state.
+- **No firmware blob is shipped.** The repository contains source probes and
+  build instructions only.
+- **System changes are explicit and reversible.** The wizard separates checks
+  from installation and preserves the password fallback. It does not alter
+  login authentication.
+- **Research is not a security claim.** A high matcher score or consistent
+  ridge pattern is not proof of identity, FAR, FRR or production readiness.
 
-## What was wrong, and what fixed it
+## Release contents
 
-Three findings did the work. All three are documented with the measurements
-behind them in [`docs/05-geometry-regression.md`](docs/05-geometry-regression.md).
+Each tagged release publishes a source archive and SHA-256 checksum. It does
+not publish a prebuilt fingerprint driver: recipients build the pinned source
+with the supplied patches on their own Arch system. This keeps the driver,
+runtime dependencies and local security policy visible and reviewable.
 
-**A one-byte allocation bug upstream** (`0005`). `err_from_ssl()` allocated
-`strlen(msg)` instead of `strlen(msg) + 1`, so the process died the moment it
-tried to report *any* SSL failure. Fixing it is what made the real errors
-visible at all.
+The current driver source revision is
+[`c1937b99ec3db5abca05f619a95d2e37496d8810`](https://github.com/TheWeirdDev/libfprint/commit/c1937b99ec3db5abca05f619a95d2e37496d8810).
 
-**The row length** (`0006`). `goodix-fp-dump` and the vendor's own `Wbdi.dll`
-table both say this die is 88×108, and both are right — about the die. The
-sensor emits whatever window the uploaded MCU config asks it to scan, and that
-config is the GF3268's, so it emits 108-wide rows. Cutting at 88 sheared the
-image a little further every row.
+## Development and CI
 
-| Cut at 108 (correct) | Cut at 88 |
-|---|---|
-| ![correct](captures/ridges-correct-geometry.png) | ![wrong](captures/ridges-wrong-geometry.png) |
-
-**The normalisation** (`0009`). `squash_frame_linear` stretched min-to-max, so
-the part of the window the finger never touched pinned the black point and the
-ridges were squeezed into the top of the range — every capture had a 1st
-percentile of 0 and a median of 122–189. Stretching the 2nd–98th percentile of
-the live area instead took the match score on two overlapping captures from 5
-to 63, against a threshold of 72.
-
-| min/max (before) | percentile (after) |
-|---|---|
-| ![before](captures/normalisation-minmax.png) | ![after](captures/normalisation-percentile.png) |
-
-*(Those four images are synthetic — a generated ridge field put through the
-same two failures. No real fingerprint is committed to this repository.)*
-
-## Repository layout
-
-```
-docs/            how the device was identified, what was tried, what was ruled out
-  00-setup.md      the whole procedure, start to finish
-  05-geometry...   what the 0/72 failure actually was
-  evidence/        facts extracted from the vendor's Windows driver
-src/
-  driver/        12 patches against the libfprint goodixtls fork, plus a PKGBUILD
-  fpstudio/      the C++/Qt6 application
-    pam/         polkit, sudo and lock-screen stacks
-  firmware/      read-only probes, and the one write (PSK) this needed
-captures/        synthetic illustrations only
+```bash
+cmake -S src/fpstudio -B build -G Ninja
+cmake --build build
+ctest --test-dir build --output-on-failure
 ```
 
-## Before you start: the irreversible step
-
-If the TLS handshake fails, the sensor needs the all-zero PSK written to it.
-**This cannot be undone.** The key the sensor currently holds cannot be read
-back — the protocol returns a value derived from it, not the key — so there is
-no backup to restore, and **Windows fingerprint sign-in stops working on that
-machine permanently.**
-
-If you dual-boot and use it there, stop before that step. The wizard makes you
-type the word `WRITE` rather than click past it.
-
-## What this does to your system's authentication
-
-Three PAM stacks, each installed separately and each reversible by deleting one
-file:
-
-| File | Effect | Default |
-|---|---|---|
-| `/etc/pam.d/polkit-1` | `pkexec` and desktop prompts accept a fingerprint | installed by the wizard |
-| `/etc/pam.d/kde-fingerprint` | lock screen retries 20× instead of 3× | optional |
-| `/etc/pam.d/sudo` | terminal `sudo` accepts a fingerprint | **opt-in** |
-
-Every one uses `sufficient`, so a fingerprint that fails for any reason —
-unplugged sensor, broken driver, no enrolment — falls through to the password
-prompt exactly as before. Login is deliberately never touched: a sensor that
-stops working can never lock you out of the machine.
-
-`sudo` is opt-in and separate because it is itself the way back in when
-something else breaks.
-
-## Known limits
-
-- **About 70% per touch.** The window is roughly 5.5 × 4.5 mm, so a placement
-  that misses every enrolled sample scores nothing. Twenty retries is what
-  makes this a non-issue in practice, not a better matcher.
-- **Image quality is not calibrated per die.** The driver uploads one fixed MCU
-  config and never reads the chip's OTP, where the DAC and tcode values live.
-  Command `0xa6` returns 32 bytes — the MCU's own OTP, not that one — and
-  sweeping the sensor's register space to `0x8000` did not find the other.
-  Reaching it means decoding the vendor's bit-banged SPI sequence.
-- **Terminal prompts have no progress indication.** `pam_fprintd` prints a line
-  per failed scan and nothing while it waits. That module is the distribution's,
-  not this project's.
+Pull requests and `main` changes run privacy checks, driver package builds,
+translation checks, a full CTest run and a release-readiness check. Pushing a
+`v*` tag builds a source archive, writes its checksum and publishes the
+matching release note from `docs/releases/`.
 
 ## Documentation
 
-| | |
-|---|---|
-| [`00-setup.md`](docs/00-setup.md) | the whole procedure, and what to check at each step |
-| [`01-investigation.md`](docs/01-investigation.md) | how the device was identified |
-| [`02-device.md`](docs/02-device.md) | measured values from this hardware |
-| [`03-driver.md`](docs/03-driver.md) | the patches, and how to rebuild |
-| [`04-fpstudio.md`](docs/04-fpstudio.md) | the tool's design |
-| [`05-geometry-regression.md`](docs/05-geometry-regression.md) | the `0/72` failure, measured |
-| [`06-system-integration.md`](docs/06-system-integration.md) | fprintd, PAM, and why they are separate |
+- [Setup guide](docs/00-setup.md)
+- [Driver implementation notes](docs/03-driver.md)
+- [FPStudio architecture](docs/04-fpstudio.md)
+- [Recognition and research workflow](docs/07-recognition.md)
+- [Vulkan matching design](docs/11-vulkan-matching.md)
+- [Contact-anchored v8 matcher](docs/20-contact-anchored-rotation-v8.md)
+- [v0.2.0 release notes](docs/releases/v0.2.0.md)
 
-## Licence
+## Licence and third-party code
 
-LGPL-2.1, matching `libfprint`. See [`LICENSE`](LICENSE).
+FPStudio and its Goodix/libfprint-derived driver patches are licensed under
+the **GNU Lesser General Public License, version 2.1 or later**. See
+[LICENSE](LICENSE) and [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+
+The driver build recipe retrieves the LGPL `libfprint` Goodix TLS fork at a
+pinned revision. If you redistribute a modified driver binary, you must also
+provide the corresponding source, patches, licence text and copyright notices.

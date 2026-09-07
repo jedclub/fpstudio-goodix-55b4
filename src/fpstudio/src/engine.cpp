@@ -74,7 +74,14 @@ Engine::QualityHook  g_qualityHook;
 // is waiting looks identical to a capture that has hung.
 bool humaniseLine(const QString &text, QString *stage, QString *human)
 {
-    if (text.contains(QLatin1String("FP_FINGER_STATUS_PRESENT"))) {
+    if (text.contains(QLatin1String("SCAN_EMPTY_NUM completed successfully"))) {
+        *stage = QStringLiteral("background-ready");
+        *human = QCoreApplication::translate("fpstudio", "Put your finger on the sensor and hold it there");
+        return true;
+    }
+    // A PRESENT-only status also occurs after AWAIT_FINGER_OFF when the
+    // NEEDED flag is cleared. It must not overwrite "lift your finger".
+    if (text.contains(QLatin1String("Image device reported finger status: on"))) {
         *stage = QStringLiteral("finger-on");
         *human = QCoreApplication::translate("fpstudio", "Finger detected — hold still");
         return true;
@@ -215,7 +222,7 @@ struct Deadline {
     }
     ~Deadline()
     {
-        if (id) g_source_remove(id);
+        if (id && g_main_context_find_source_by_id(nullptr, id)) g_source_remove(id);
         if (c) g_object_unref(c);
     }
     bool tripped() const { return c && g_cancellable_is_cancelled(c); }
@@ -285,6 +292,13 @@ void Engine::enableVerboseLogging()
     g_setenv("G_MESSAGES_DEBUG", "all", TRUE);
     g_setenv("LIBFPRINT_DEBUG", "3", FALSE);
     g_log_set_writer_func(logWriter, nullptr, nullptr);
+    // The Goodix fork also uses g_print for protocol and background traces.
+    // Route these through the same collector so stdout remains one JSON
+    // result and failed captures retain their diagnostic evidence.
+    g_set_print_handler([](const gchar *message) {
+        g_log_structured("goodix-stdout", G_LOG_LEVEL_DEBUG,
+                         "MESSAGE", "%s", message);
+    });
 }
 
 QList<LogLine> Engine::takeLog()

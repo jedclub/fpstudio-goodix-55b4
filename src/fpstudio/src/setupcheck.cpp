@@ -7,9 +7,12 @@
 #include <QProcess>
 #include <QRegularExpression>
 #include <QStandardPaths>
+#include <QJsonDocument>
+#include <QJsonObject>
 
 namespace fpstudio {
 namespace {
+QString lastHardwareProbe;
 
 // Runs a command and returns stdout, or an empty string if it could not run.
 // Used only for probing, never for changing anything - every call here is a
@@ -19,8 +22,11 @@ QString ask(const QString &program, const QStringList &args, int timeoutMs = 400
     QProcess p;
     p.setProcessChannelMode(QProcess::MergedChannels);
     p.start(program, args);
-    if (!p.waitForFinished(timeoutMs))
+    if (!p.waitForFinished(timeoutMs)) {
         p.kill();
+        p.waitForFinished(1000);
+        return {};
+    }
     return QString::fromUtf8(p.readAll());
 }
 
@@ -113,8 +119,7 @@ StepResult driver()
                    "Install fprintd afterwards, not before: installing it "
                    "first pulls in the stock libfprint and undoes this.");
     r.action = QCoreApplication::translate("fpstudio", "Build and install the patched libfprint");
-    r.commands = {QStringLiteral("makepkg -f -D %1").arg(QFileInfo(pkgbuild).absolutePath()),
-                  QStringLiteral("pacman -U <built package>")};
+    r.commands = {QStringLiteral("python %1").arg(repoFile(QStringLiteral("../../tools/driver_build.py")))};
     return r;
 }
 
@@ -130,17 +135,15 @@ StepResult udevRule()
     // add event, so a freshly written rule does nothing until a replug or a
     // trigger. Check the node itself, which is the thing that matters.
     bool writable = false;
-    QDir busRoot(QStringLiteral("/dev/bus/usb"));
-    for (const QString &bus : busRoot.entryList(QDir::Dirs | QDir::NoDotAndDotDot)) {
-        QDir d(busRoot.filePath(bus));
-        for (const QString &dev : d.entryList(QDir::Files | QDir::System)) {
-            QFile f(d.filePath(dev));
-            if (f.open(QIODevice::ReadWrite)) {
-                f.close();
-                if (QFileInfo(d.filePath(dev)).group() == QLatin1String("wheel"))
-                    writable = true;
-            }
-        }
+    QDir devices(QStringLiteral("/sys/bus/usb/devices"));
+    for(const auto &entry:devices.entryInfoList(QDir::Dirs|QDir::NoDotAndDotDot)) {
+        auto read=[&](const QString &name){QFile f(entry.filePath()+"/"+name);return f.open(QIODevice::ReadOnly)?QString::fromUtf8(f.readAll()).trimmed():QString();};
+        if(read("idVendor")!="27c6"||read("idProduct")!="55b4")continue;
+        bool busOk=false,deviceOk=false;
+        const int bus=read("busnum").toInt(&busOk),device=read("devnum").toInt(&deviceOk);
+        if(!busOk||!deviceOk||bus<1||device<1)continue;
+        const QFileInfo node(QStringLiteral("/dev/bus/usb/%1/%2").arg(bus,3,10,QLatin1Char('0')).arg(device,3,10,QLatin1Char('0')));
+        writable=node.isReadable()&&node.isWritable();
     }
 
     if (writable) {
@@ -170,7 +173,7 @@ StepResult udevRule()
         r.action = QCoreApplication::translate("fpstudio", "Install the udev rule and reload");
         r.commands = {QStringLiteral("install -Dm644 %1 %2").arg(rule, installed),
                       QStringLiteral("udevadm control --reload"),
-                      QStringLiteral("udevadm trigger --attr-match=idVendor=27c6")};
+                      QStringLiteral("udevadm trigger --attr-match=idVendor=27c6 --attr-match=idProduct=55b4")};
     }
     return r;
 }
@@ -179,15 +182,21 @@ StepResult udevRule()
 // only thing that actually exercises the handshake. Run once, read twice.
 QString handshakeProbe()
 {
-    return ask(selfPath(),
-               {QStringLiteral("--cli"), QStringLiteral("capture"),
-                QStringLiteral("--timeout"), QStringLiteral("2")},
-               30000);
+    // Opening the wizard must not steal USB from sudo/KDE authentication.
+    // Only the explicit capture action performs the hardware transaction.
+    return lastHardwareProbe;
 }
 
 StepResult tlsSession(const QString &probe)
 {
     StepResult r{StepId::TlsSession};
+    if(probe.isEmpty()) {
+        r.state=StepState::Unknown;
+        r.summary=QStringLiteral("장치 통신은 아직 시험하지 않았습니다");
+        r.detail=QStringLiteral("다른 인증 요청을 닫고 영상 시험을 실행하세요. 위저드를 열거나 새로고침할 때 센서를 자동 점유하지 않습니다.");
+        r.action=QStringLiteral("센서 통신·영상 시험");
+        return r;
+    }
 
     // Not "HANDSHAKE DONE": that line is a debug log, and the CLI drops its
     // log array on the timeout path this probe deliberately takes. What does
@@ -202,8 +211,7 @@ StepResult tlsSession(const QString &probe)
     }
     // Activation got as far as reading the sensor's key-derived value and
     // then stopped, which is what a key mismatch looks like from here.
-    if (probe.contains(QStringLiteral("Checking PSK")) ||
-        probe.contains(QStringLiteral("Device PSK"))) {
+    if (probe.contains(QStringLiteral("Invalid device PSK:"))) {
         r.state = StepState::Failed;
         r.summary = QCoreApplication::translate("fpstudio", "The sensor answered, but the handshake did not complete");
         r.detail = QCoreApplication::translate("fpstudio", "The sensor holds a key this driver does not have. "
@@ -227,6 +235,13 @@ StepResult psk(const StepResult &tls)
     if (tls.state == StepState::Ok) {
         r.state = StepState::Ok;
         r.summary = QCoreApplication::translate("fpstudio", "The sensor already holds a usable key");
+        return r;
+    }
+    if(!lastHardwareProbe.contains(QStringLiteral("Invalid device PSK:"))) {
+        r.state=StepState::Unknown;
+        r.irreversible=false;
+        r.summary=QStringLiteral("키 변경 필요 여부 미확인 — 자동 쓰기 금지");
+        r.detail=QStringLiteral("USB 오류나 센서 점유를 키 불일치로 간주하지 않습니다. 먼저 통신 시험을 완료하세요.");
         return r;
     }
 
@@ -327,6 +342,37 @@ StepResult enrolment()
     return r;
 }
 
+StepResult gpuAuth()
+{
+    StepResult r{StepId::GpuAuth};r.needsRoot=true;
+    QFile state(QStringLiteral("/etc/fpstudio-auth.json"));
+    if(state.open(QIODevice::ReadOnly)) {
+        const auto data=QJsonDocument::fromJson(state.readAll()).object();
+        if(data.value("installed").toBool()&&data.value("username").toString()==qEnvironmentVariable("USER")&&
+           QFileInfo::exists(QStringLiteral("/opt/fpstudio-auth/bin/fpstudio-auth-match"))) {
+            r.state=StepState::Ok;r.summary=QStringLiteral("GPU 인증 연결 설치됨 · 기준 %1장").arg(data.value("references").toInt());
+            r.detail=QStringLiteral("실험적 인증입니다. 설정 설치와 실제 sudo/KDE 인증 성공은 별개입니다. 복구 위치: %1").arg(data.value("backup").toString());
+            return r;
+        }
+    }
+    r.state=StepState::Missing;r.summary=QStringLiteral("저장 지문과 새 GPU 엔진을 시스템 인증에 연결");
+    r.action=QStringLiteral("저장 지문 가져오기 · sudo/KDE 연결");
+    r.detail=QStringLiteral("본인의 저장 지문 폴더를 선택합니다. 기존 fprintd 등록은 보존하고, root 전용 기준 데이터로 가져옵니다. sudo·관리자 창·KDE 잠금 화면을 함께 연결하며 10회/90초 제한과 비밀번호 경로를 유지합니다. 다른 지문 거절 성능은 아직 검증되지 않은 실험적 기능입니다.");
+    return r;
+}
+
+StepResult pamKde()
+{
+    StepResult r{StepId::PamKde};
+    QFile f(QStringLiteral("/etc/pam.d/kde-fingerprint"));
+    const QString text=f.open(QIODevice::ReadOnly)?QString::fromUtf8(f.readAll()):QString();
+    const QRegularExpression entry(QStringLiteral("(?m)^-?auth\\s+required\\s+pam_fprintd\\.so[^\\n]*\\bmax-tries=10\\b"));
+    r.state=entry.match(text).hasMatch()?StepState::Ok:StepState::Missing;
+    r.summary=r.state==StepState::Ok?QStringLiteral("KDE 지문 경로 · 최대 10회"):QStringLiteral("KDE 지문 경로 연결 필요");
+    r.detail=QStringLiteral("GPU 인증 연결 단계에서 함께 적용합니다. KDE 잠금 화면의 기존 비밀번호 경로는 병렬로 유지되며, 관리자 권한 창은 polkit 설정을 사용합니다.");
+    return r;
+}
+
 StepResult pamPolkit()
 {
     StepResult r{StepId::PamPolkit};
@@ -336,7 +382,7 @@ StepResult pamPolkit()
     QFile f(installed);
     if (f.open(QIODevice::ReadOnly)) {
         const QString text = QString::fromUtf8(f.readAll());
-        if (text.contains(QStringLiteral("pam_fprintd"))) {
+        if (QRegularExpression(QStringLiteral("(?m)^auth\\s+sufficient\\s+pam_fprintd\\.so[^\\n]*\\bmax-tries=10\\b")).match(text).hasMatch()) {
             r.state = StepState::Ok;
             r.summary = QCoreApplication::translate("fpstudio", "polkit accepts a fingerprint");
             return r;
@@ -353,7 +399,8 @@ StepResult pamPolkit()
     }
 
     const QString stack = repoFile(QStringLiteral("pam/polkit-1"));
-    r.state = stack.isEmpty() ? StepState::Manual : StepState::Missing;
+    const QString notice = repoFile(QStringLiteral("pam/admin-auth-notice.txt"));
+    r.state = stack.isEmpty() || notice.isEmpty() ? StepState::Manual : StepState::Missing;
     r.summary = QCoreApplication::translate("fpstudio", "polkit still asks for a password");
     r.detail = QCoreApplication::translate("fpstudio", "This adds one line to the stack polkit uses, so pkexec and "
                    "the desktop's authentication dialog try the fingerprint "
@@ -364,7 +411,8 @@ StepResult pamPolkit()
                    "reason, you are asked for the password exactly as before.");
     if (r.state == StepState::Missing) {
         r.action = QCoreApplication::translate("fpstudio", "Let polkit accept a fingerprint");
-        r.commands = {QStringLiteral("install -Dm644 %1 %2").arg(stack, installed)};
+        r.commands = {QStringLiteral("install -Dm644 %1 /etc/security/fpstudio-admin-auth.txt").arg(notice),
+                      QStringLiteral("install -Dm644 %1 %2").arg(stack, installed)};
     }
     return r;
 }
@@ -377,7 +425,7 @@ StepResult pamSudo()
     QFile f(QStringLiteral("/etc/pam.d/sudo"));
     if (f.open(QIODevice::ReadOnly)) {
         const QString text = QString::fromUtf8(f.readAll());
-        if (text.contains(QStringLiteral("pam_fprintd"))) {
+        if (QRegularExpression(QStringLiteral("(?m)^auth\\s+sufficient\\s+pam_fprintd\\.so[^\\n]*\\bmax-tries=10\\b")).match(text).hasMatch()) {
             r.state = StepState::Ok;
             r.summary = QCoreApplication::translate("fpstudio", "sudo accepts a fingerprint");
             return r;
@@ -398,7 +446,8 @@ StepResult pamSudo()
     // rather than assumes. See the detail text below for why extending
     // fingerprint auth to it is still safe.
     const QString stack = repoFile(QStringLiteral("pam/sudo"));
-    r.state = stack.isEmpty() ? StepState::Manual : StepState::Missing;
+    const QString notice = repoFile(QStringLiteral("pam/admin-auth-notice.txt"));
+    r.state = stack.isEmpty() || notice.isEmpty() ? StepState::Manual : StepState::Missing;
     r.summary = QCoreApplication::translate("fpstudio", "Terminal sudo still asks for a password only");
     r.detail = QCoreApplication::translate("fpstudio", "Optional, and a step further than the polkit rule "
                    "above: sudo is usually the way back in when something "
@@ -411,7 +460,8 @@ StepResult pamSudo()
                    "working - only the fingerprint shortcut can.");
     if (r.state == StepState::Missing) {
         r.action = QCoreApplication::translate("fpstudio", "Let sudo accept a fingerprint");
-        r.commands = {QStringLiteral("install -Dm644 %1 /etc/pam.d/sudo").arg(stack)};
+        r.commands = {QStringLiteral("install -Dm644 %1 /etc/security/fpstudio-admin-auth.txt").arg(notice),
+                      QStringLiteral("install -Dm644 %1 /etc/pam.d/sudo").arg(stack)};
     }
     return r;
 }
@@ -430,6 +480,8 @@ QString stepKey(StepId id)
     case StepId::Enrolment:  return QStringLiteral("enrolment");
     case StepId::PamPolkit:  return QStringLiteral("pam");
     case StepId::PamSudo:    return QStringLiteral("pam_sudo");
+    case StepId::GpuAuth:    return QStringLiteral("gpu_auth");
+    case StepId::PamKde:     return QStringLiteral("pam_kde");
     }
     return QString();
 }
@@ -446,6 +498,8 @@ QString stepTitle(StepId id)
     case StepId::Enrolment:  return QCoreApplication::translate("fpstudio", "Enrolment");
     case StepId::PamPolkit:  return QCoreApplication::translate("fpstudio", "Unlocking");
     case StepId::PamSudo:    return QCoreApplication::translate("fpstudio", "Terminal sudo (optional)");
+    case StepId::GpuAuth:    return QStringLiteral("저장 지문 · GPU 인증 연결");
+    case StepId::PamKde:     return QStringLiteral("KDE 잠금 화면");
     }
     return QString();
 }
@@ -461,7 +515,7 @@ QVector<StepResult> probeAll()
     if (dev.state != StepState::Ok) {
         for (StepId id : {StepId::Driver, StepId::UdevRule, StepId::TlsSession,
                           StepId::Psk, StepId::Capture, StepId::Enrolment,
-                          StepId::PamPolkit, StepId::PamSudo}) {
+                          StepId::GpuAuth, StepId::PamPolkit, StepId::PamSudo, StepId::PamKde}) {
             StepResult r{id};
             r.state = StepState::Unknown;
             r.summary = QCoreApplication::translate("fpstudio", "Not checked - no sensor");
@@ -481,8 +535,10 @@ QVector<StepResult> probeAll()
     out << psk(tls);
     out << capture(probe);
     out << enrolment();
+    out << gpuAuth();
     out << pamPolkit();
     out << pamSudo();
+    out << pamKde();
     return out;
 }
 
@@ -492,15 +548,17 @@ QVector<StepResult> probeAll()
 // same thing either way.
 StepResult parseCaptureOutput(const QString &output)
 {
+    lastHardwareProbe=output;
     return capture(output);
 }
 
 bool allReady(const QVector<StepResult> &steps)
 {
+    if(steps.size()!=11)return false;
     for (const StepResult &r : steps) {
-        if (r.id == StepId::UdevRule || r.id == StepId::Capture || r.id == StepId::PamSudo)
+        if (r.id == StepId::UdevRule || r.id == StepId::Capture)
             continue;
-        if (r.state != StepState::Ok && r.state != StepState::Skipped)
+        if (r.state != StepState::Ok)
             return false;
     }
     return true;
@@ -524,6 +582,8 @@ StepResult probe(StepId id)
     case StepId::Enrolment: return enrolment();
     case StepId::PamPolkit: return pamPolkit();
     case StepId::PamSudo: return pamSudo();
+    case StepId::GpuAuth: return gpuAuth();
+    case StepId::PamKde: return pamKde();
     case StepId::TlsSession: return tlsSession(handshakeProbe());
     case StepId::Psk: {
         const QString p = handshakeProbe();

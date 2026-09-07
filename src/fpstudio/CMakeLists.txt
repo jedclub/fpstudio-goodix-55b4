@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.21)
-project(fpstudio VERSION 0.1.0 LANGUAGES CXX)
+project(fpstudio VERSION 0.2.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -15,12 +15,14 @@ endif()
 set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_RELEASE ON)
 add_compile_options(-Wall -Wextra -Wno-unused-parameter)
 
-find_package(Qt6 6.5 REQUIRED COMPONENTS Core Gui Widgets LinguistTools)
+find_package(Qt6 6.5 REQUIRED COMPONENTS Core Gui Widgets Concurrent LinguistTools)
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(FPRINT REQUIRED IMPORTED_TARGET libfprint-2)
 pkg_check_modules(GLIB   REQUIRED IMPORTED_TARGET glib-2.0 gobject-2.0)
 
 qt_standard_project_setup()
+include(CTest)
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/../../tools/vkmatch" "${CMAKE_BINARY_DIR}/vkmatch")
 
 qt_add_executable(fpstudio
   src/main.cpp
@@ -32,7 +34,10 @@ qt_add_executable(fpstudio
   src/i18n.cpp
   src/setupcheck.cpp
   src/setupwizard.cpp
+  src/researchwindow.cpp
+  src/livewindow.cpp
 )
+add_dependencies(fpstudio fpstudio-vkmatch)
 
 # The eleven languages the tool ships. English is the source language and has
 # no catalogue of its own - see i18n.cpp.
@@ -70,10 +75,29 @@ target_compile_definitions(fpstudio PRIVATE
 target_include_directories(fpstudio PRIVATE ${CMAKE_SOURCE_DIR}/thirdparty)
 
 target_link_libraries(fpstudio PRIVATE
-  Qt6::Core Qt6::Gui Qt6::Widgets
+  Qt6::Core Qt6::Gui Qt6::Widgets Qt6::Concurrent
   PkgConfig::FPRINT
   PkgConfig::GLIB
 )
 
 install(TARGETS fpstudio RUNTIME DESTINATION bin)
 install(FILES ${FPSTUDIO_QM_FILES} DESTINATION share/fpstudio/translations)
+
+include(CTest)
+if(BUILD_TESTING)
+  add_executable(fpstudio-setup-policy-test tests/setup_policy_test.cpp src/setupcheck.cpp)
+  target_include_directories(fpstudio-setup-policy-test PRIVATE src)
+  target_compile_definitions(fpstudio-setup-policy-test PRIVATE FPSTUDIO_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
+  target_link_libraries(fpstudio-setup-policy-test PRIVATE Qt6::Core)
+  add_test(NAME setup-policy-safety COMMAND fpstudio-setup-policy-test)
+  find_package(Qt6 REQUIRED COMPONENTS Test)
+  qt_add_executable(fpstudio-fake-capture tests/fakecapture.cpp)
+  target_link_libraries(fpstudio-fake-capture PRIVATE Qt6::Core Qt6::Gui)
+  qt_add_executable(fpstudio-research-test tests/research_test.cpp src/researchwindow.cpp src/livewindow.cpp src/beacon.cpp)
+  target_include_directories(fpstudio-research-test PRIVATE src)
+  target_compile_definitions(fpstudio-research-test PRIVATE FAKE_CAPTURE="$<TARGET_FILE:fpstudio-fake-capture>" FPSTUDIO_APP="$<TARGET_FILE:fpstudio>")
+  target_link_libraries(fpstudio-research-test PRIVATE Qt6::Core Qt6::Gui Qt6::Widgets Qt6::Test)
+  add_dependencies(fpstudio-research-test fpstudio-fake-capture fpstudio)
+  add_test(NAME research-workflow COMMAND fpstudio-research-test)
+  set_tests_properties(research-workflow PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+endif()

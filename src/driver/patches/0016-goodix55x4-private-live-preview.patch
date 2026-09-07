@@ -1,0 +1,84 @@
+--- a/libfprint/drivers/goodixtls/goodix55x4.c
++++ b/libfprint/drivers/goodixtls/goodix55x4.c
+@@ -920,6 +920,57 @@
+   fpi_ssm_jump_to_state(ssm, SCAN_STAGE_SWITCH_TO_FDT_MODE);
+ }
+
++static void preview_next_frame(FpDevice *dev, gpointer user_data) {
++  fpi_ssm_jump_to_state(user_data, SCAN_STAGE_GET_IMG);
++}
++
++/* Opt-in diagnostic stream. Never used by normal enrollment/authentication.
++ * One atomically replaced private PGM, no growing biometric video archive.
++ * Reuse the established FDT/read sequence and the same empty calibration. */
++static gboolean preview_frame(FpDevice *dev, FpiSsm *ssm,
++                              const Goodix55X4Pix *candidate, double diff) {
++  const char *path = g_getenv("GOODIX55X4_PREVIEW_PATH");
++  if (!path || !*path)
++    return FALSE;
++  gint64 *start = g_object_get_data(G_OBJECT(dev), "preview-start");
++  if (!start) {
++    start = g_new(gint64, 1);
++    *start = g_get_monotonic_time();
++    g_object_set_data_full(G_OBJECT(dev), "preview-start", start, g_free);
++  }
++  g_autofree char *stop = g_strconcat(path, ".stop", NULL);
++  if (g_file_test(stop, G_FILE_TEST_EXISTS) ||
++      g_get_monotonic_time() - *start > 180 * G_USEC_PER_SEC) {
++    fpi_ssm_mark_completed(ssm);
++    fpi_image_device_session_error(FP_IMAGE_DEVICE(dev),
++        fpi_device_error_new_msg(FP_DEVICE_ERROR_GENERAL, "Live preview ended"));
++    return TRUE;
++  }
++  Goodix55X4Pix corrected[GOODIX55X4_FRAME_SIZE];
++  guint8 pixels[GOODIX55X4_FRAME_SIZE];
++  memcpy(corrected, candidate, sizeof(corrected));
++  postprocess_frame(corrected, FPI_DEVICE_GOODIXTLS55X4(dev)->empty_img);
++  squash_frame_linear(corrected, pixels);
++  guint metrics[2];
++  assess_image(pixels, metrics);
++  g_autofree char *header = g_strdup_printf("P5\n# %" G_GINT64_FORMAT " %.1f %u %u\n%d %d\n255\n",
++      g_get_monotonic_time(), diff, metrics[0], metrics[1],
++      GOODIX55X4_WIDTH, GOODIX55X4_HEIGHT);
++  gsize size = strlen(header) + sizeof(pixels);
++  g_autofree char *packet = g_malloc(size);
++  memcpy(packet, header, strlen(header));
++  memcpy(packet + strlen(header), pixels, sizeof(pixels));
++  GError *error = NULL;
++  if (!g_file_set_contents_full(path, packet, size,
++                               G_FILE_SET_CONTENTS_CONSISTENT, 0600, &error)) {
++    fpi_ssm_mark_completed(ssm);
++    fpi_image_device_session_error(FP_IMAGE_DEVICE(dev), error);
++    return TRUE;
++  }
++  fpi_device_add_timeout(dev, 1, preview_next_frame, ssm, NULL);
++  return TRUE;
++}
++
+ static void scan_on_read_img(FpDevice *dev, guint8 *data, guint16 len,
+                              gpointer ssm, GError *err) {
+   g_print("SCAN_ON_READ_IMG\n");
+@@ -936,6 +987,9 @@
+   double diff = frame_diff_score(candidate, self->empty_img);
+   g_print("Finger-detect poll: diff vs background = %.1f\n", diff);
+
++  if (preview_frame(dev, ssm, candidate, diff))
++    return;
++
+   if (diff < GOODIX55X4_FINGER_DETECT_DIFF_THRESHOLD) {
+     if (++self->poll_attempts >= GOODIX55X4_FINGER_DETECT_MAX_ATTEMPTS) {
+       /* Ten seconds of seeing nothing. Either nobody touched the sensor, or
+@@ -1162,7 +1216,13 @@
+     scan_empty_img(dev, ssm);
+     break;
+   case SCAN_STAGE_SWITCH_TO_FDT_MODE:
++    if (g_getenv("GOODIX55X4_PREVIEW_PATH")) {
++      /* Preview must also show the empty sensor. Do not wait for an FDT
++       * transition between frames; GET_IMAGE starts a fresh acquisition. */
++      fpi_ssm_jump_to_state(ssm, SCAN_STAGE_GET_IMG);
++      break;
++    }
+     g_print("SWITCH TO FDT MODE\n");
+     goodix_send_mcu_switch_to_fdt_mode(
+         dev, (guint8 *)fdt_switch_state_mode_55X4,
+         sizeof(fdt_switch_state_mode_55X4), NULL, check_none_cmd, ssm);
