@@ -108,7 +108,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Install lupdate
-        run: pacman -Syu --noconfirm --needed qt6-tools
+        run: pacman -Syu --noconfirm --needed qt6-tools qt6-declarative
 
       - name: lupdate must find nothing new
         run: |
