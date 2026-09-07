@@ -1,0 +1,87 @@
+--- a/libfprint/sigfm/sigfm.cpp
++++ b/libfprint/sigfm/sigfm.cpp
+@@ -66,18 +66,52 @@
+ struct match {
+     cv::Point2i p1;
+     cv::Point2i p2;
+-    match(cv::Point2i ip1, cv::Point2i ip2) : p1{ip1}, p2{ip2} {}
+-    match() : p1{cv::Point2i(0, 0)}, p2{cv::Point2i(0, 0)} {}
++    /* Lowe ratio of the correspondence that produced this match; lower is a
++     * stronger match. Only used to decide what to drop when there are more
++     * matches than the scoring loops below can afford. */
++    float strength;
++    match(cv::Point2i ip1, cv::Point2i ip2, float s = 0.f)
++        : p1{ip1}, p2{ip2}, strength{s}
++    {
++    }
++    match() : p1{cv::Point2i(0, 0)}, p2{cv::Point2i(0, 0)}, strength{0.f} {}
+     bool operator==(const match& right) const
+     {
+         return std::tie(this->p1, this->p2) == std::tie(right.p1, right.p2);
+     }
++    /* This used to read
++     *
++     *     return (p1.y < right.p1.y) ||
++     *            ((p1.y < right.p1.y) && p1.x < right.p1.x);
++     *
++     * where the second clause repeats the first instead of testing equality,
++     * so the whole expression reduces to "order by row". That is a valid
++     * strict weak ordering, so std::set accepted it without complaint - and
++     * then treated every correspondence sharing a row of the query image as a
++     * duplicate of the first one on that row. On a 108x88 sensor frame that
++     * silently discarded most of them; fed 40 distinct correspondences spread
++     * over 20 rows, the set kept 10.
++     *
++     * It costs more than the ratio suggests. The two loops below are each
++     * quadratic in what they are given, so the returned score grows roughly
++     * with the fourth power of the number of correspondences that reach them.
++     *
++     * Ordered here the way operator== above already implies. */
+     bool operator<(const match& right) const
+     {
+-        return (this->p1.y < right.p1.y) ||
+-               ((this->p1.y < right.p1.y) && this->p1.x < right.p1.x);
++        return std::tie(this->p1.y, this->p1.x, this->p2.y, this->p2.x) <
++               std::tie(right.p1.y, right.p1.x, right.p2.y, right.p2.x);
+     }
+ };
++
++/* Upper bound on the correspondences handed to the scoring loops.
++ *
++ * With the comparator above fixed they are no longer bounded by accident, and
++ * a quartic cost needs a deliberate limit. Keeping the strongest matches is a
++ * better rule than keeping whichever one happened to land on a row first, and
++ * measured over a real fifteen-stage enrolment, raising this to 96 changed no
++ * accept decision - the matches past this point are the weak ones. */
++constexpr auto max_matches = 64;
+ struct angle {
+     double cos;
+     double sin;
+@@ -144,7 +178,10 @@
+             if (match_1.distance < distance_match * pts.at(1).distance) {
+                 matches_unique.emplace(
+                     match{frame->keypoints.at(match_1.queryIdx).pt,
+-                          enrolled->keypoints.at(match_1.trainIdx).pt});
++                          enrolled->keypoints.at(match_1.trainIdx).pt,
++                          pts.at(1).distance > 0.f
++                              ? match_1.distance / pts.at(1).distance
++                              : 0.f});
+                 nb_matched++;
+             }
+         }
+@@ -154,6 +191,15 @@
+         std::vector<match> matches{matches_unique.begin(),
+                                    matches_unique.end()};
+
++        if (matches.size() > max_matches) {
++            std::nth_element(matches.begin(), matches.begin() + max_matches,
++                             matches.end(),
++                             [](const match& a, const match& b) {
++                                 return a.strength < b.strength;
++                             });
++            matches.resize(max_matches);
++        }
++
+         std::vector<angle> angles;
+         for (std::size_t j = 0; j < matches.size(); j++) {
+             match match_1 = matches[j];

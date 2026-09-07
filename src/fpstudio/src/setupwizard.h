@@ -32,6 +32,7 @@ class QProgressBar;
 class QPushButton;
 class QStackedWidget;
 class QTextBrowser;
+class QProcess;
 
 namespace fpstudio {
 
@@ -39,6 +40,8 @@ class SetupWizard : public QDialog {
     Q_OBJECT
 public:
     explicit SetupWizard(QWidget *parent = nullptr);
+    void reject() override;
+    void done(int result) override;
 
 private slots:
     void rescan();
@@ -48,12 +51,22 @@ private slots:
     void skipCurrent();
     void selectRow(int row);
     void openDiagnostics();
+    void runGpuInstall();
+    void runRecovery();
+    void runSystemVerify();
 
 private:
     void render();
     void showStep(int index);
     bool confirmIrreversible(const StepResult &r);
     void applyResult(int index, const StepResult &r);
+    void runManagedAction(const QStringList &arguments,bool privileged=true);
+    QProcess *m_operation=nullptr;
+    bool m_scanning=false;
+    void selectNextStep();
+    QPushButton *m_recover=nullptr;
+    QPushButton *m_verify=nullptr;
+    QPushButton *m_stopOperation=nullptr;
 
     QVector<StepResult> m_steps;
     int                 m_current = 0;

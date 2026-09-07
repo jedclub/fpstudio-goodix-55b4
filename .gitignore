@@ -1,6 +1,12 @@
 # Build output
-build/
-src/fpstudio/build/
+# Local investigation originals and device-specific secrets; never publish.
+/local-private/
+device-secrets.txt
+
+# All CMake build trees, including local PGO variants.  Keeping this broad is
+# important because CMake records absolute user paths and host details.
+/build*/
+src/fpstudio/build*/
 *.o
 *.so
 *.so.*
@@ -15,6 +21,9 @@ src/fpstudio/build/
 # and src/ in particular is a full libfprint checkout.
 src/driver/src/
 src/driver/pkg/
+# This directory is the local Git metadata checkout used while building the
+# patched driver; it is not a source snapshot to publish.
+src/driver/libfprint-goodixtls-55x4/
 *.pkg.tar.zst
 *.pkg.tar.xz
 *.log
@@ -43,6 +52,40 @@ captures/**
 .cache/
 .vscode/
 .idea/
+__pycache__/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage.xml
 compile_commands.json
 *.swp
 *~
+
+# Per-user coding-agent state.  Project instructions such as AGENTS.md remain
+# trackable; these are only local sessions, account connections, and caches.
+/.codex/
+/.claude/
+/.cursor/
+/.aider/
+/.continue/
+/.roo/
+/.windsurf/
+/.agent/
+/.agents/
+/.qt/
+
+# Never publish credentials or machine-local account configuration.  Examples
+# remain explicitly trackable so setup can still be documented safely.
+.env
+.env.*
+!.env.example
+!.env.*.example
+*.key
+*.pem
+*.p12
+*.pfx
+*.token
+/credentials.json
+/auth.json
+/token.json

@@ -33,6 +33,8 @@ enum class StepId {
     Enrolment,     // is a finger enrolled with fprintd
     PamPolkit,     // does polkit accept a fingerprint
     PamSudo,       // does terminal sudo accept a fingerprint (opt-in)
+    GpuAuth,       // root-managed GPU matcher and imported gallery
+    PamKde,        // KDE lock-screen fingerprint service
 };
 
 enum class StepState {
@@ -45,6 +47,7 @@ enum class StepState {
 };
 
 struct StepResult {
+    explicit StepResult(StepId value=StepId::Device) : id(value) {}
     StepId    id;
     StepState state = StepState::Unknown;
 

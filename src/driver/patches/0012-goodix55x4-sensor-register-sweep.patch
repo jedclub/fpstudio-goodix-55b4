@@ -11,7 +11,7 @@
 @@ -354,6 +355,84 @@
    fpi_ssm_next_state(ssm);
  }
- 
+
 +/* Diagnostic sweep of the sensor's register space. Off unless
 + * GOODIX55X4_SWEEP is set in the environment, because it costs about twelve
 + * seconds on every activation and answers a question that has already been
@@ -91,12 +91,12 @@
 +}
 +
  static void activate_run_state(FpiSsm *ssm, FpDevice *dev) {
- 
+
    switch (fpi_ssm_get_cur_state(ssm)) {
 @@ -405,6 +484,18 @@
      goodix_send_read_otp(dev, read_otp_callback, ssm);
      break;
- 
+
 +  case ACTIVATE_SWEEP_SENSOR_REGS:
 +    if (g_getenv("GOODIX55X4_SWEEP") == NULL) {
 +      fpi_ssm_next_state(ssm);

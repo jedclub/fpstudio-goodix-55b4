@@ -1,27 +1,23 @@
 name: CI
 
-# Every job runs in an Arch container. The driver is an Arch package
-# (PKGBUILD, makepkg) and fpstudio is built the same way a real install
-# would build it - a generic Ubuntu runner would validate less, since the
-# package tooling itself is Arch-specific.
-
 on:
   push:
     branches: [main]
+    tags: ['v*']
   pull_request:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   no-leaked-data:
-    name: No personal paths or real fingerprint captures
+    name: Privacy and release hygiene
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      # This project's own history had this exact mistake once - eight real
-      # captures sat in git before the repo's first push. Cheap enough to
-      # never trust "we checked once" again.
-      - name: Scan for /home/<user> paths
+      - name: Reject absolute user-home paths
         run: |
           if grep -rnE "/home/[a-z][a-z0-9_-]*" \
                --include='*.md' --include='*.cpp' --include='*.h' \
@@ -31,66 +27,78 @@ jobs:
             exit 1
           fi
 
-      - name: Scan captures/ for anything that isn't a named synthetic image
+      - name: Reject biometric and credential artifacts
+        run: |
+          forbidden='(\.pgm$|\.fp$|\.qm$|\.pem$|\.p12$|\.pfx$|\.key$|\.token$|(^|/)(\.env|credentials\.json|auth\.json|token\.json)$)'
+          if git ls-files | grep -Ei "$forbidden"; then
+            echo "::error::A biometric, credential, or generated artifact is tracked"
+            exit 1
+          fi
+
+      - name: Allow only documented public ridge illustrations
         run: |
           allowed="README.md ridges-correct-geometry.png ridges-wrong-geometry.png normalisation-minmax.png normalisation-percentile.png"
           bad=0
           for f in captures/*; do
             name=$(basename "$f")
-            echo "$allowed" | tr ' ' '\n' | grep -qx "$name" || { echo "::error::Unexpected file in captures/: $name"; bad=1; }
+            echo "$allowed" | tr ' ' '\n' | grep -qx "$name" || {
+              echo "::error::Unexpected file in captures/: $name"; bad=1;
+            }
           done
-          exit $bad
+          exit "$bad"
 
   driver-patches:
-    name: Driver patches apply and build
+    name: Driver package builds from the pinned source
     runs-on: ubuntu-latest
     container: archlinux:base-devel
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install build dependencies
+      - name: Install package build dependencies
         run: |
           pacman -Syu --noconfirm --needed \
             git meson pkgconf gobject-introspection gtk-doc doctest glib2-devel \
             libgusb openssl pixman nss libgudev opencv sudo
 
-      # makepkg refuses to run as root, and a fresh container has no
-      # unprivileged user to run it as.
       - name: Build the package as an unprivileged user
         run: |
           useradd -m builder
-          echo 'builder ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers
           chown -R builder:builder .
           su builder -c 'cd src/driver && makepkg -f --noconfirm --nocheck'
 
   fpstudio:
-    name: Build fpstudio (GUI, CLI, MCP)
+    name: Build and test FPStudio
     runs-on: ubuntu-latest
     container: archlinux:base-devel
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install build dependencies
+      - name: Install build and software-Vulkan dependencies
         run: |
           pacman -Syu --noconfirm --needed \
-            cmake ninja qt6-base qt6-tools pkgconf glib2 libfprint
+            cmake ninja qt6-base qt6-tools pkgconf glib2 libfprint \
+            vulkan-headers vulkan-icd-loader vulkan-swrast glslang
 
       - name: Configure
-        run: cmake -S src/fpstudio -B build -G Ninja
+        run: cmake -S src/fpstudio -B build -G Ninja -DBUILD_TESTING=ON
 
       - name: Build
-        run: cmake --build build
+        run: cmake --build build --parallel
 
-      # No sensor in CI, so this only proves the binary starts, resolves a
-      # translation, and exits cleanly - not that capture/enrol/verify work.
-      - name: Smoke test the CLI entry points
+      - name: Run the full CTest suite with Lavapipe
+        env:
+          QT_QPA_PLATFORM: offscreen
+          VK_DRIVER_FILES: /usr/share/vulkan/icd.d/lvp_icd.json
+        run: ctest --test-dir build --output-on-failure
+
+      - name: Smoke-test CLI localisation and diagnostics
         run: |
           ./build/fpstudio --help
           test "$(./build/fpstudio --lang ko --tr 'Sensor ready')" = "센서 준비 완료"
           ./build/fpstudio --cli devices
 
   translations:
-    name: Translation catalogues are up to date
+    name: Translation catalogues are complete
     runs-on: ubuntu-latest
     container: archlinux:base-devel
     steps:
@@ -99,18 +107,13 @@ jobs:
       - name: Install lupdate
         run: pacman -Syu --noconfirm --needed qt6-tools
 
-      # Catches the exact mistake this project made once: a new tr() call
-      # added without re-running lupdate, which left the wizard's own
-      # strings out of every catalogue while the rest of the window was
-      # already translated - a language mix nobody would notice from the
-      # diff alone.
       - name: lupdate must find nothing new
         run: |
           cd src/fpstudio
           cp -r translations /tmp/translations.before
           /usr/lib/qt6/bin/lupdate src/ -ts translations/fpstudio_*.ts -no-obsolete
           if ! diff -rq /tmp/translations.before translations; then
-            echo "::error::Source strings changed without updating the .ts files - run lupdate and translate what it adds"
+            echo "::error::Source strings changed without updating the .ts files"
             exit 1
           fi
 
@@ -125,4 +128,4 @@ jobs:
               fail=1
             fi
           done
-          exit $fail
+          exit "$fail"

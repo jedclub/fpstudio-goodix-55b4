@@ -16,13 +16,14 @@ QString Beacon::path()
     // Fixed path so a GUI started before or after the worker finds the same
     // file. /tmp rather than /run because the worker may run before any
     // /run/fpstudio has been created, and this is not state worth persisting.
-    return QStringLiteral("/tmp/fpstudio-status.json");
+    return qEnvironmentVariable("FPSTUDIO_STATUS_PATH", QStringLiteral("/tmp/fpstudio-status.json"));
 }
 
 namespace {
 // The standing instruction for the operation in flight. progress() re-publishes
 // it so a status update never erases what the user was asked to do.
 QString g_prompt;
+QString g_imagePath;
 qint64  g_startedAt = 0;   // begin() 시각. 화면에 경과를 띄우기 위한 것
 }
 
@@ -38,6 +39,7 @@ static void write(const QString &source, const QString &stage,
         {QStringLiteral("stage"), stage},
         {QStringLiteral("prompt"), prompt},
         {QStringLiteral("status"), status},
+        {QStringLiteral("image_path"), g_imagePath},
         {QStringLiteral("started_at"), g_startedAt},
         {QStringLiteral("ts"), QDateTime::currentMSecsSinceEpoch()},
         // Who to ask whether this is still live. The timestamp alone cannot
@@ -63,7 +65,8 @@ static void write(const QString &source, const QString &stage,
 
     // Written by root, read by the seat user: make that possible. The content
     // is stage names and prompts, nothing worth protecting.
-    ::chmod(Beacon::path().toLocal8Bit().constData(), 0644);
+    ::chmod(Beacon::path().toLocal8Bit().constData(),
+            qEnvironmentVariableIsSet("FPSTUDIO_STATUS_PATH") ? 0600 : 0644);
 }
 
 void Beacon::begin(const QString &source, const QString &stage,
@@ -83,6 +86,8 @@ void Beacon::begin(const QString &source, const QString &stage,
 void Beacon::progress(const QString &source, const QString &stage,
                       const QString &status)
 {
+    if (stage == QLatin1String("await-finger-off") || stage == QLatin1String("done") ||
+        stage == QLatin1String("failed")) g_prompt = status;
     write(source, stage, g_prompt, status);
 }
 
@@ -96,6 +101,12 @@ void Beacon::quality(const QString &source, int coverage, int sharpness,
     // numbers to the picture, it does not change what the person is being
     // asked to do.
     write(source, QStringLiteral("quality"), g_prompt, QString());
+}
+
+void Beacon::preview(const QString &source, const QString &imagePath)
+{
+    g_imagePath = imagePath;
+    write(source, QStringLiteral("preview"), g_prompt, QString());
 }
 
 void Beacon::clear(const QString &source)

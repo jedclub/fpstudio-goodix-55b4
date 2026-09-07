@@ -18,6 +18,17 @@
 #include "headless.h"
 #include "mainwindow.h"
 #include "setupwizard.h"
+#include "researchwindow.h"
+#include "livewindow.h"
+#include <QDir>
+#include <QDateTime>
+#include <QLockFile>
+#include <QStandardPaths>
+#include <QMessageBox>
+#include <QTimer>
+#include <QListWidget>
+#include <QSaveFile>
+#include <QFileInfo>
 
 namespace {
 
@@ -37,6 +48,10 @@ void printUsage()
         "  fpstudio --cli verify  [--user U] [--finger N]\n"
         "  fpstudio --cli list|delete [--user U]\n"
         "  fpstudio --mcp                 MCP stdio server\n"
+        "  fpstudio --research            guided research capture session\n"
+        "  fpstudio --live                continuous diagnostic preview (local preview driver required)\n"
+        "    --match-reference-dir DIR    compare stable frames against prior reference images using Vulkan\n"
+        "    --different-finger-test      explicitly guide a different-finger research trial\n"
         "\n"
         "  --lang TAG                     en ko ja zh_CN zh_TW es de fr ru it pt\n"
         "                                 default: the system locale, else en\n"
@@ -108,6 +123,9 @@ int main(int argc, char **argv)
     if (args.contains(QStringLiteral("--mcp"))) {
         QCoreApplication app(argc, argv);
         fpstudio::i18n::install(lang);
+        QLockFile serverLock(QStandardPaths::writableLocation(QStandardPaths::RuntimeLocation)
+                             + QStringLiteral("/fpstudio-mcp.lock"));
+        if (!serverLock.tryLock()) { std::fputs("fpstudio MCP is already running\n", stderr); return 3; }
         return fpstudio::runMcp();
     }
 
@@ -120,6 +138,38 @@ int main(int argc, char **argv)
 
     QApplication app(argc, argv);
     fpstudio::i18n::install(lang);
+    QLockFile guiLock(QStandardPaths::writableLocation(QStandardPaths::RuntimeLocation)
+                      + QStringLiteral("/fpstudio-gui.lock"));
+    if (!guiLock.tryLock()) {
+        std::fputs("fpstudio GUI is already running\n", stderr);
+        return 3;
+    }
+    if (args.contains(QStringLiteral("--live"))) {
+        const QString directory = QDir::cleanPath(QStringLiteral(FPSTUDIO_SOURCE_DIR "/../../local-private/recognition/live-")
+                             + QDateTime::currentDateTime().toString("yyyyMMdd-HHmmss-zzz"));
+        const int refAt=args.indexOf(QStringLiteral("--match-reference-dir"));
+        const QString references=refAt>=0&&refAt+1<args.size()?args.at(refAt+1):QString();
+        const int fastAt=args.indexOf(QStringLiteral("--match-fast-bank"));
+        const QString fastBank=fastAt>=0&&fastAt+1<args.size()?args.at(fastAt+1):QString();
+        const bool different=args.contains(QStringLiteral("--different-finger-test"));
+        const int targetAt=args.indexOf(QStringLiteral("--target-contacts"));
+        bool valid=true;
+        const int target=targetAt>=0?args.value(targetAt+1).toInt(&valid):(references.isEmpty()?0:different?10:20);
+        if(!valid||target<0||target>128) {std::fputs("--target-contacts must be 0..128\n",stderr);return 2;}
+        fpstudio::LiveWindow window(directory,nullptr,{},5000,references,different,{},fastBank,target);
+        window.show();
+        return app.exec();
+    }
+    if (args.contains(QStringLiteral("--research"))) {
+        const int at = args.indexOf(QStringLiteral("--session-dir"));
+        const QString directory = at >= 0 && at + 1 < args.size() ? args.at(at + 1)
+            : QDir::cleanPath(QStringLiteral(FPSTUDIO_SOURCE_DIR "/../../local-private/recognition/session-")
+                             + QDateTime::currentDateTime().toString("yyyyMMdd-HHmmss-zzz"));
+        fpstudio::ResearchWindow window(directory, nullptr, {}, 5000, 4000,
+                                         !args.contains(QStringLiteral("--preview")));
+        window.show();
+        return app.exec();
+    }
 
     // Two different tools live in this one binary, and showing both windows
     // together is what made them confusing to tell apart - a checklist for
@@ -140,6 +190,31 @@ int main(int argc, char **argv)
         auto *wiz = new fpstudio::SetupWizard(nullptr);
         wiz->setAttribute(Qt::WA_DeleteOnClose);
         wiz->show();
+        if(args.contains(QStringLiteral("--system-verify"))) {
+            auto *start=new QTimer(wiz);
+            QObject::connect(start,&QTimer::timeout,wiz,[wiz,start]{
+                auto *list=wiz->findChild<QListWidget *>();
+                if(!list||list->count()==0||!list->isEnabled())return;
+                start->stop();QMetaObject::invokeMethod(wiz,"runSystemVerify",Qt::QueuedConnection);
+            });
+            start->start(100);
+        }
+        // Read-only UI regression capture; never invokes a setup action.
+        const int snapshotAt=args.indexOf(QStringLiteral("--wizard-snapshot"));
+        if(snapshotAt>=0) {
+            const QString path=args.value(snapshotAt+1);
+            if(path.isEmpty()||QFileInfo::exists(path))return 2;
+            auto *timer=new QTimer(wiz);
+            QObject::connect(timer,&QTimer::timeout,wiz,[wiz,path,&app]{
+                auto *list=wiz->findChild<QListWidget *>();
+                if(!list||list->count()==0||!list->isEnabled())return;
+                QSaveFile file(path);
+                if(!file.open(QIODevice::WriteOnly)){app.exit(2);return;}
+                file.setPermissions(QFileDevice::ReadOwner|QFileDevice::WriteOwner);
+                const bool ok=wiz->grab().save(&file,"PNG")&&file.commit();app.exit(ok?0:2);
+            });
+            timer->start(100);QTimer::singleShot(25000,&app,[&app]{app.exit(2);});
+        }
     }
     return app.exec();
 }

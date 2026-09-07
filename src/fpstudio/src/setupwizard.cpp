@@ -3,6 +3,13 @@
 #include "mainwindow.h"
 
 #include <QFileInfo>
+#include <QFile>
+#include <QFileDialog>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QTimer>
+#include <QFutureWatcher>
+#include <QtConcurrent/QtConcurrentRun>
 #include <QCoreApplication>
 #include <QApplication>
 #include <QDialogButtonBox>
@@ -51,35 +58,6 @@ QString colour(StepState s)
     return QString();
 }
 
-// Runs one privileged command list under a single pkexec, so a fix that needs
-// three commands asks once rather than three times. The shell is what makes
-// that possible; the commands come from setupcheck.cpp and never from user
-// input, which is what makes it safe.
-bool runAsRoot(const QStringList &commands, QString *error)
-{
-    QProcess p;
-    p.setProcessChannelMode(QProcess::MergedChannels);
-    p.start(QStringLiteral("pkexec"),
-            {QStringLiteral("sh"), QStringLiteral("-c"),
-             QStringLiteral("set -e\n") + commands.join(QLatin1Char('\n'))});
-    if (!p.waitForFinished(600000)) {
-        p.kill();
-        *error = SetupWizard::tr("The command did not finish in time");
-        return false;
-    }
-    if (p.exitCode() != 0) {
-        const QString out = QString::fromUtf8(p.readAll()).trimmed();
-        // 126 and 127 are pkexec saying the prompt was dismissed or refused,
-        // which is a choice rather than a fault and should not read as one.
-        *error = (p.exitCode() == 126 || p.exitCode() == 127)
-                     ? SetupWizard::tr("Authentication was cancelled or refused")
-                     : (out.isEmpty() ? SetupWizard::tr("Failed — %1").arg(p.exitCode())
-                                      : out.right(600));
-        return false;
-    }
-    return true;
-}
-
 // The wrapper that puts fprintd's progress on the banner. Beside the binary in
 // a build tree, under share/ once installed.
 QString enrolmentScript()
@@ -111,11 +89,11 @@ void SetupWizard::openDiagnostics()
 
 SetupWizard::SetupWizard(QWidget *parent) : QDialog(parent)
 {
-    setWindowTitle(tr("Set up fingerprint unlock"));
-    resize(760, 520);
+    setWindowTitle(QStringLiteral("FPStudio · 지문 인증 통합 설정"));
+    resize(1050, 740);
 
     m_list = new QListWidget;
-    m_list->setFixedWidth(230);
+    m_list->setFixedWidth(270);
     connect(m_list, &QListWidget::currentRowChanged, this, &SetupWizard::selectRow);
 
     m_title = new QLabel;
@@ -142,19 +120,22 @@ SetupWizard::SetupWizard(QWidget *parent) : QDialog(parent)
     m_busy->hide();
 
     m_fix    = new QPushButton;
+    m_fix->setMinimumHeight(40);
+    m_fix->setStyleSheet(QStringLiteral("QPushButton {background:#1769c2;color:white;border:0;border-radius:6px;padding:8px 16px;font-weight:bold;} QPushButton:disabled {background:#a0a8b0;color:#e8e8e8;}"));
     m_skip   = new QPushButton(tr("Skip"));
-    m_rescan = new QPushButton(tr("Re-check"));
+    m_rescan = new QPushButton(QStringLiteral("상태 다시 확인"));
     connect(m_fix,    &QPushButton::clicked, this, &SetupWizard::runCurrentFix);
     connect(m_skip,   &QPushButton::clicked, this, &SetupWizard::skipCurrent);
     connect(m_rescan, &QPushButton::clicked, this, &SetupWizard::rescan);
 
     m_verdict = new QLabel;
     m_verdict->setWordWrap(true);
+    m_verdict->setStyleSheet(QStringLiteral("background:#123e68;color:white;padding:10px;border-radius:5px;font-size:13px;"));
 
     // A quiet checklist of green marks does not say "you are done" on its
     // own - this does, and Finish is the one button in the dialog whose whole
     // job is to end the wizard on purpose.
-    m_completionText = new QLabel(tr("Fingerprint unlock is ready."));
+    m_completionText = new QLabel(QStringLiteral("설정 단계 완료 · 실제 sudo/KDE 인증과 비밀번호 복구 시험은 별도 확인이 필요합니다."));
     m_completionText->setWordWrap(true);
     m_finish = new QPushButton(tr("Finish"));
     connect(m_finish, &QPushButton::clicked, this, &QDialog::accept);
@@ -182,6 +163,18 @@ SetupWizard::SetupWizard(QWidget *parent) : QDialog(parent)
     m_completion->hide();
 
     auto *btns = new QHBoxLayout;
+    m_stopOperation=new QPushButton(QStringLiteral("중단"));
+    m_stopOperation->hide();
+    connect(m_stopOperation,&QPushButton::clicked,this,[this]{
+        if(m_operation){m_verdict->setText(QStringLiteral("지문 시험을 중단합니다. 손을 떼셔도 됩니다."));m_operation->terminate();}
+    });
+    btns->addWidget(m_stopOperation);
+    m_recover=new QPushButton(QStringLiteral("인증 설정 복구"));
+    m_verify=new QPushButton(QStringLiteral("시스템 지문 시험"));
+    connect(m_recover,&QPushButton::clicked,this,&SetupWizard::runRecovery);
+    connect(m_verify,&QPushButton::clicked,this,&SetupWizard::runSystemVerify);
+    btns->addWidget(m_recover);
+    btns->addWidget(m_verify);
     btns->addWidget(m_rescan);
     btns->addStretch(1);
     btns->addWidget(m_skip);
@@ -225,24 +218,36 @@ SetupWizard::SetupWizard(QWidget *parent) : QDialog(parent)
 
 void SetupWizard::rescan()
 {
+    if(m_operation||m_scanning)return;
+    m_scanning=true;
     m_busy->show();
-    m_verdict->setText(tr("Checking…"));
-    // Let the label paint before probeAll blocks: it takes seconds, and a
-    // window that freezes with no explanation is indistinguishable from one
-    // that has crashed.
-    QApplication::processEvents();
-
-    m_steps = probeAll();
+    m_verdict->setText(QStringLiteral("장치와 설치 상태 확인 중입니다. 손가락은 아직 대지 마세요."));
+    m_fix->setEnabled(false);m_rescan->setEnabled(false);m_list->setEnabled(false);
+    m_skip->setEnabled(false);m_verify->setEnabled(false);m_recover->setEnabled(false);
+    auto *watcher=new QFutureWatcher<QVector<StepResult>>(this);
+    connect(watcher,&QFutureWatcher<QVector<StepResult>>::finished,this,[this,watcher]{
+    m_steps=watcher->result();watcher->deleteLater();m_scanning=false;
+    m_fix->setEnabled(true);m_rescan->setEnabled(true);m_list->setEnabled(true);
+    m_skip->setEnabled(true);m_verify->setEnabled(true);
     m_busy->hide();
     m_verdict->clear();
     render();
 
     m_completion->setVisible(allReady(m_steps));
+    m_recover->setEnabled(QFileInfo::exists(QStringLiteral("/etc/fpstudio-auth.json")));
 
     // Land on the first thing that needs attention rather than the top, so
     // the wizard opens on the work instead of on eight ticks. When there is
     // nothing left, staying on the first row is fine too - the banner above
     // it is what actually announces "done", not which row happens to be lit.
+    selectNextStep();
+    const QString message=property("scanResultMessage").toString();
+    if(!message.isEmpty()){m_verdict->setText(message);setProperty("scanResultMessage",QString());}
+    });
+    watcher->setFuture(QtConcurrent::run([]{return probeAll();}));
+}
+
+void SetupWizard::selectNextStep() {
     int first = 0;
     for (int i = 0; i < m_steps.size(); ++i) {
         if (m_steps[i].state != StepState::Ok && m_steps[i].state != StepState::Skipped) {
@@ -251,6 +256,7 @@ void SetupWizard::rescan()
         }
     }
     m_list->setCurrentRow(first);
+    if(first>=0&&first<m_steps.size())showStep(first);
 }
 
 void SetupWizard::render()
@@ -279,7 +285,7 @@ void SetupWizard::showStep(int index)
 {
     const StepResult &r = m_steps[index];
 
-    m_title->setText(stepTitle(r.id));
+    m_title->setText(QStringLiteral("%1 / %2 · %3").arg(index+1).arg(m_steps.size()).arg(stepTitle(r.id)));
 
     QString body = QStringLiteral("<p><b>%1</b></p>").arg(r.summary.toHtmlEscaped());
     if (!r.detail.isEmpty()) {
@@ -298,18 +304,19 @@ void SetupWizard::showStep(int index)
     m_cmds->setVisible(!r.commands.isEmpty());
     m_cmds->setText(r.commands.join(QLatin1Char('\n')));
 
-    const bool interactive = r.id == StepId::Enrolment || r.id == StepId::Capture;
+    const bool interactive = r.id == StepId::Enrolment || r.id == StepId::Capture || r.id == StepId::TlsSession;
     const bool fixable = !r.action.isEmpty() &&
         (r.state == StepState::Missing ||
          (interactive && r.state != StepState::Ok && r.state != StepState::Skipped));
     m_fix->setVisible(fixable);
     m_fix->setText(r.action);
-    m_skip->setVisible(r.state == StepState::Missing || r.state == StepState::Manual);
+    m_skip->setVisible(r.id==StepId::UdevRule&&(r.state == StepState::Missing || r.state == StepState::Manual));
 
     if (r.needsRoot && fixable)
         m_verdict->setText(tr("This will ask for your password."));
     else
-        m_verdict->clear();
+        m_verdict->setText(r.state==StepState::Ok?QStringLiteral("이 단계는 확인됐습니다. 다음 필요한 단계로 진행하세요."):
+            !r.action.isEmpty()?QStringLiteral("다음 행동: ")+r.action:QStringLiteral("안내를 확인하세요. 아직 완료로 판정하지 않은 단계입니다."));
 }
 
 bool SetupWizard::confirmIrreversible(const StepResult &r)
@@ -342,6 +349,7 @@ void SetupWizard::applyResult(int index, const StepResult &r)
 // takes minutes and the banner it drives has to keep updating while it does.
 void SetupWizard::runEnrolment()
 {
+    if(m_operation)return;
     const QString script = enrolmentScript();
     if (script.isEmpty()) {
         m_verdict->setText(tr("Failed — %1")
@@ -354,10 +362,25 @@ void SetupWizard::runEnrolment()
     m_verdict->setText(tr("Enrolling — press and lift your finger repeatedly"));
 
     auto *p = new QProcess(this);
+    m_operation=p;m_list->setEnabled(false);m_rescan->setEnabled(false);m_skip->setEnabled(false);
+    m_recover->setEnabled(false);m_verify->setEnabled(false);m_diagnostics->setEnabled(false);
     p->setProcessChannelMode(QProcess::MergedChannels);
+    connect(p,&QProcess::readyReadStandardOutput,this,[this,p]{
+        const auto out=QString::fromUtf8(p->readAllStandardOutput());
+        m_verdict->setText(QStringLiteral("등록 진행 · 안내에 따라 같은 손가락을 대고 떼세요\n")+out.right(500));
+    });
+    connect(p,&QProcess::errorOccurred,this,[this,p](QProcess::ProcessError error){
+        if(error!=QProcess::FailedToStart||m_operation!=p)return;
+        m_operation=nullptr;m_diagnostics->setEnabled(true);
+        setProperty("scanResultMessage",QStringLiteral("등록 도구를 시작하지 못했습니다: ")+p->errorString());
+        p->deleteLater();rescan();
+    });
     connect(p, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), this,
             [this, p](int, QProcess::ExitStatus) {
         m_busy->hide();
+        m_operation=nullptr;m_list->setEnabled(true);m_rescan->setEnabled(true);m_skip->setEnabled(true);
+        m_verify->setEnabled(true);m_diagnostics->setEnabled(true);
+        m_recover->setEnabled(QFileInfo::exists(QStringLiteral("/etc/fpstudio-auth.json")));
         m_fix->setEnabled(true);
         applyResult(m_current, probe(StepId::Enrolment));
         p->deleteLater();
@@ -371,6 +394,7 @@ void SetupWizard::runEnrolment()
 // blocking pkexec path below.
 void SetupWizard::runCaptureTest()
 {
+    if(m_operation)return;
     m_busy->show();
     m_fix->setEnabled(false);
     // The same sentence the CLI's own capture command shows, so the
@@ -378,14 +402,28 @@ void SetupWizard::runCaptureTest()
     m_verdict->setText(tr("Put your finger on the sensor and hold it there"));
 
     auto *p = new QProcess(this);
+    m_operation=p;m_list->setEnabled(false);m_rescan->setEnabled(false);m_skip->setEnabled(false);
+    m_recover->setEnabled(false);m_verify->setEnabled(false);m_diagnostics->setEnabled(false);
     p->setProcessChannelMode(QProcess::MergedChannels);
+    connect(p,&QProcess::errorOccurred,this,[this,p](QProcess::ProcessError error){
+        if(error!=QProcess::FailedToStart||m_operation!=p)return;
+        m_operation=nullptr;m_diagnostics->setEnabled(true);
+        setProperty("scanResultMessage",QStringLiteral("영상 도구를 시작하지 못했습니다: ")+p->errorString());
+        p->deleteLater();rescan();
+    });
     connect(p, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), this,
             [this, p](int, QProcess::ExitStatus) {
         const QString out = QString::fromUtf8(p->readAllStandardOutput());
         m_busy->hide();
+        m_operation=nullptr;m_list->setEnabled(true);m_rescan->setEnabled(true);m_skip->setEnabled(true);
+        m_verify->setEnabled(true);m_diagnostics->setEnabled(true);
+        m_recover->setEnabled(QFileInfo::exists(QStringLiteral("/etc/fpstudio-auth.json")));
         m_fix->setEnabled(true);
         m_verdict->clear();
-        applyResult(m_current, parseCaptureOutput(out));
+        parseCaptureOutput(out);
+        for(int i=0;i<m_steps.size();++i)if(m_steps[i].id==StepId::TlsSession||m_steps[i].id==StepId::Psk||m_steps[i].id==StepId::Capture)
+            m_steps[i]=probe(m_steps[i].id);
+        render();selectNextStep();showStep(m_current);
         p->deleteLater();
     });
     p->start(QFileInfo(QCoreApplication::applicationFilePath()).canonicalFilePath(),
@@ -396,7 +434,14 @@ void SetupWizard::runCaptureTest()
 
 void SetupWizard::runCurrentFix()
 {
+    if(m_operation||m_scanning)return;
     StepResult r = m_steps[m_current];
+    if(r.id==StepId::Driver) {
+        runManagedAction({QStringLiteral("/usr/bin/python"),QStringLiteral(FPSTUDIO_SOURCE_DIR "/../../tools/driver_build.py")},false);return;
+    }
+    if(r.id==StepId::GpuAuth||r.id==StepId::PamKde||r.id==StepId::PamPolkit||r.id==StepId::PamSudo) {
+        runGpuInstall();return;
+    }
 
     // Enrolment is the one step whose fix is not a command to run but a person
     // to guide: it needs fifteen presentations of a finger, with feedback
@@ -411,7 +456,7 @@ void SetupWizard::runCurrentFix()
     // Same reasoning as enrolment: this is a person doing something in front
     // of the sensor, not a command to run, so it gets its own interactive flow
     // instead of the pkexec path below.
-    if (r.id == StepId::Capture) {
+    if (r.id == StepId::Capture || r.id == StepId::TlsSession) {
         runCaptureTest();
         return;
     }
@@ -427,20 +472,105 @@ void SetupWizard::runCurrentFix()
     m_verdict->setText(tr("in progress…"));
     QApplication::processEvents();
 
-    QString error;
-    const bool ran = runAsRoot(r.commands, &error);
+    runManagedAction({QStringLiteral("/usr/bin/sh"),QStringLiteral("-c"),QStringLiteral("set -e\n")+r.commands.join('\n')});
+}
 
-    // Re-probe either way. A fix that reported success can still leave the
-    // machine unchanged - a udev rule that has not taken effect is exactly
-    // that - and a fix that reported failure sometimes did most of the work.
-    // What the machine says now is the only answer worth showing.
-    StepResult after = probe(r.id);
-    m_busy->hide();
-    m_fix->setEnabled(true);
-    applyResult(m_current, after);
+void SetupWizard::reject() {
+    if(m_operation){m_verdict->setText(QStringLiteral("작업이 끝나거나 인증 요청이 취소될 때까지 기다려 주세요. 설정 기록과 복구 정보를 보호하고 있습니다."));return;}
+    QDialog::reject();
+}
+void SetupWizard::done(int result) {
+    if(m_operation){m_verdict->setText(QStringLiteral("실행 중인 설정 작업을 완료하거나 인증 요청을 취소한 뒤 닫아 주세요."));return;}
+    QDialog::done(result);
+}
 
-    if (!ran && after.state != StepState::Ok)
-        m_verdict->setText(tr("Failed — %1").arg(error));
+void SetupWizard::runManagedAction(const QStringList &arguments,bool privileged) {
+    if(m_operation)return;
+    auto *p=new QProcess(this);m_operation=p;
+    m_busy->show();m_fix->setEnabled(false);m_rescan->setEnabled(false);
+    m_skip->setEnabled(false);m_recover->setEnabled(false);m_verify->setEnabled(false);
+    m_list->setEnabled(false);m_diagnostics->setEnabled(false);
+    p->setProcessChannelMode(QProcess::MergedChannels);
+    auto finish=[this,p](bool ok) {
+        if(m_operation!=p)return;
+        const QString output=QString::fromUtf8(p->readAll()).right(2400);
+        m_operation=nullptr;m_busy->hide();m_fix->setEnabled(true);m_rescan->setEnabled(true);
+        m_skip->setEnabled(true);m_verify->setEnabled(true);m_list->setEnabled(true);m_diagnostics->setEnabled(true);
+        setProperty("scanResultMessage",ok?QStringLiteral("설정 작업 완료. 시스템 지문 시험으로 실제 경로를 확인하세요."):QStringLiteral("설정 미완료·취소: ")+output);
+        rescan();
+        p->deleteLater();
+    };
+    connect(p,qOverload<int,QProcess::ExitStatus>(&QProcess::finished),this,[finish](int code,QProcess::ExitStatus status){finish(status==QProcess::NormalExit&&code==0);});
+    connect(p,&QProcess::errorOccurred,this,[finish](QProcess::ProcessError error){if(error==QProcess::FailedToStart)finish(false);});
+    m_verdict->setText(privileged?QStringLiteral("관리자 권한 요청 후 자동 설치·검사합니다. 인증 연결 설치가 실패하면 원래 설정을 복구합니다."):
+        QStringLiteral("일반 사용자 권한으로 드라이버를 빌드합니다. 의존성과 패키지 설치 때만 관리자 권한을 요청합니다."));
+    if(privileged)p->start(QStringLiteral("/usr/bin/pkexec"),arguments);
+    else p->start(arguments.first(),arguments.mid(1));
+}
+
+void SetupWizard::runGpuInstall() {
+    QStringList directories;
+    const auto options=QCoreApplication::arguments();
+    for(int i=0;i+1<options.size();++i)if(options[i]=="--auth-reference-dir")directories<<options[++i];
+    if(directories.isEmpty()) {
+        const QString directory=QFileDialog::getExistingDirectory(this,QStringLiteral("본인의 저장 지문 세션 선택"),QStringLiteral(FPSTUDIO_SOURCE_DIR "/../../local-private/recognition"));
+        if(directory.isEmpty())return;
+        directories<<directory;
+    }
+    if(QMessageBox::question(this,QStringLiteral("실험적 GPU 인증 연결"),
+        QStringLiteral("선택한 폴더의 지문이 현재 사용자 본인의 것인지 확인하세요.\n%1\n\n기존 등록은 보존하고 sudo·KDE 인증에 GPU 비교를 사용합니다. 최대 10회/90초 후 비밀번호 경로를 유지합니다. 다른 지문 거절 성능은 미검증입니다. 설정 백업 후 적용할까요?").arg(directories.join('\n')))!=QMessageBox::Yes)return;
+    QStringList args{QStringLiteral("/usr/bin/python"),QStringLiteral(FPSTUDIO_SOURCE_DIR "/../../tools/auth_install.py"),"--user",qEnvironmentVariable("USER"),"--enable-experimental-auth","--apply"};
+    for(const auto &dir:directories)args<<"--reference-dir"<<dir;
+    runManagedAction(args);
+}
+
+void SetupWizard::runRecovery() {
+    QFile file(QStringLiteral("/etc/fpstudio-auth.json"));if(!file.open(QIODevice::ReadOnly))return;
+    const auto path=QJsonDocument::fromJson(file.readAll()).object().value("backup").toString();
+    if(path.isEmpty())return;
+    if(QMessageBox::question(this,QStringLiteral("인증 설정 복구"),QStringLiteral("설치 전 sudo·KDE·fprintd 설정을 복구할까요? 기존 지문 등록은 삭제하지 않습니다."))!=QMessageBox::Yes)return;
+    runManagedAction({QStringLiteral("/usr/bin/python"),QStringLiteral(FPSTUDIO_SOURCE_DIR "/../../tools/auth_install.py"),"--rollback",path});
+}
+
+void SetupWizard::runSystemVerify() {
+    if(m_operation)return;
+    auto *p=new QProcess(this);m_operation=p;
+    m_stopOperation->show();
+    m_busy->show();m_fix->setEnabled(false);m_verify->setEnabled(false);m_rescan->setEnabled(false);
+    m_recover->setEnabled(false);m_list->setEnabled(false);m_skip->setEnabled(false);m_diagnostics->setEnabled(false);
+    p->setProcessChannelMode(QProcess::MergedChannels);
+    auto finish=[this,p](bool ok) {
+        if(m_operation!=p)return;
+        const QString output=p->property("transcript").toString()+QString::fromUtf8(p->readAll());
+        // fprintd publishes VerifyStatus before it winds the imaging device
+        // down. fprintd-verify can then stop/release the device and return a
+        // non-zero process status even though the authentication result was
+        // already a match. The observed status is authoritative for this
+        // one-shot test; process completion only closes the transport.
+        const bool matched=output.contains(QStringLiteral("verify-match"));
+        m_operation=nullptr;m_stopOperation->hide();m_busy->hide();m_fix->setEnabled(true);m_verify->setEnabled(true);m_rescan->setEnabled(true);
+        m_list->setEnabled(true);m_skip->setEnabled(true);m_diagnostics->setEnabled(true);
+        m_recover->setEnabled(QFileInfo::exists(QStringLiteral("/etc/fpstudio-auth.json")));
+        m_verdict->setText(matched?QStringLiteral("지문 비교 성공. 손가락을 계속 대고 있어도 결과가 이미 전달됐습니다. sudo/KDE 대화창과 비밀번호 폴백은 별도 시험이 필요합니다."):QStringLiteral("시스템 지문 시험 미완료: ")+output.right(1000));p->deleteLater();
+    };
+    connect(p,qOverload<int,QProcess::ExitStatus>(&QProcess::finished),this,[finish](int code,QProcess::ExitStatus status){finish(code==0&&status==QProcess::NormalExit);});
+    connect(p,&QProcess::errorOccurred,this,[finish](QProcess::ProcessError error){if(error==QProcess::FailedToStart)finish(false);});
+    connect(p,&QProcess::readyReadStandardOutput,this,[this,p]{
+        const auto output=QString::fromUtf8(p->readAllStandardOutput());
+        p->setProperty("transcript",(p->property("transcript").toString()+output).right(4000));
+        if(output.contains(QStringLiteral("verify-match"))) {
+            // Show the actual match as soon as fprintd emits it, rather than
+            // making the person wait for the sensor's cleanup/release phase.
+            m_verdict->setText(QStringLiteral("[시스템 지문 시험] 일치했습니다. 손가락을 유지한 상태에서 결과가 확인됐습니다.\n")+output.right(700));
+        } else if(output.contains(QStringLiteral("verify-no-match"))) {
+            m_verdict->setText(QStringLiteral("[시스템 지문 시험] 일치하지 않습니다. 이 접촉은 기록·등록하지 않았습니다.\n")+output.right(700));
+        } else {
+            m_verdict->setText(QStringLiteral("[시스템 지문 시험] 손가락을 센서 중앙에 올린 뒤 결과가 표시될 때까지 그대로 유지하세요. 떼는 동작은 필요 없습니다.\n")+output.right(700));
+        }
+    });
+    QTimer::singleShot(95000,p,[p]{if(p->state()!=QProcess::NotRunning)p->kill();});
+    m_verdict->setText(QStringLiteral("[시스템 지문 시험] 처음에는 센서에서 손을 떼고, 지문 요청이 뜨면 등록한 같은 손가락을 올린 뒤 결과가 표시될 때까지 유지하세요. 떼는 동작은 필요 없습니다."));
+    p->start(QStringLiteral("/usr/bin/fprintd-verify"),{qEnvironmentVariable("USER")});
 }
 
 void SetupWizard::skipCurrent()

@@ -1,0 +1,60 @@
+#version 450
+layout(local_size_x = 128) in;
+layout(std430, binding = 0) readonly buffer Images { float pixels[]; };
+struct Job { uint reference; uint probe; float cosine; float sine; float dx; float dy; float scale; float reserved; float pivotX; float pivotY; float anchorX; float anchorY; };
+layout(std430, binding = 1) readonly buffer Jobs { Job jobs[]; };
+layout(std430, binding = 2) writeonly buffer Scores { vec4 scores[]; };
+layout(push_constant) uniform Params { uint width; uint height; uint stride; uint count; } p;
+shared float sums[10][128];
+
+float pixel(uint image, uint x, uint y) { return pixels[image*p.width*p.height+y*p.width+x]; }
+float sampleImage(uint image, vec2 pos) {
+    uvec2 q = uvec2(floor(pos));
+    vec2 f = fract(pos);
+    // At the outer border an exact integer coordinate has zero fractional
+    // weight, but clamp the unused neighbour to keep every load in bounds.
+    uint xx = min(q.x+1, p.width-1), yy = min(q.y+1, p.height-1);
+    return mix(mix(pixel(image,q.x,q.y),pixel(image,xx,q.y),f.x),
+               mix(pixel(image,q.x,yy),pixel(image,xx,yy),f.x),f.y);
+}
+void main() {
+    uint lane = gl_LocalInvocationID.x;
+    uint jobIndex = gl_WorkGroupID.x;
+    Job j = jobs[jobIndex];
+    uint nx = (p.width-3)/p.stride+1, ny = (p.height-3)/p.stride+1;
+    float v[10];
+    for (uint k=0; k<10; ++k) v[k]=0.0;
+    for (uint i=lane; i<nx*ny; i+=128) {
+        uvec2 r = uvec2(1+(i%nx)*p.stride,1+(i/nx)*p.stride);
+        vec2 d = vec2(r)-vec2(j.pivotX,j.pivotY);
+        vec2 q = vec2(j.anchorX,j.anchorY)+j.scale*vec2(j.cosine*d.x-j.sine*d.y,j.sine*d.x+j.cosine*d.y)+vec2(j.dx,j.dy);
+        if (!(q.x>=1.0 && q.y>=1.0 && q.x<=float(p.width-2) && q.y<=float(p.height-2))) continue;
+        float a=pixel(j.reference,r.x,r.y), b=sampleImage(j.probe,q);
+        vec2 ga=vec2(pixel(j.reference,r.x+1,r.y)-pixel(j.reference,r.x-1,r.y),pixel(j.reference,r.x,r.y+1)-pixel(j.reference,r.x,r.y-1));
+        vec2 gb=vec2(sampleImage(j.probe,q+vec2(1,0))-sampleImage(j.probe,q-vec2(1,0)),sampleImage(j.probe,q+vec2(0,1))-sampleImage(j.probe,q-vec2(0,1)));
+        gb=vec2(j.cosine*gb.x+j.sine*gb.y,-j.sine*gb.x+j.cosine*gb.y);
+        v[0]+=a; v[1]+=b; v[2]+=a*a; v[3]+=b*b; v[4]+=a*b;
+        v[5]+=dot(ga,gb); v[6]+=dot(ga,ga); v[7]+=dot(gb,gb);
+        v[8]+=abs(a-b); v[9]+=1.0;
+    }
+    for (uint k=0; k<10; ++k) sums[k][lane]=v[k];
+    barrier();
+    for (uint step=64; step>0; step/=2) {
+        if (lane<step) for(uint k=0;k<10;++k) sums[k][lane]+=sums[k][lane+step];
+        barrier();
+    }
+    if (lane==0) {
+        float n=sums[9][0];
+        vec4 result=vec4(0);
+        if (n>0) {
+            float va=max(0.0,sums[2][0]-sums[0][0]*sums[0][0]/n);
+            float vb=max(0.0,sums[3][0]-sums[1][0]*sums[1][0]/n);
+            float den=sqrt(va*vb), gd=sqrt(sums[6][0]*sums[7][0]);
+            // Variances below float reduction precision are uninformative.
+            result.x=(va>n*1e-7 && vb>n*1e-7) ? clamp((sums[4][0]-sums[0][0]*sums[1][0]/n)/den,-1.0,1.0):0.0;
+            result.y=gd>1e-12 ? clamp(sums[5][0]/gd,-1.0,1.0):0.0;
+            result.z=n/float(nx*ny); result.w=sums[8][0]/n;
+        }
+        scores[jobIndex]=result;
+    }
+}

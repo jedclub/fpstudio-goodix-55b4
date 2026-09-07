@@ -8,7 +8,7 @@ pkgdesc="libfprint fork for goodixtls 55x4 devices with host-side finger detecti
 pkgver=r1805.c1937b9
 pkgrel=1
 arch=('x86_64')
-license=("LGPL2")
+license=("LGPL-2.1-or-later")
 # Local: keep symbols so the config-upload crash can be located precisely.
 # !strip leaves the debug info in place; debug alone would split it into a
 # separate -debug package that also has to be installed to be useful.
@@ -18,32 +18,11 @@ provides=("libfprint" "libfprint-2.so=2-64" "${_pkgbase}")
 conflicts=("libfprint" "${_pkgbase}")
 depends=('libgusb' 'openssl' 'pixman' 'nss' 'libgudev' 'opencv')
 optdepends=('fprintd: D-Bus daemon for managing readers')
-source=("${_pkgbase}::git+https://github.com/TheWeirdDev/libfprint.git"
-        "0001-goodix55x4-host-side-finger-detect.patch"
-        "0002-sigfm-opencv-pkgconfig-fallback.patch"
-        "0003-goodix55x4-accept-gf3208-firmware.patch"
-        "0004-goodix55x4-accept-gf3208-psk.patch"
-        "0005-err-from-ssl-nul-terminator.patch"
-        "0006-goodix55x4-correct-sensor-geometry.patch"
-        "0007-debug-frame-dump.patch"
-        "0008-goodix55x4-read-otp.patch"
-        "0009-goodix55x4-percentile-normalisation.patch"
-        "0010-goodix55x4-more-enroll-stages.patch"
-        "0011-goodix55x4-enrol-quality-gate.patch"
-        "0012-goodix55x4-sensor-register-sweep.patch")
-md5sums=('SKIP'
-         'SKIP'
-         'SKIP'
-         'SKIP'
-         'SKIP'
-         'SKIP'
-         'SKIP'
-         'SKIP'
-         'SKIP'
-         'SKIP'
-         'SKIP'
-         'SKIP'
-         'SKIP')
+# A release must build the same reviewed driver source every time.  Do not
+# replace this with a branch name or `git pull` in prepare().
+_upstream_commit="c1937b99ec3db5abca05f619a95d2e37496d8810"
+source=("${_pkgbase}::git+https://github.com/TheWeirdDev/libfprint.git#commit=${_upstream_commit}")
+md5sums=('SKIP')
 
 pkgver() {
   cd "${_pkgbase}"
@@ -52,62 +31,87 @@ pkgver() {
 
 prepare() {
     cd "${srcdir}/${_pkgbase}"
+    # makepkg preserves src/ after a failed build.  Reset only that generated
+    # checkout so every retry starts from the pinned upstream revision rather
+    # than trying to apply the patch series on top of an earlier attempt.
+    git reset --hard "${_upstream_commit}"
+    git clean -fdx
     mkdir -p build
-    git switch '55b4-experimental'
-    git pull -f origin 55b4-experimental
-    patch -Np1 -i "${srcdir}/0001-goodix55x4-host-side-finger-detect.patch"
-    patch -Np1 -i "${srcdir}/0002-sigfm-opencv-pkgconfig-fallback.patch"
+    patch -Np1 -i "${startdir}/patches/0001-goodix55x4-host-side-finger-detect.patch"
+    patch -Np1 -i "${startdir}/patches/0002-sigfm-opencv-pkgconfig-fallback.patch"
     # Local: this ThinkPad's 55b4 carries a GF3208 die, not the GF3268 the
     # driver was written against. The version check is a plain string compare
     # with no side effects, so this only widens the accept list.
-    patch -Np1 -i "${srcdir}/0003-goodix55x4-accept-gf3208-firmware.patch"
+    patch -Np1 -i "${startdir}/patches/0003-goodix55x4-accept-gf3208-firmware.patch"
+    patch -Np1 -i "${startdir}/patches/0019-goodix55x4-additional-firmware-variant.patch"
     # Local: the GF3208 derives a different value from the same all-zero TLS
     # PSK, so the identity check needs its answer in the accept list too.
     # Read-only, like the firmware check - nothing is written to the sensor.
-    patch -Np1 -i "${srcdir}/0004-goodix55x4-accept-gf3208-psk.patch"
+    patch -Np1 -i "${startdir}/patches/0004-goodix55x4-accept-gf3208-psk.patch"
     # Upstream bug, not device-specific: err_from_ssl() under-allocates by one
     # byte, so reporting any SSL failure aborts the process before the reason
     # is ever printed. Fixing it is what makes the real TLS error visible.
-    patch -Np1 -i "${srcdir}/0005-err-from-ssl-nul-terminator.patch"
+    patch -Np1 -i "${startdir}/patches/0005-err-from-ssl-nul-terminator.patch"
     # Keeps the row length at 108 and records why. The die is a GF3208 whose
     # native geometry is 88x108, but the config blob uploaded at activation is
     # the GF3268's and the scan window lives in that blob, so the sensor emits
     # 108-wide rows. Measured over a raw frame: 108 scores 309.5 mean vertical
     # neighbour difference against 411.6 for 88. Comment only, no code change.
-    patch -Np1 -i "${srcdir}/0006-goodix55x4-correct-sensor-geometry.patch"
-    patch -Np1 -i "${srcdir}/0007-debug-frame-dump.patch"
+    patch -Np1 -i "${startdir}/patches/0006-goodix55x4-correct-sensor-geometry.patch"
+    patch -Np1 -i "${startdir}/patches/0007-debug-frame-dump.patch"
     # Reads the chip's OTP and logs it. Upstream left the call commented out
     # and never wrote the callback, so the per-die DAC/tcode calibration the
     # vendor driver applies is simply absent here - which is why a touched
     # frame correlates 0.96 with the empty one and carries no ridge signal.
     # Read-only and non-fatal; the bytes are logged so the layout can be
     # decoded against real hardware instead of guessed.
-    patch -Np1 -i "${srcdir}/0008-goodix55x4-read-otp.patch"
+    patch -Np1 -i "${startdir}/patches/0008-goodix55x4-read-otp.patch"
     # squash_frame_linear used min/max, so the untouched part of the window
     # pinned the black point and the ridges were compressed into the top half
     # of the range. Stretching the 2nd-98th percentile of the live area instead
     # took the SIGFM score on two overlapping captures from 5 to 63 (threshold
     # 72) with nothing else changed.
-    patch -Np1 -i "${srcdir}/0009-goodix55x4-percentile-normalisation.patch"
+    patch -Np1 -i "${startdir}/patches/0009-goodix55x4-percentile-normalisation.patch"
     # 10 enrol stages left too little of the finger covered for a 5.5 x 4.5 mm
     # window: five of seven verifies matched, and the two failures scored 0 and
     # 7 against a threshold of 72 - misses, not weak matches. Each stage stores
     # one more sample and verify walks them all, so 20 doubles the covered area
     # at the cost of ten more touches during enrolment.
-    patch -Np1 -i "${srcdir}/0010-goodix55x4-more-enroll-stages.patch"
+    patch -Np1 -i "${startdir}/patches/0010-goodix55x4-more-enroll-stages.patch"
     # A half-landed scan still consumed an enrol stage and then matched
     # nothing, which on a window this small is a slot that cannot be spared.
     # Measures coverage and mean |Laplacian| - calibrated against five real
     # captures, where full contact ran 93-96% / 15-16 and partial contact
     # 67-77% / 11-12 - and asks for the finger again instead.
-    patch -Np1 -i "${srcdir}/0011-goodix55x4-enrol-quality-gate.patch"
+    patch -Np1 -i "${startdir}/patches/0011-goodix55x4-enrol-quality-gate.patch"
     # Diagnostic only, off unless GOODIX55X4_SWEEP is set - it costs ~12s per
     # activation. Command 0xa6 returns 32 bytes here, which is the MCU's own
     # OTP, not the one holding the analog calibration; this swept 0-0x8000 of
     # sensor register space looking for that one and found seven non-empty
     # windows, all below 0x0240 and all live configuration. The calibration OTP
     # is not reachable this way.
-    patch -Np1 -i "${srcdir}/0012-goodix55x4-sensor-register-sweep.patch"
+    patch -Np1 -i "${startdir}/patches/0012-goodix55x4-sensor-register-sweep.patch"
+    # The scan state machine recalibrates its background once per scan - so
+    # once per verify attempt and once per enrol stage - and did so without
+    # checking whether anything was on the sensor. A retry that began while the
+    # finger was still down therefore stored the finger as the background,
+    # which both stopped touch detection (the retry then appeared to need a
+    # lift) and subtracted a fingerprint out of every capture that followed.
+    # In the recorded captures, every frame taken against a background diff
+    # below 320 scored 0 against all fifteen enrolled stages - including one
+    # measuring 73% coverage and sharpness 66 - while every match came from a
+    # diff above 700.
+    patch -Np1 -i "${startdir}/patches/0013-goodix55x4-do-not-calibrate-on-a-finger.patch"
+    # Upstream bug, not device-specific. The std::set that deduplicates
+    # correspondences is ordered by a comparator whose second clause repeats
+    # its first instead of testing equality, so it orders by image row alone
+    # and drops every correspondence after the first on each row - 40 distinct
+    # ones became 10 in a direct test. The score is quartic in what survives.
+    patch -Np1 -i "${startdir}/patches/0014-sigfm-fix-match-dedup-comparator.patch"
+    patch -Np1 -i "${startdir}/patches/0015-goodix55x4-report-only-confirmed-touch.patch"
+    patch -Np1 -i "${startdir}/patches/0016-goodix55x4-private-live-preview.patch"
+    patch -Np1 -i "${startdir}/patches/0017-preview-multiframe-background-and-presence.patch"
+    patch -Np1 -i "${startdir}/patches/0018-root-managed-gpu-authentication-bridge.patch"
 }
 
 build() {
