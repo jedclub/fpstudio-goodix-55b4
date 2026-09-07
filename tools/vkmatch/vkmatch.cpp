@@ -305,7 +305,7 @@ Score cpuScore(const Image& reference,const Image& probe,const Job& job,uint32_t
         float va=std::max(0.f,sums[2][0]-sums[0][0]*sums[0][0]/n),vb=std::max(0.f,sums[3][0]-sums[1][0]*sums[1][0]/n);
         float gd=std::sqrt(sums[6][0]*sums[7][0]);
         if(va>n*1e-7f && vb>n*1e-7f) out.ncc=std::clamp((sums[4][0]-sums[0][0]*sums[1][0]/n)/std::sqrt(va*vb),-1.f,1.f);
-        if(gd>1e-12f) out.gradient=std::clamp(sums[5][0]/gd,-1.f,1.f);
+        if(sums[6][0]>n*1e-7f && sums[7][0]>n*1e-7f) out.gradient=std::clamp(sums[5][0]/gd,-1.f,1.f);
         out.overlap=n/float(nx*ny); out.mae=sums[8][0]/n;
     }
     return out;

@@ -52,7 +52,10 @@ void main() {
             float den=sqrt(va*vb), gd=sqrt(sums[6][0]*sums[7][0]);
             // Variances below float reduction precision are uninformative.
             result.x=(va>n*1e-7 && vb>n*1e-7) ? clamp((sums[4][0]-sums[0][0]*sums[1][0]/n)/den,-1.0,1.0):0.0;
-            result.y=gd>1e-12 ? clamp(sums[5][0]/gd,-1.0,1.0):0.0;
+            // A near-flat image has no directional evidence. Require both
+            // gradient energies to rise above reduction noise before forming
+            // a signed ratio, otherwise a tiny denominator can look decisive.
+            result.y=(sums[6][0]>n*1e-7 && sums[7][0]>n*1e-7) ? clamp(sums[5][0]/gd,-1.0,1.0):0.0;
             result.z=n/float(nx*ny); result.w=sums[8][0]/n;
         }
         scores[jobIndex]=result;

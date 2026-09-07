@@ -127,7 +127,7 @@ matching release note from `docs/releases/`.
 - [Recognition and research workflow](docs/07-recognition.md)
 - [Vulkan matching design](docs/11-vulkan-matching.md)
 - [Contact-anchored v8 matcher](docs/20-contact-anchored-rotation-v8.md)
-- [v0.2.3 release notes](docs/releases/v0.2.3.md)
+- [v0.2.4 release notes](docs/releases/v0.2.4.md)
 
 ## Licence and third-party code
 
