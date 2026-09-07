@@ -151,6 +151,9 @@ void matchingTests(vkmatch::Matcher &matcher) {
     near(batch.scores[4].ncc, 0, 1e-6f, "different constant images have no correlation evidence");
     near(batch.scores[4].gradient, 0, 1e-6f, "different constant images have no gradient evidence");
     near(batch.scores[4].mae, 0.5f, 1e-6f, "constant image MAE");
+    const auto textureAgainstFlat=matcher.run({{0,4,0,0,0,1}},1).scores.at(0);
+    parity(textureAgainstFlat,vkmatch::cpuScore(reference,otherFlat,{0,4,0,0,0,1},1),"texture against flat probe");
+    near(textureAgainstFlat.gradient,0,1e-6f,"flat probe has no gradient evidence");
     require(std::abs(batch.scores[5].ncc) < 0.1f && std::abs(batch.scores[5].gradient) < 0.1f,
             "independent deterministic noise should have low signed correlation");
     near(batch.scores[6].ncc, -1, 5e-4f, "inverted image signed NCC");
