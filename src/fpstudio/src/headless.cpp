@@ -519,7 +519,7 @@ int runMcp()
                     {QStringLiteral("tools"), QJsonObject{}}}},
                 {QStringLiteral("serverInfo"), QJsonObject{
                     {QStringLiteral("name"), QStringLiteral("fpstudio")},
-                    {QStringLiteral("version"), QStringLiteral("0.2.1")}}}});
+                    {QStringLiteral("version"), QStringLiteral("0.2.2")}}}});
         } else if (method == QLatin1String("tools/list")) {
             reply(id, QJsonObject{{QStringLiteral("tools"), mcpTools()}});
         } else if (method == QLatin1String("tools/call")) {
