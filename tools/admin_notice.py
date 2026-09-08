@@ -3,7 +3,8 @@
 
 Default: read-only diff. --apply requires root but never invokes sudo or PAM.
 Existing authentication modules and password fallback are preserved.
-Optional --max-tries changes only the fingerprint attempt limit.
+Optional limits only change the fingerprint line; the password fallback stays
+immediately after it.
 """
 import argparse
 import difflib
@@ -48,10 +49,19 @@ def read_root_file(path):
     return path.read_bytes()
 
 
-def set_retry_limit(text, attempts):
-    """Only edit a known sufficient-fingerprint/password-fallback stack."""
-    if not 1 <= attempts <= 100:
+def set_fingerprint_limits(text, attempts=None, timeout=None):
+    """Only edit a known sufficient-fingerprint/password-fallback stack.
+
+    A Goodix 55x4 scan that is left open for a long time can enter its thermal
+    protection state.  Keep the timeout bounded here so every caller gets the
+    same safe behaviour rather than merely changing the retry count.
+    """
+    if attempts is None and timeout is None:
+        raise ValueError("Specify a fingerprint limit to change")
+    if attempts is not None and not 1 <= attempts <= 100:
         raise ValueError("Fingerprint attempt limit must be between 1 and 100")
+    if timeout is not None and not 5 <= timeout <= 60:
+        raise ValueError("Fingerprint timeout must be between 5 and 60 seconds")
     lines = text.splitlines(keepends=True)
     if any("\\" in line.split("#", 1)[0] for line in lines):
         raise ValueError("PAM continuations need manual review")
@@ -67,16 +77,24 @@ def set_retry_limit(text, attempts):
     if pos + 1 != len(auth) - 1 or auth[pos + 1][1] != ["auth", "include", "system-auth"]:
         raise ValueError("Expected existing system-auth password fallback immediately after fingerprint")
     body, marker, comment = lines[index].partition("#")
-    options = [token for token in fields[3:] if token.startswith("max-tries")]
-    if len(options) > 1 or (options and not re.fullmatch(r"max-tries=-?\d+", options[0])):
-        raise ValueError("Ambiguous fingerprint attempt options")
-    if options:
-        body = re.sub(r"(?<!\S)max-tries=-?\d+(?!\S)", f"max-tries={attempts}", body)
-    else:
-        trailing = body[len(body.rstrip()):]
-        body = body.rstrip() + f" max-tries={attempts}" + trailing
+    for name, value in (("max-tries", attempts), ("timeout", timeout)):
+        options = [token for token in fields[3:] if token.startswith(name)]
+        if len(options) > 1 or (options and not re.fullmatch(rf"{re.escape(name)}=-?\d+", options[0])):
+            raise ValueError(f"Ambiguous fingerprint {name} options")
+        if value is None:
+            continue
+        if options:
+            body = re.sub(rf"(?<!\S){re.escape(name)}=-?\d+(?!\S)", f"{name}={value}", body)
+        else:
+            trailing = body[len(body.rstrip()):]
+            body = body.rstrip() + f" {name}={value}" + trailing
     lines[index] = body + marker + comment
     return "".join(lines)
+
+
+def set_retry_limit(text, attempts):
+    """Backward-compatible retry-only wrapper for callers using the old API."""
+    return set_fingerprint_limits(text, attempts=attempts)
 
 
 def atomic_write(path, data, mode=0o644):
@@ -96,10 +114,13 @@ def atomic_write(path, data, mode=0o644):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--apply", action="store_true", help="apply after backup; root required")
-    parser.add_argument("--max-tries", type=int, help="also set fingerprint attempts (1..100); keep password fallback")
+    parser.add_argument("--max-tries", type=int, help="set fingerprint attempts (1..100); keep password fallback")
+    parser.add_argument("--timeout", type=int, help="set fingerprint timeout in seconds (5..60); keep password fallback")
     args = parser.parse_args()
     if args.max_tries is not None and not 1 <= args.max_tries <= 100:
         parser.error("--max-tries must be between 1 and 100")
+    if args.timeout is not None and not 5 <= args.timeout <= 60:
+        parser.error("--timeout must be between 5 and 60 seconds")
     if args.apply and os.geteuid() != 0:
         parser.error("Root required. No authentication was requested and no files were changed.")
     if not Path("/usr/lib/security/pam_echo.so").is_file():
@@ -110,8 +131,8 @@ def main():
         path = Path("/etc/pam.d") / service
         before = read_root_file(path)
         updated = add_notice(before.decode("utf-8"))
-        if args.max_tries is not None:
-            updated = set_retry_limit(updated, args.max_tries)
+        if args.max_tries is not None or args.timeout is not None:
+            updated = set_fingerprint_limits(updated, args.max_tries, args.timeout)
         after = updated.encode("utf-8")
         if after != before:
             plans[path] = (before, after, stat.S_IMODE(path.stat().st_mode))

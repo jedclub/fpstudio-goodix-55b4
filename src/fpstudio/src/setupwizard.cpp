@@ -439,8 +439,9 @@ void SetupWizard::runCurrentFix()
     if(r.id==StepId::Driver) {
         runManagedAction({QStringLiteral("/usr/bin/python"),QStringLiteral(FPSTUDIO_SOURCE_DIR "/../../tools/driver_build.py")},false);return;
     }
-    if(r.id==StepId::GpuAuth||r.id==StepId::PamKde||r.id==StepId::PamPolkit||r.id==StepId::PamSudo) {
-        runGpuInstall();return;
+    if(r.id==StepId::GpuAuth) { runGpuInstall();return; }
+    if(r.id==StepId::PamKde||r.id==StepId::PamPolkit||r.id==StepId::PamSudo) {
+        runPamRepair();return;
     }
 
     // Enrolment is the one step whose fix is not a command to run but a person
@@ -504,11 +505,23 @@ void SetupWizard::runManagedAction(const QStringList &arguments,bool privileged)
     connect(p,&QProcess::errorOccurred,this,[finish](QProcess::ProcessError error){if(error==QProcess::FailedToStart)finish(false);});
     m_verdict->setText(privileged?QStringLiteral("관리자 권한 요청 후 자동 설치·검사합니다. 인증 연결 설치가 실패하면 원래 설정을 복구합니다."):
         QStringLiteral("일반 사용자 권한으로 드라이버를 빌드합니다. 의존성과 패키지 설치 때만 관리자 권한을 요청합니다."));
-    if(privileged)p->start(QStringLiteral("/usr/bin/pkexec"),arguments);
+    if(privileged)p->start(QStringLiteral("/usr/bin/pkexec"),QStringList{QStringLiteral("--disable-internal-agent")}+arguments);
     else p->start(arguments.first(),arguments.mid(1));
 }
 
 void SetupWizard::runGpuInstall() {
+    QFile state(QStringLiteral("/etc/fpstudio-auth.json"));
+    if(state.open(QIODevice::ReadOnly)) {
+        const auto installed=QJsonDocument::fromJson(state.readAll()).object();
+        if(installed.value("installed").toBool()&&installed.value("username").toString()==qEnvironmentVariable("USER")) {
+            if(QMessageBox::question(this,QStringLiteral("GPU 인증 엔진 업데이트"),
+                QStringLiteral("기존 지문 기준·fprintd 등록·PAM 설정은 바꾸지 않습니다. 최신 매처·셰이더·드라이버 브리지만 교체하고 기준 영상 자기 비교를 실행합니다. 변경 전 파일은 별도 백업합니다. 적용할까요?"))!=QMessageBox::Yes)return;
+            runManagedAction({QStringLiteral("/usr/bin/python"),
+                              QStringLiteral(FPSTUDIO_SOURCE_DIR "/../../tools/auth_install.py"),
+                              QStringLiteral("--refresh-experimental-auth"),QStringLiteral("--apply")});
+            return;
+        }
+    }
     QStringList directories;
     const auto options=QCoreApplication::arguments();
     for(int i=0;i+1<options.size();++i)if(options[i]=="--auth-reference-dir")directories<<options[++i];
@@ -518,10 +531,19 @@ void SetupWizard::runGpuInstall() {
         directories<<directory;
     }
     if(QMessageBox::question(this,QStringLiteral("실험적 GPU 인증 연결"),
-        QStringLiteral("선택한 폴더의 지문이 현재 사용자 본인의 것인지 확인하세요.\n%1\n\n기존 등록은 보존하고 sudo·KDE 인증에 GPU 비교를 사용합니다. 최대 10회/90초 후 비밀번호 경로를 유지합니다. 다른 지문 거절 성능은 미검증입니다. 설정 백업 후 적용할까요?").arg(directories.join('\n')))!=QMessageBox::Yes)return;
+        QStringLiteral("선택한 폴더의 지문이 현재 사용자 본인의 것인지 확인하세요.\n%1\n\n기존 등록은 보존하고 sudo·KDE 인증에 GPU 비교를 사용합니다. 최대 10회/30초 후 비밀번호 경로를 유지합니다. 다른 지문 거절 성능은 미검증입니다. 설정 백업 후 적용할까요?").arg(directories.join('\n')))!=QMessageBox::Yes)return;
     QStringList args{QStringLiteral("/usr/bin/python"),QStringLiteral(FPSTUDIO_SOURCE_DIR "/../../tools/auth_install.py"),"--user",qEnvironmentVariable("USER"),"--enable-experimental-auth","--apply"};
     for(const auto &dir:directories)args<<"--reference-dir"<<dir;
     runManagedAction(args);
+}
+
+void SetupWizard::runPamRepair() {
+    // Do not re-import the private gallery for an authentication repair. This
+    // installs the supported local PAM paths and first checks KDE's
+    // separate password service, which keeps its password field available.
+    runManagedAction({QStringLiteral("/usr/bin/python"),
+                      QStringLiteral(FPSTUDIO_SOURCE_DIR "/../../tools/dual_auth_install.py"),
+                      QStringLiteral("--apply")});
 }
 
 void SetupWizard::runRecovery() {
@@ -551,7 +573,13 @@ void SetupWizard::runSystemVerify() {
         m_operation=nullptr;m_stopOperation->hide();m_busy->hide();m_fix->setEnabled(true);m_verify->setEnabled(true);m_rescan->setEnabled(true);
         m_list->setEnabled(true);m_skip->setEnabled(true);m_diagnostics->setEnabled(true);
         m_recover->setEnabled(QFileInfo::exists(QStringLiteral("/etc/fpstudio-auth.json")));
-        m_verdict->setText(matched?QStringLiteral("지문 비교 성공. 손가락을 계속 대고 있어도 결과가 이미 전달됐습니다. sudo/KDE 대화창과 비밀번호 폴백은 별도 시험이 필요합니다."):QStringLiteral("시스템 지문 시험 미완료: ")+output.right(1000));p->deleteLater();
+        const bool thermal=output.contains(QStringLiteral("overheating"),Qt::CaseInsensitive)||
+                           output.contains(QStringLiteral("prevent overheating"),Qt::CaseInsensitive);
+        const bool timedOut=p->property("fpstudioTimedOut").toBool();
+        m_verdict->setText(matched?QStringLiteral("지문 비교 성공. 손가락을 계속 대고 있어도 결과가 이미 전달됐습니다. sudo/KDE 대화창과 비밀번호 폴백은 별도 시험이 필요합니다."):
+            thermal?QStringLiteral("센서 과열 보호가 시험을 중단했습니다. 잠시 손을 떼고 식힌 뒤 다시 시도하세요."):
+            timedOut?QStringLiteral("30초 동안 손가락 감지가 없었습니다. 센서를 비운 뒤 안내가 뜨면 등록한 오른쪽 검지를 중앙에 1~2초 올려 보세요."):
+            QStringLiteral("시스템 지문 시험 미완료: ")+output.right(1000));p->deleteLater();
     };
     connect(p,qOverload<int,QProcess::ExitStatus>(&QProcess::finished),this,[finish](int code,QProcess::ExitStatus status){finish(code==0&&status==QProcess::NormalExit);});
     connect(p,&QProcess::errorOccurred,this,[finish](QProcess::ProcessError error){if(error==QProcess::FailedToStart)finish(false);});
@@ -568,7 +596,17 @@ void SetupWizard::runSystemVerify() {
             m_verdict->setText(QStringLiteral("[시스템 지문 시험] 손가락을 센서 중앙에 올린 뒤 결과가 표시될 때까지 그대로 유지하세요. 떼는 동작은 필요 없습니다.\n")+output.right(700));
         }
     });
-    QTimer::singleShot(95000,p,[p]{if(p->state()!=QProcess::NotRunning)p->kill();});
+    // A no-touch verification used to run for 95 seconds. On this sensor that
+    // is long enough to enter its own thermal protection, turning a missed
+    // prompt into a misleading "disconnected" result. Stop at the same safe
+    // 30-second bound used by the PAM paths, and let fprintd release cleanly.
+    QTimer::singleShot(30000,p,[p]{
+        if(p->state()!=QProcess::NotRunning) {
+            p->setProperty("fpstudioTimedOut",true);
+            p->terminate();
+            QTimer::singleShot(2000,p,[p]{if(p->state()!=QProcess::NotRunning)p->kill();});
+        }
+    });
     m_verdict->setText(QStringLiteral("[시스템 지문 시험] 처음에는 센서에서 손을 떼고, 지문 요청이 뜨면 등록한 같은 손가락을 올린 뒤 결과가 표시될 때까지 유지하세요. 떼는 동작은 필요 없습니다."));
     p->start(QStringLiteral("/usr/bin/fprintd-verify"),{qEnvironmentVariable("USER")});
 }

@@ -9,7 +9,7 @@ class AuthInstallTest(unittest.TestCase):
     def test_kde_preserves_controls_and_other_lines(self):
         text = "auth required pam_shells.so\n-auth required pam_fprintd.so\nauth required pam_env.so\n"
         updated = kde_stack(text)
-        self.assertEqual(updated, text.replace("pam_fprintd.so", "pam_fprintd.so max-tries=10 timeout=90"))
+        self.assertEqual(updated, text.replace("pam_fprintd.so", "pam_fprintd.so max-tries=10 timeout=30"))
         self.assertEqual(kde_stack(updated), updated)
 
     def test_kde_refuses_unknown_control(self):

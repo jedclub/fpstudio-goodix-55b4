@@ -1,5 +1,5 @@
 import unittest
-from admin_notice import add_notice, set_retry_limit, LINE
+from admin_notice import add_notice, set_fingerprint_limits, set_retry_limit, LINE
 
 
 class AdminNoticeTest(unittest.TestCase):
@@ -24,7 +24,7 @@ class AdminNoticeTest(unittest.TestCase):
         for service in ("sudo", "polkit-1"):
             text = (folder / service).read_text()
             self.assertEqual(add_notice(text), text)
-            self.assertEqual(set_retry_limit(text, 10), text)
+            self.assertEqual(set_fingerprint_limits(text, 10, 30), text)
 
     def test_retry_limit_preserves_fallback_and_other_options(self):
         source = "# max-tries=20 historical comment\nauth\tsufficient\tpam_fprintd.so max-tries=20 timeout=90 # keep\nauth include system-auth\naccount include system-auth\n"
@@ -35,6 +35,12 @@ class AdminNoticeTest(unittest.TestCase):
     def test_retry_option_inserted_when_absent(self):
         source = "auth sufficient /usr/lib/security/pam_fprintd.so timeout=90\nauth include system-auth\n"
         self.assertEqual(set_retry_limit(source, 10), source.replace("timeout=90", "timeout=90 max-tries=10"))
+
+    def test_timeout_is_changed_without_altering_password_fallback(self):
+        source = "auth sufficient pam_fprintd.so max-tries=10 timeout=90 # keep\nauth include system-auth\n"
+        expected = source.replace("timeout=90", "timeout=30")
+        self.assertEqual(set_fingerprint_limits(source, 10, 30), expected)
+        self.assertEqual(set_fingerprint_limits(expected, 10, 30), expected)
 
     def test_retry_limit_rejects_unsafe_stacks(self):
         good = "auth sufficient pam_fprintd.so max-tries=20 timeout=90\nauth include system-auth\n"
@@ -50,6 +56,9 @@ class AdminNoticeTest(unittest.TestCase):
         for limit in (0, -1, 101):
             with self.assertRaises(ValueError):
                 set_retry_limit(good, limit)
+        for timeout in (0, 4, 61):
+            with self.assertRaises(ValueError):
+                set_fingerprint_limits(good, 10, timeout)
 
 
 if __name__ == "__main__":

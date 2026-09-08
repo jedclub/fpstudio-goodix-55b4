@@ -77,7 +77,8 @@ jobs:
         run: |
           pacman -Syu --noconfirm --needed \
             cmake ninja qt6-base qt6-tools pkgconf glib2 libfprint \
-            vulkan-headers vulkan-icd-loader vulkan-swrast glslang
+            vulkan-headers vulkan-icd-loader vulkan-swrast glslang \
+            pam systemd python-dbus python-gobject dbus
 
       - name: Configure
         run: cmake -S src/fpstudio -B build -G Ninja -DBUILD_TESTING=ON
@@ -93,6 +94,12 @@ jobs:
           export VK_DRIVER_FILES="$(find /usr/share/vulkan/icd.d -maxdepth 1 -type f -name 'lvp_icd*.json' -print -quit)"
           test -n "$VK_DRIVER_FILES"
           ctest --test-dir build --output-on-failure
+
+      - name: Test PAM terminal conversation and isolated fingerprint bus
+        run: |
+          python src/pam/test_tty.py build/pam
+          python src/pam/test_worker_bus.py build/pam/fpstudio-fprint-worker
+          PYTHONPATH=tools python -m unittest tools/test_dual_auth_install.py
 
       - name: Smoke-test CLI localisation and diagnostics
         run: |

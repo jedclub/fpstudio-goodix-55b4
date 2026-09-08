@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.21)
-project(fpstudio VERSION 0.2.5 LANGUAGES CXX)
+project(fpstudio VERSION 0.2.6 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -23,6 +23,7 @@ pkg_check_modules(GLIB   REQUIRED IMPORTED_TARGET glib-2.0 gobject-2.0)
 qt_standard_project_setup()
 include(CTest)
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/../../tools/vkmatch" "${CMAKE_BINARY_DIR}/vkmatch")
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/../pam" "${CMAKE_BINARY_DIR}/pam")
 
 qt_add_executable(fpstudio
   src/main.cpp

@@ -280,29 +280,24 @@ Windows fingerprint sign-in will stop working on this machine, permanently. If y
         <translation>데몬에 접근할 수 없습니다. 보통은 필요할 때 자동으로 시작되므로, 설치만 하면 되는 경우가 많습니다.</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="387"/>
-        <source>polkit accepts a fingerprint</source>
-        <translation>polkit 이 지문을 받습니다</translation>
-    </message>
-    <message>
-        <location filename="../src/setupcheck.cpp" line="395"/>
-        <location filename="../src/setupcheck.cpp" line="438"/>
+        <location filename="../src/setupcheck.cpp" line="407"/>
+        <location filename="../src/setupcheck.cpp" line="451"/>
         <source>pam_fprintd is not installed</source>
         <translation>pam_fprintd 가 설치되어 있지 않습니다</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="396"/>
-        <location filename="../src/setupcheck.cpp" line="439"/>
+        <location filename="../src/setupcheck.cpp" line="408"/>
+        <location filename="../src/setupcheck.cpp" line="452"/>
         <source>The PAM module that lets authentication use a fingerprint is missing. It usually ships with fprintd.</source>
         <translation>인증에 지문을 쓸 수 있게 하는 PAM 모듈이 없습니다. 보통 fprintd 와 함께 제공됩니다.</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="404"/>
+        <location filename="../src/setupcheck.cpp" line="416"/>
         <source>polkit still asks for a password</source>
         <translation>polkit 이 여전히 비밀번호를 요구합니다</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="405"/>
+        <location filename="../src/setupcheck.cpp" line="417"/>
         <source>This adds one line to the stack polkit uses, so pkexec and the desktop&apos;s authentication dialog try the fingerprint first.
 
 Login and sudo are deliberately left alone, so a sensor that stops working can never lock you out of the machine. The line is &apos;sufficient&apos;: if the fingerprint fails for any reason, you are asked for the password exactly as before.</source>
@@ -311,22 +306,17 @@ Login and sudo are deliberately left alone, so a sensor that stops working can n
 로그인과 sudo 는 일부러 건드리지 않았습니다. 그래야 센서가 고장 나도 기계에서 잠기지 않습니다. 이 줄은 &apos;sufficient&apos; 이므로 지문이 어떤 이유로든 실패하면 예전과 똑같이 비밀번호를 묻습니다.</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="413"/>
+        <location filename="../src/setupcheck.cpp" line="425"/>
         <source>Let polkit accept a fingerprint</source>
         <translation>polkit 이 지문을 받게 하기</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="430"/>
-        <source>sudo accepts a fingerprint</source>
-        <translation>sudo 가 지문을 받습니다</translation>
-    </message>
-    <message>
-        <location filename="../src/setupcheck.cpp" line="451"/>
+        <location filename="../src/setupcheck.cpp" line="464"/>
         <source>Terminal sudo still asks for a password only</source>
         <translation>터미널 sudo 는 아직 비밀번호만 받습니다</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="452"/>
+        <location filename="../src/setupcheck.cpp" line="465"/>
         <source>Optional, and a step further than the polkit rule above: sudo is usually the way back in when something else on the machine is broken, so extending fingerprint auth to it is worth doing deliberately rather than by default.
 
 The safety net is the same either way. The line added is &apos;sufficient&apos;, so a failing fingerprint falls back to the password exactly as before. sudo itself never stops working - only the fingerprint shortcut can.</source>
@@ -335,57 +325,57 @@ The safety net is the same either way. The line added is &apos;sufficient&apos;,
 안전장치는 똑같습니다. 추가되는 줄은 &apos;sufficient&apos; 이므로, 지문이 실패하면 예전처럼 비밀번호로 넘어갑니다. sudo 자체는 절대 멈추지 않습니다 — 지문이라는 지름길만 멈출 수 있습니다.</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="462"/>
+        <location filename="../src/setupcheck.cpp" line="475"/>
         <source>Let sudo accept a fingerprint</source>
         <translation>sudo 가 지문을 받게 하기</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="492"/>
+        <location filename="../src/setupcheck.cpp" line="505"/>
         <source>Sensor</source>
         <translation>센서</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="493"/>
+        <location filename="../src/setupcheck.cpp" line="506"/>
         <source>Driver</source>
         <translation>드라이버</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="494"/>
+        <location filename="../src/setupcheck.cpp" line="507"/>
         <source>Permissions</source>
         <translation>권한</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="495"/>
+        <location filename="../src/setupcheck.cpp" line="508"/>
         <source>Secure channel</source>
         <translation>보안 채널</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="496"/>
+        <location filename="../src/setupcheck.cpp" line="509"/>
         <source>Sensor key</source>
         <translation>센서 키</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="497"/>
+        <location filename="../src/setupcheck.cpp" line="510"/>
         <source>Image quality</source>
         <translation>이미지 품질</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="498"/>
+        <location filename="../src/setupcheck.cpp" line="511"/>
         <source>Enrolment</source>
         <translation>등록</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="499"/>
+        <location filename="../src/setupcheck.cpp" line="512"/>
         <source>Unlocking</source>
         <translation>잠금 해제</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="500"/>
+        <location filename="../src/setupcheck.cpp" line="513"/>
         <source>Terminal sudo (optional)</source>
         <translation>터미널 sudo (선택 사항)</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="521"/>
+        <location filename="../src/setupcheck.cpp" line="534"/>
         <source>Not checked - no sensor</source>
         <translation>확인 안 됨 — 센서 없음</translation>
     </message>
@@ -883,7 +873,7 @@ Type %2 to confirm.</source>
         <translation>센서에 손가락을 올리고 그대로 유지해 주세요</translation>
     </message>
     <message>
-        <location filename="../src/setupwizard.cpp" line="472"/>
+        <location filename="../src/setupwizard.cpp" line="473"/>
         <source>in progress…</source>
         <translation>진행 중…</translation>
     </message>

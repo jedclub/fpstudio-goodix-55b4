@@ -12,7 +12,9 @@
 # that stops working - a kernel update, a driver rebuild, an unplugged reader -
 # can never lock anyone out of the machine.
 #
-# max-tries=10, timeout=90: stop after at most ten authentication attempts.
+# max-tries=10, timeout=30: stop after at most ten authentication attempts in
+# a short window. This avoids leaving the 55x4 sensor active long enough to
+# trip its thermal protection when no finger is detected.
 # Timeout or device failure may end fingerprint authentication earlier.
 # Retries are not independent evidence and do not guarantee recognition.
 # `sufficient` is what makes that safe here too: if pam_fprintd fails for any
@@ -30,7 +32,7 @@
 
 # Informational only: ignore every return code; never grant or deny access.
 auth [default=ignore] pam_echo.so file=/etc/security/fpstudio-admin-auth.txt
-auth       sufficient   pam_fprintd.so max-tries=10 timeout=90
+auth       sufficient   pam_fprintd.so max-tries=10 timeout=30
 auth       include      system-auth
 account    include      system-auth
 password   include      system-auth

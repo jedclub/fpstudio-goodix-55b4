@@ -108,7 +108,7 @@ int main(int argc,char **argv) {
        !std::isfinite(roi.value("overlap").toDouble())||roi.value("overlap").toDouble()<.50||
        roi.value("reference_mask").toInt()==0||roi.value("probe_mask").toInt()==0)return 2;
     // Numeric diagnostics only: never log biometric images, paths or user IDs.
-    std::fprintf(stderr,"fpstudio GPU v7 accepted=%d ncc=%.3f gradient=%.3f overlap=%.3f roi=%.3f tiles=%d/%d ambiguous=%d boundary=%d refined=%d ms=%.1f\n",
+    std::fprintf(stderr,"fpstudio GPU v8 accepted=%d ncc=%.3f gradient=%.3f overlap=%.3f roi=%.3f tiles=%d/%d ambiguous=%d boundary=%d refined=%d ms=%.1f\n",
         authPatternAccepted(result),e.value("ncc").toDouble(),e.value("gradient").toDouble(),
         e.value("overlap").toDouble(),roi.value("overlap").toDouble(),e.value("supported_tiles").toInt(),e.value("probe_tiles").toInt(),
         best.value("ambiguous").toBool(),best.value("at_search_boundary").toBool(),
