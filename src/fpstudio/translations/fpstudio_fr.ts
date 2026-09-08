@@ -280,29 +280,24 @@ La connexion par empreinte sous Windows cessera définitivement de fonctionner s
         <translation>Impossible de joindre le démon. Il démarre généralement à la demande ; l&apos;installer peut être tout ce qui manque.</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="387"/>
-        <source>polkit accepts a fingerprint</source>
-        <translation>polkit accepte une empreinte</translation>
-    </message>
-    <message>
-        <location filename="../src/setupcheck.cpp" line="395"/>
-        <location filename="../src/setupcheck.cpp" line="438"/>
+        <location filename="../src/setupcheck.cpp" line="407"/>
+        <location filename="../src/setupcheck.cpp" line="451"/>
         <source>pam_fprintd is not installed</source>
         <translation>pam_fprintd n&apos;est pas installé</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="396"/>
-        <location filename="../src/setupcheck.cpp" line="439"/>
+        <location filename="../src/setupcheck.cpp" line="408"/>
+        <location filename="../src/setupcheck.cpp" line="452"/>
         <source>The PAM module that lets authentication use a fingerprint is missing. It usually ships with fprintd.</source>
         <translation>Le module PAM qui permet à l&apos;authentification d&apos;utiliser une empreinte est manquant. Il est généralement fourni avec fprintd.</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="404"/>
+        <location filename="../src/setupcheck.cpp" line="416"/>
         <source>polkit still asks for a password</source>
         <translation>polkit demande encore un mot de passe</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="405"/>
+        <location filename="../src/setupcheck.cpp" line="417"/>
         <source>This adds one line to the stack polkit uses, so pkexec and the desktop&apos;s authentication dialog try the fingerprint first.
 
 Login and sudo are deliberately left alone, so a sensor that stops working can never lock you out of the machine. The line is &apos;sufficient&apos;: if the fingerprint fails for any reason, you are asked for the password exactly as before.</source>
@@ -311,22 +306,17 @@ Login and sudo are deliberately left alone, so a sensor that stops working can n
 La connexion et sudo sont volontairement laissés intacts, afin qu&apos;un capteur qui cesse de fonctionner ne puisse jamais vous verrouiller hors de la machine. La ligne est &apos;sufficient&apos; : si l&apos;empreinte échoue pour une raison quelconque, le mot de passe vous sera demandé exactement comme avant.</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="413"/>
+        <location filename="../src/setupcheck.cpp" line="425"/>
         <source>Let polkit accept a fingerprint</source>
         <translation>Permettre à polkit d&apos;accepter une empreinte</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="430"/>
-        <source>sudo accepts a fingerprint</source>
-        <translation>sudo accepte une empreinte</translation>
-    </message>
-    <message>
-        <location filename="../src/setupcheck.cpp" line="451"/>
+        <location filename="../src/setupcheck.cpp" line="464"/>
         <source>Terminal sudo still asks for a password only</source>
         <translation>Le sudo du terminal ne demande encore que le mot de passe</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="452"/>
+        <location filename="../src/setupcheck.cpp" line="465"/>
         <source>Optional, and a step further than the polkit rule above: sudo is usually the way back in when something else on the machine is broken, so extending fingerprint auth to it is worth doing deliberately rather than by default.
 
 The safety net is the same either way. The line added is &apos;sufficient&apos;, so a failing fingerprint falls back to the password exactly as before. sudo itself never stops working - only the fingerprint shortcut can.</source>
@@ -335,57 +325,57 @@ The safety net is the same either way. The line added is &apos;sufficient&apos;,
 Le filet de sécurité est le même dans tous les cas. La ligne ajoutée est &apos;sufficient&apos;, donc une empreinte en échec revient au mot de passe exactement comme avant. sudo lui-même ne cesse jamais de fonctionner - seul le raccourci de l&apos;empreinte le peut.</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="462"/>
+        <location filename="../src/setupcheck.cpp" line="475"/>
         <source>Let sudo accept a fingerprint</source>
         <translation>Permettre à sudo d&apos;accepter une empreinte</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="492"/>
+        <location filename="../src/setupcheck.cpp" line="505"/>
         <source>Sensor</source>
         <translation>Capteur</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="493"/>
+        <location filename="../src/setupcheck.cpp" line="506"/>
         <source>Driver</source>
         <translation>Pilote</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="494"/>
+        <location filename="../src/setupcheck.cpp" line="507"/>
         <source>Permissions</source>
         <translation>Autorisations</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="495"/>
+        <location filename="../src/setupcheck.cpp" line="508"/>
         <source>Secure channel</source>
         <translation>Canal sécurisé</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="496"/>
+        <location filename="../src/setupcheck.cpp" line="509"/>
         <source>Sensor key</source>
         <translation>Clé du capteur</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="497"/>
+        <location filename="../src/setupcheck.cpp" line="510"/>
         <source>Image quality</source>
         <translation>Qualité de l&apos;image</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="498"/>
+        <location filename="../src/setupcheck.cpp" line="511"/>
         <source>Enrolment</source>
         <translation>Enregistrement</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="499"/>
+        <location filename="../src/setupcheck.cpp" line="512"/>
         <source>Unlocking</source>
         <translation>Déverrouillage</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="500"/>
+        <location filename="../src/setupcheck.cpp" line="513"/>
         <source>Terminal sudo (optional)</source>
         <translation>sudo du terminal (facultatif)</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="521"/>
+        <location filename="../src/setupcheck.cpp" line="534"/>
         <source>Not checked - no sensor</source>
         <translation>Non vérifié - aucun capteur</translation>
     </message>
@@ -883,7 +873,7 @@ Tapez %2 pour confirmer.</translation>
         <translation>Posez votre doigt sur le capteur et maintenez-le</translation>
     </message>
     <message>
-        <location filename="../src/setupwizard.cpp" line="472"/>
+        <location filename="../src/setupwizard.cpp" line="473"/>
         <source>in progress…</source>
         <translation>en cours…</translation>
     </message>

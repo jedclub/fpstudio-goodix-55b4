@@ -44,6 +44,9 @@ kept outside version control.
 - **Safe authentication boundary**: password fallback remains available;
   GPU-assisted system authentication is experimental and must be explicitly
   installed and verified by the machine owner.
+- **Local authentication integration** for supported sudo, Polkit, TTY login
+  and KDE lock-screen PAM profiles, with concise sensor feedback. See
+  [simultaneous-input setup and limitations](docs/21-simultaneous-auth.md).
 
 ## Requirements
 
@@ -51,6 +54,7 @@ kept outside version control.
 - Goodix `27c6:55b4` hardware (`lsusb -d 27c6:`).
 - Qt 6.5+, CMake, Ninja, Vulkan headers/loader and `glslangValidator` to build
   FPStudio.
+- PAM and libsystemd development files for the authentication module/worker.
 - A patched `libfprint` package from this repository; install `fprintd` only
   after the driver package.
 
@@ -84,6 +88,18 @@ the system locale. For example, start in English with:
 ```
 
 ## Security and privacy model
+
+CLI fingerprint authentication completes automatically only if no key has been
+pressed. Any key (including erase or arrow keys) makes Enter mandatory for that
+request. Typed input is masked with `*`; submitted passwords use the existing
+PAM validator. KDE fingerprint authentication still completes automatically.
+CLI uses a red Admin header where terminal colour is supported and a `(1/20)`
+retry counter. Sensor activity is bounded to 20 retry events or 30 seconds.
+
+The main GUI catalogues and PAM notices cover eleven languages. PAM follows
+`LC_ALL`, `LC_MESSAGES`, then `LANG`, independently of the GUI language selector.
+Some advanced setup/recovery wizard messages remain Korean-only; catalogue
+completeness checks do not yet cover those hard-coded strings.
 
 - **No biometrics in this repository or release assets.** The ignore rules
   exclude local research material, PGM frames, fingerprint templates, build

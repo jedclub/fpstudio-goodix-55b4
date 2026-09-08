@@ -350,26 +350,37 @@ StepResult gpuAuth()
         const auto data=QJsonDocument::fromJson(state.readAll()).object();
         if(data.value("installed").toBool()&&data.value("username").toString()==qEnvironmentVariable("USER")&&
            QFileInfo::exists(QStringLiteral("/opt/fpstudio-auth/bin/fpstudio-auth-match"))) {
-            r.state=StepState::Ok;r.summary=QStringLiteral("GPU 인증 연결 설치됨 · 기준 %1장").arg(data.value("references").toInt());
-            r.detail=QStringLiteral("실험적 인증입니다. 설정 설치와 실제 sudo/KDE 인증 성공은 별개입니다. 복구 위치: %1").arg(data.value("backup").toString());
+            const bool current=data.value("matcher_profile").toString()==
+                    QStringLiteral("auth-v8-contact-anchored-ridge-roi-uniform-scale-5pct")&&
+                    data.value("artifact_sha256").isObject();
+            if(current) {
+                r.state=StepState::Ok;r.summary=QStringLiteral("GPU 인증 연결 설치됨 · 기준 %1장").arg(data.value("references").toInt());
+                r.detail=QStringLiteral("실험적 인증입니다. 설정 설치와 실제 sudo/KDE 인증 성공은 별개입니다. 복구 위치: %1").arg(data.value("backup").toString());
+                return r;
+            }
+            r.state=StepState::Missing;
+            r.summary=QStringLiteral("GPU 인증 엔진 업데이트 필요");
+            r.action=QStringLiteral("최신 GPU 인증 엔진 배포");
+            r.detail=QStringLiteral("기존 기준 %1장·fprintd 등록·PAM 설정은 보존합니다. 최신 매처·셰이더·드라이버 브리지만 교체하고, 기준 영상 자기 비교가 통과할 때만 적용합니다.").arg(data.value("references").toInt());
             return r;
         }
     }
     r.state=StepState::Missing;r.summary=QStringLiteral("저장 지문과 새 GPU 엔진을 시스템 인증에 연결");
     r.action=QStringLiteral("저장 지문 가져오기 · sudo/KDE 연결");
-    r.detail=QStringLiteral("본인의 저장 지문 폴더를 선택합니다. 기존 fprintd 등록은 보존하고, root 전용 기준 데이터로 가져옵니다. sudo·관리자 창·KDE 잠금 화면을 함께 연결하며 10회/90초 제한과 비밀번호 경로를 유지합니다. 다른 지문 거절 성능은 아직 검증되지 않은 실험적 기능입니다.");
+    r.detail=QStringLiteral("본인의 저장 지문 폴더를 선택합니다. 기존 fprintd 등록은 보존하고, root 전용 기준 데이터로 가져옵니다. sudo·관리자 창·KDE 잠금 화면을 함께 연결하며 10회/30초 제한과 비밀번호 경로를 유지합니다. 다른 지문 거절 성능은 아직 검증되지 않은 실험적 기능입니다.");
     return r;
 }
 
 StepResult pamKde()
 {
-    StepResult r{StepId::PamKde};
+    StepResult r{StepId::PamKde};r.needsRoot=true;
     QFile f(QStringLiteral("/etc/pam.d/kde-fingerprint"));
     const QString text=f.open(QIODevice::ReadOnly)?QString::fromUtf8(f.readAll()):QString();
-    const QRegularExpression entry(QStringLiteral("(?m)^-?auth\\s+required\\s+pam_fprintd\\.so[^\\n]*\\bmax-tries=10\\b"));
+    const QRegularExpression entry(QStringLiteral("(?m)^-?auth\\s+required\\s+/opt/fpstudio-auth/lib/pam_fpstudio\\.so\\s+fingerprint-only[ \\t]*$"));
     r.state=entry.match(text).hasMatch()?StepState::Ok:StepState::Missing;
-    r.summary=r.state==StepState::Ok?QStringLiteral("KDE 지문 경로 · 최대 10회"):QStringLiteral("KDE 지문 경로 연결 필요");
-    r.detail=QStringLiteral("GPU 인증 연결 단계에서 함께 적용합니다. KDE 잠금 화면의 기존 비밀번호 경로는 병렬로 유지되며, 관리자 권한 창은 polkit 설정을 사용합니다.");
+    r.summary=r.state==StepState::Ok?QStringLiteral("KDE 지문·비밀번호 병렬 경로 설정됨"):QStringLiteral("지문·비밀번호 동시 입력 설정 필요");
+    r.detail=QStringLiteral("지문은 전체 30초·최대 20회 검사하며 준비·재시도·종료 결과를 표시합니다. KDE의 별도 비밀번호 입력은 계속 사용할 수 있습니다. 실제 잠금 해제 성공은 별도 확인이 필요합니다.");
+    if(r.state!=StepState::Ok)r.action=QStringLiteral("지문·비밀번호 동시 입력 적용");
     return r;
 }
 
@@ -382,9 +393,10 @@ StepResult pamPolkit()
     QFile f(installed);
     if (f.open(QIODevice::ReadOnly)) {
         const QString text = QString::fromUtf8(f.readAll());
-        if (QRegularExpression(QStringLiteral("(?m)^auth\\s+sufficient\\s+pam_fprintd\\.so[^\\n]*\\bmax-tries=10\\b")).match(text).hasMatch()) {
+        if (text.contains(QStringLiteral("auth sufficient /opt/fpstudio-auth/lib/pam_fpstudio.so"))&&
+            QRegularExpression(QStringLiteral("(?m)^auth\\s+include\\s+system-auth[ \\t]*$")).match(text).hasMatch()) {
             r.state = StepState::Ok;
-            r.summary = QCoreApplication::translate("fpstudio", "polkit accepts a fingerprint");
+            r.summary = QStringLiteral("관리자 창 지문·비밀번호 동시 입력 설정됨");
             return r;
         }
     }
@@ -425,9 +437,10 @@ StepResult pamSudo()
     QFile f(QStringLiteral("/etc/pam.d/sudo"));
     if (f.open(QIODevice::ReadOnly)) {
         const QString text = QString::fromUtf8(f.readAll());
-        if (QRegularExpression(QStringLiteral("(?m)^auth\\s+sufficient\\s+pam_fprintd\\.so[^\\n]*\\bmax-tries=10\\b")).match(text).hasMatch()) {
+        if (text.contains(QStringLiteral("auth sufficient /opt/fpstudio-auth/lib/pam_fpstudio.so"))&&
+            QRegularExpression(QStringLiteral("(?m)^auth\\s+include\\s+system-auth[ \\t]*$")).match(text).hasMatch()) {
             r.state = StepState::Ok;
-            r.summary = QCoreApplication::translate("fpstudio", "sudo accepts a fingerprint");
+            r.summary = QStringLiteral("sudo 지문·비밀번호 동시 입력 설정됨");
             return r;
         }
     }

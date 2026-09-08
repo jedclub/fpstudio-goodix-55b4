@@ -7,10 +7,11 @@
 `auth [default=ignore] pam_echo.so file=/etc/security/fpstudio-admin-auth.txt`
 한 줄만 기존 pam_fprintd 앞에 추가한다. 모든 반환값을 무시하므로 메시지
 성공/실패가 인증 허용·거절 판단에 참여하지 않는다. 기본 실행은 지문 모듈의
-옵션을 변경하지 않는다. `--max-tries 10`을 추가하면 지문 인증을 최대 10회로
-제한하며, 기존 `sufficient` 및 바로 뒤 `system-auth` 비밀번호 fallback을
-확인하고 보존한다. 기존 90초 제한도 유지한다. 관리자 표식 자체가 요청의
-진위를 보증하지는 않는다. 사용자 자신이 시작한 작업인지 확인해야 한다.
+옵션을 변경하지 않는다. `--max-tries 10 --timeout 30`을 추가하면 지문 인증을
+최대 10회·30초로 제한하며, 기존 `sufficient` 및 바로 뒤 `system-auth`
+비밀번호 fallback을 확인하고 보존한다. 짧은 시간 제한은 손가락 감지가 없을
+때 55x4 센서의 과열 보호가 인증을 중단하는 일을 방지한다. 관리자 표식 자체가
+요청의 진위를 보증하지는 않는다. 사용자 자신이 시작한 작업인지 확인해야 한다.
 
 일반 sudo 암호 프롬프트를 바꾸는 sudo -p/SUDO_PROMPT 설정과 다르다.
 터미널에는 PAM 정보 메시지로 전달되며, polkit의 표시 형태는 데스크톱
@@ -19,14 +20,14 @@
 기존 시스템 구성의 변경안 확인(읽기 전용):
 
 ```bash
-python tools/admin_notice.py --max-tries 10
+python tools/admin_notice.py --max-tries 10 --timeout 30
 ```
 
 실제 적용은 root 권한이 필요하다. 이 스크립트는 자체적으로 sudo를 실행하거나
 인증창을 띄우지 않는다. 사용자가 적용할 경우:
 
 ```bash
-sudo python tools/admin_notice.py --max-tries 10 --apply
+sudo python tools/admin_notice.py --max-tries 10 --timeout 30 --apply
 ```
 
 기존 root 소유 일반 설정 파일만 처리하고, 숫자 점프가 있는 PAM 스택이나
@@ -37,9 +38,9 @@ sudo python tools/admin_notice.py --max-tries 10 --apply
 `max-tries=10`을 확인한다. 이 옵션은 연속 영상의 10프레임을 뜻하지 않는다.
 로그인이나 다른 PAM 서비스는 변경하지 않는다.
 
-현재 작업에서는 저장소 템플릿·설치 도구·설정 마법사 설치 명령을 준비하고
-자동 시험과 실제 설정에 대한 읽기 전용 차이를 확인했다. **시스템 적용이나
-실제 sudo/polkit 인증창 시험은 하지 않았다.**
+기본 실행은 항상 읽기 전용 미리보기다. 실제 적용 뒤에는 `sudo`·polkit에서
+지문 성공뿐 아니라 시간 초과 뒤 비밀번호 입력도 별도로 확인해야 한다. 설정
+파일의 존재나 helper 자기 비교만으로 실제 인증 성공을 주장하지 않는다.
 
 이 표식 작업은 Vulkan 연구 매처의 PAM 연동이 아니다. 연구 세션의 영상은
 로컬 비공개 자료이고, 기존 시스템 fprintd 등록 템플릿을 자동으로 교체하거나

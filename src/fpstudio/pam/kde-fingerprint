@@ -16,12 +16,11 @@
 # sudo do; the password fallback already exists one level up, as the other
 # service running at the same time. Only the retry budget needed changing.
 #
-# max-tries=20, timeout=90: see pam/polkit-1 and pam/sudo for the measurement
-# this is based on - roughly a 70% match chance per touch on this sensor, so
-# the module's own defaults (3 tries, 30 seconds) fail far more often than
-# they need to. The `required` control flag and everything else here is
-# copied unchanged from the vendor default; this adds one thing and nothing
-# more.
+# max-tries=10, timeout=30: a short bounded window gives several deliberate
+# touches without leaving the 55x4 sensor active long enough to trip its
+# thermal protection when no finger is detected. The `required` control flag
+# and everything else here is copied unchanged from the vendor default; this
+# changes only the retry budget.
 #
 # Install:
 #   sudo install -Dm644 kde-fingerprint /etc/pam.d/kde-fingerprint
@@ -34,7 +33,7 @@
 auth       required                    pam_shells.so
 auth       requisite                   pam_nologin.so
 auth       requisite                   pam_faillock.so      preauth
--auth      required                    pam_fprintd.so max-tries=20 timeout=90
+-auth      required                    pam_fprintd.so max-tries=10 timeout=30
 auth       optional                    pam_permit.so
 auth       required                    pam_env.so
 

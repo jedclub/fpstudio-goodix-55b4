@@ -52,6 +52,7 @@ private slots:
     void selectRow(int row);
     void openDiagnostics();
     void runGpuInstall();
+    void runPamRepair();
     void runRecovery();
     void runSystemVerify();
 

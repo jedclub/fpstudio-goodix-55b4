@@ -2,7 +2,7 @@
 
 ## 구현한 연결
 
-sudo / polkit / KDE 잠금 화면 → 기존 pam_fprintd → 기존 fprintd의 사용자·등록 선택
+sudo / polkit / TTY / KDE 잠금 화면 → pam_fpstudio → 기존 fprintd의 사용자·등록 선택
 → libfprint GPU 연결 → root 전용 영상 기준 → Vulkan 비교 → 결과 반환.
 
 기존 등록 파일을 덮어쓰거나 재등록하지 않는다. 사용자의 기존 Goodix 등록에서
@@ -43,9 +43,17 @@ fprintd systemd drop-in에만 지정한다. 기존 서비스 보안을 해제하
 원본 연구 데이터와 기존 fprintd 등록은 보존한다. 마지막 영상 후보를 가져오는
 방식이므로 후보의 품질 점수와 인증 정책 통과 여부를 동일시하지 않는다.
 
-sudo/polkit는 최대10회·90초 제한과 기존 system-auth 비밀번호 경로를 보존한다.
-KDE 잠금 화면은 원래 병렬 비밀번호 서비스가 있으므로 fingerprint 서비스의
-재시도 옵션만 수정한다. 로그인/비밀번호 PAM 스택을 덮어쓰지 않는다.
+지문·비밀번호 동시 입력은 `tools/dual_auth_install.py --apply`로 적용한다.
+sudo·sudo-i·polkit·TTY login·su·su-l의 기존 비밀번호 검증을 유지하고,
+KDE 잠금 화면은 별도 비밀번호 서비스와 병렬 지문 서비스를 유지한다.
+센서는 전체 30초·최대 20회로 제한하며 준비·재시도·종료 메시지를 전달한다.
+기존 `--repair-pam`은 표준 pam_fprintd의 직렬 경로 보정용이며 동시 입력이 아니다.
+설치 범위·백업·복구·시험 방법은 [동시 입력 안내](21-simultaneous-auth.md)를 참고한다.
+
+매처나 드라이버 브리지만 최신 빌드로 교체할 때는
+`pkexec /usr/bin/python tools/auth_install.py --refresh-experimental-auth --apply`를
+쓴다. 이 경로는 갤러리·fprintd 등록·PAM을 다시 만들지 않으며, 새 바이너리
+해시를 기록하고 root 전용 기준의 자기 비교가 통과할 때만 유지한다.
 
 원본 설정은 `/var/backups/fpstudio-gpu-auth/install-*`에 보관한다.
 `--rollback <정확한 백업 폴더>`로 복구하며, 제거된 실험 파일도 백업 폴더로

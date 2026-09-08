@@ -19,7 +19,8 @@ jobs:
         run: |
           pacman -Syu --noconfirm --needed \
             cmake ninja qt6-base qt6-tools pkgconf glib2 libfprint \
-            vulkan-headers vulkan-icd-loader vulkan-swrast glslang
+            vulkan-headers vulkan-icd-loader vulkan-swrast glslang \
+            pam systemd python-dbus python-gobject dbus
 
       - name: Configure, build and test
         env:
@@ -31,6 +32,9 @@ jobs:
           cmake -S src/fpstudio -B build -G Ninja -DBUILD_TESTING=ON
           cmake --build build --parallel
           ctest --test-dir build --output-on-failure
+          python src/pam/test_tty.py build/pam
+          python src/pam/test_worker_bus.py build/pam/fpstudio-fprint-worker
+          PYTHONPATH=tools python -m unittest tools/test_dual_auth_install.py
 
   publish-source-release:
     name: Publish source archive and checksum

@@ -45,8 +45,10 @@ def run_worker(binary, references, probes, auth_search):
     for row, path in zip(rows, probes):
         if row.get("ok") is not True or row.get("probe") != str(path):
             raise RuntimeError("Invalid/mismatched result")
-        if auth_search and (row.get("algorithm_version") != 7 or row.get("auth_search") is not True):
-            raise RuntimeError("Candidate did not execute v7 auth search")
+        if auth_search and (row.get("algorithm_version") != 8 or
+                            row.get("auth_profile") != "auth-v8-contact-anchored-ridge-roi-uniform-scale-5pct" or
+                            row.get("auth_search") is not True):
+            raise RuntimeError("Candidate did not execute the v8 authentication search")
     return rows
 
 

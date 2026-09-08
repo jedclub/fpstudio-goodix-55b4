@@ -47,7 +47,7 @@ static int gpu_auth_match(FpPrint *enrolled,FpPrint *probe) {
   if(!pixels||length!=9504)return -1;
   const char *helper="/opt/fpstudio-auth/bin/fpstudio-auth-match";
   if(lstat(helper,&st)||st.st_uid!=0||!S_ISREG(st.st_mode)||(st.st_mode&0022))return -1;
-  g_autoptr(GSubprocessLauncher) launcher=g_subprocess_launcher_new(G_SUBPROCESS_FLAGS_STDIN_PIPE|G_SUBPROCESS_FLAGS_STDOUT_PIPE);
+  g_autoptr(GSubprocessLauncher) launcher=g_subprocess_launcher_new(G_SUBPROCESS_FLAGS_STDIN_PIPE|G_SUBPROCESS_FLAGS_STDOUT_PIPE|G_SUBPROCESS_FLAGS_STDERR_PIPE);
   const char *env[]={"PATH=/usr/bin","LANG=C.UTF-8",NULL};
   g_subprocess_launcher_set_environ(launcher,(gchar **)env);
   g_autoptr(GError) error=NULL;
@@ -56,14 +56,26 @@ static int gpu_auth_match(FpPrint *enrolled,FpPrint *probe) {
   guchar *pgm=g_malloc(9518);memcpy(pgm,"P5\n108 88\n255\n",14);memcpy(pgm+14,pixels,9504);
   g_autoptr(GBytes) input=g_bytes_new_take(pgm,9518);
   g_autoptr(GBytes) output=NULL;
+  g_autoptr(GBytes) diagnostics=NULL;
   g_autoptr(GCancellable) cancel=g_cancellable_new();
   GpuAuthDeadline deadline={0};deadline.child=child;deadline.cancel=cancel;
   g_mutex_init(&deadline.mutex);g_cond_init(&deadline.condition);
   GThread *thread=g_thread_new("gpu-auth-deadline",gpu_auth_deadline,&deadline);
-  const gboolean communicated=g_subprocess_communicate(child,input,cancel,&output,NULL,&error);
+  const gboolean communicated=g_subprocess_communicate(child,input,cancel,&output,&diagnostics,&error);
   g_mutex_lock(&deadline.mutex);deadline.done=TRUE;g_cond_signal(&deadline.condition);g_mutex_unlock(&deadline.mutex);
   g_thread_join(thread);g_mutex_clear(&deadline.mutex);g_cond_clear(&deadline.condition);
   if(!communicated||!output||!g_subprocess_get_if_exited(child))return -1;
+  /* The helper emits one fixed-format, numeric-only diagnostic line. Capture
+   * it so a no-match can be diagnosed from the journal without retaining an
+   * image, gallery filename, username or any other biometric material. */
+  if(diagnostics) {
+    gsize diagnostic_size=0;const char *diagnostic=g_bytes_get_data(diagnostics,&diagnostic_size);
+    if(diagnostic_size>=24&&diagnostic_size<=512&&
+       memcmp(diagnostic,"fpstudio GPU v8 accepted=",24)==0) {
+      g_autofree char *line=g_strndup(diagnostic,diagnostic_size);
+      g_strchomp(line);fp_dbg("%s",line);
+    }
+  }
   gsize size=0;const char *reply=g_bytes_get_data(output,&size);
   const char *accepted="FPSTUDIO_GPU_MATCH_V1\n";
   const int status=g_subprocess_get_exit_status(child);

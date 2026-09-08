@@ -280,29 +280,24 @@ Windows fingerprint sign-in will stop working on this machine, permanently. If y
         <translation>無法連接到守護行程。它通常會依需求自動啟動，安裝它可能就是唯一缺少的步驟。</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="387"/>
-        <source>polkit accepts a fingerprint</source>
-        <translation>polkit 接受指紋</translation>
-    </message>
-    <message>
-        <location filename="../src/setupcheck.cpp" line="395"/>
-        <location filename="../src/setupcheck.cpp" line="438"/>
+        <location filename="../src/setupcheck.cpp" line="407"/>
+        <location filename="../src/setupcheck.cpp" line="451"/>
         <source>pam_fprintd is not installed</source>
         <translation>未安裝 pam_fprintd</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="396"/>
-        <location filename="../src/setupcheck.cpp" line="439"/>
+        <location filename="../src/setupcheck.cpp" line="408"/>
+        <location filename="../src/setupcheck.cpp" line="452"/>
         <source>The PAM module that lets authentication use a fingerprint is missing. It usually ships with fprintd.</source>
         <translation>缺少讓身分驗證使用指紋的 PAM 模組。它通常隨 fprintd 一起提供。</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="404"/>
+        <location filename="../src/setupcheck.cpp" line="416"/>
         <source>polkit still asks for a password</source>
         <translation>polkit 仍要求輸入密碼</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="405"/>
+        <location filename="../src/setupcheck.cpp" line="417"/>
         <source>This adds one line to the stack polkit uses, so pkexec and the desktop&apos;s authentication dialog try the fingerprint first.
 
 Login and sudo are deliberately left alone, so a sensor that stops working can never lock you out of the machine. The line is &apos;sufficient&apos;: if the fingerprint fails for any reason, you are asked for the password exactly as before.</source>
@@ -311,22 +306,17 @@ Login and sudo are deliberately left alone, so a sensor that stops working can n
 登入和 sudo 刻意保持不變，這樣即使感測器停止運作也不會把你鎖在機器之外。這一行是 &apos;sufficient&apos;：若指紋因任何原因失敗，仍會像以前一樣要求輸入密碼。</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="413"/>
+        <location filename="../src/setupcheck.cpp" line="425"/>
         <source>Let polkit accept a fingerprint</source>
         <translation>讓 polkit 接受指紋</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="430"/>
-        <source>sudo accepts a fingerprint</source>
-        <translation>sudo 接受指紋</translation>
-    </message>
-    <message>
-        <location filename="../src/setupcheck.cpp" line="451"/>
+        <location filename="../src/setupcheck.cpp" line="464"/>
         <source>Terminal sudo still asks for a password only</source>
         <translation>終端機 sudo 目前仍只接受密碼</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="452"/>
+        <location filename="../src/setupcheck.cpp" line="465"/>
         <source>Optional, and a step further than the polkit rule above: sudo is usually the way back in when something else on the machine is broken, so extending fingerprint auth to it is worth doing deliberately rather than by default.
 
 The safety net is the same either way. The line added is &apos;sufficient&apos;, so a failing fingerprint falls back to the password exactly as before. sudo itself never stops working - only the fingerprint shortcut can.</source>
@@ -335,57 +325,57 @@ The safety net is the same either way. The line added is &apos;sufficient&apos;,
 安全網是一樣的。新增的一行是 &apos;sufficient&apos;，因此指紋失敗時會像以前一樣退回密碼。sudo 本身永遠不會失效——只有指紋這條捷徑可能失效。</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="462"/>
+        <location filename="../src/setupcheck.cpp" line="475"/>
         <source>Let sudo accept a fingerprint</source>
         <translation>讓 sudo 接受指紋</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="492"/>
+        <location filename="../src/setupcheck.cpp" line="505"/>
         <source>Sensor</source>
         <translation>感測器</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="493"/>
+        <location filename="../src/setupcheck.cpp" line="506"/>
         <source>Driver</source>
         <translation>驅動程式</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="494"/>
+        <location filename="../src/setupcheck.cpp" line="507"/>
         <source>Permissions</source>
         <translation>權限</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="495"/>
+        <location filename="../src/setupcheck.cpp" line="508"/>
         <source>Secure channel</source>
         <translation>安全通道</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="496"/>
+        <location filename="../src/setupcheck.cpp" line="509"/>
         <source>Sensor key</source>
         <translation>感測器金鑰</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="497"/>
+        <location filename="../src/setupcheck.cpp" line="510"/>
         <source>Image quality</source>
         <translation>影像品質</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="498"/>
+        <location filename="../src/setupcheck.cpp" line="511"/>
         <source>Enrolment</source>
         <translation>註冊</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="499"/>
+        <location filename="../src/setupcheck.cpp" line="512"/>
         <source>Unlocking</source>
         <translation>解鎖</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="500"/>
+        <location filename="../src/setupcheck.cpp" line="513"/>
         <source>Terminal sudo (optional)</source>
         <translation>終端機 sudo（可選）</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="521"/>
+        <location filename="../src/setupcheck.cpp" line="534"/>
         <source>Not checked - no sensor</source>
         <translation>未檢查 — 無感測器</translation>
     </message>
@@ -883,7 +873,7 @@ Type %2 to confirm.</source>
         <translation>請將手指放在感測器上並保持不動</translation>
     </message>
     <message>
-        <location filename="../src/setupwizard.cpp" line="472"/>
+        <location filename="../src/setupwizard.cpp" line="473"/>
         <source>in progress…</source>
         <translation>進行中…</translation>
     </message>
