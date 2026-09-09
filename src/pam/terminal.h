@@ -82,6 +82,19 @@ static void terminal_prompt(struct fp_terminal *t, const char *status, bool init
     if (t->submitted) dprintf(t->fd, "\r\n");
 }
 
+/* Keep the spinner in place: a new line every quarter-second makes sudo and
+ * TTY history unreadable. Do not animate a dumb terminal or after the user
+ * starts typing, because the password prompt then has priority. */
+static void terminal_progress(struct fp_terminal *t, const char *status)
+{
+    if (!t->ready || t->submitted || t->key_pressed || !t->colour) return;
+    /* The cursor rests on the password row. Move to the status row, redraw
+     * it, then return to and redraw the password row: net vertical movement
+     * is zero, so a long scan never scrolls the terminal. */
+    dprintf(t->fd, "\r\033[1A\033[2K%s\r\n\033[2K%s", status, terminal_choice(t->messages));
+    for (size_t i = 0; i < terminal_stars(t); ++i) dprintf(t->fd, "*");
+}
+
 static int terminal_init(struct fp_terminal *t, int fd, const struct termios *saved,
                          const struct fp_messages *messages)
 {

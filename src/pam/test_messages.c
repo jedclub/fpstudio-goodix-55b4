@@ -13,11 +13,13 @@ int main(void)
         const struct fp_messages *m = fp_message_catalog();
         if (m != &fp_catalog[i]) return 1;
         const char *fields[] = {m->prompt, m->prompt_tty, m->starting, m->no_response,
-            m->matched_pending, m->ready, m->retry, m->ended, m->unavailable, m->authenticated};
+            m->matched_pending, m->ready, m->contact, m->scanning, m->retry, m->ended, m->unavailable, m->authenticated};
         for (size_t j = 0; j < sizeof(fields) / sizeof(fields[0]); ++j)
             if (!fields[j] || !*fields[j] || strlen(fields[j]) >= 240) return 2;
         const char *format = strchr(m->retry, '%');
         if (!format || format[1] != 'd' || strchr(format + 1, '%')) return 3;
+        format = strchr(m->scanning, '%');
+        if (!format || format[1] != 's' || strchr(format + 1, '%')) return 8;
     }
     setenv("LANG", "ko_KR.UTF-8", 1); setenv("LC_MESSAGES", "ja_JP.UTF-8", 1);
     if (strcmp(fp_message_catalog()->language, "ja")) return 4;

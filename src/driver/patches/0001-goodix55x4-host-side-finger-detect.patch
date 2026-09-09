@@ -4,7 +4,7 @@ index 20db582..a40a97b 100644
 +++ b/libfprint/drivers/goodixtls/goodix55x4.c
 @@ -53,6 +53,18 @@
    (GOODIX55X4_HEIGHT * GOODIX55X4_SCAN_WIDTH) / 4 * 6
- #define GOODIX55X4_CAP_FRAMES 1 // Number of frames we capture per swipe
+#define GOODIX55X4_CAP_FRAMES 1 // Number of frames we capture per swipe
 
 +// The MCU's FDT down reply doesn't actually block until a real touch on
 +// this firmware - it's an instantaneous check regardless of the
