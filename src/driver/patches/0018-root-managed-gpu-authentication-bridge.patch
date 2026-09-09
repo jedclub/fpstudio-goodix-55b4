@@ -46,10 +46,12 @@ index 4620cc6..2c40e07 100644
 +  if(gpu_result!=-2) {
 +    fp_dbg("fpstudio GPU authentication result=%d",gpu_result);
 +    if(gpu_result<0) {
-+      *error=fpi_device_error_new_msg(FP_DEVICE_ERROR_GENERAL,"FPStudio GPU authentication unavailable; use password");
-+      return FPI_MATCH_ERROR;
++      /* An optional accelerator must never turn a valid capture into an
++       * outage. Fall through to SIGFM for this same probe. */
++      fp_dbg("fpstudio GPU unavailable; falling back to SIGFM");
++    } else {
++      return gpu_result?FPI_MATCH_SUCCESS:FPI_MATCH_FAIL;
 +    }
-+    return gpu_result?FPI_MATCH_SUCCESS:FPI_MATCH_FAIL;
 +  }
    SigfmImgInfo *against = g_ptr_array_index(print->prints, 0);
    for (int i = 0; i != template->prints->len; ++i) {
@@ -61,8 +63,9 @@ new file mode 100644
 +++ b/libfprint/gpu_auth_bridge.h
 @@ -0,0 +1,85 @@
 +/* Root-managed, opt-in GPU gallery bridge. No PAM or enrollment format change.
-+ * Missing gallery retains SIGFM. An enabled gallery NEVER falls back to the
-+ * old matcher on rejection/error. Existing fprintd authorizes/selects the user.
++ * Missing gallery retains SIGFM. A GPU transport error retains the established
++ * SIGFM matcher; a completed GPU rejection remains a rejection. Existing
++ * fprintd authorizes/selects the user.
 + */
 +#include <errno.h>
 +#include <sys/stat.h>
@@ -91,8 +94,9 @@ new file mode 100644
 +  return NULL;
 +}
 +
-+/* -2 = no configured override; -1 = error; 0 = reject; 1 = accept. */
-+static int gpu_auth_match(FpPrint *enrolled,FpPrint *probe) {
++/* One attempt creates its own helper process and therefore a new Vulkan
++ * instance. -2 = no override; -1 = error; 0 = reject; 1 = accept. */
++static int gpu_auth_attempt(FpPrint *enrolled,FpPrint *probe) {
 +  const char *username=fp_print_get_username(enrolled);
 +  if(g_strcmp0(fp_print_get_driver(enrolled),"goodixtls55x4")!=0)return -2;
 +  if(!username||!g_regex_match_simple("^[a-z_][a-z0-9_-]{0,31}$",username,0,0))return -2;
@@ -144,4 +148,15 @@ new file mode 100644
 +  if(status==0&&size==strlen(accepted)&&memcmp(reply,accepted,size)==0)return 1;
 +  if(status==1)return 0;
 +  return -1;
++}
++
++static int gpu_auth_match(FpPrint *enrolled,FpPrint *probe) {
++  int result=gpu_auth_attempt(enrolled,probe);
++  if(result<0) {
++    /* The failed helper is gone. Repeat once with a fresh Vulkan device;
++     * a definite non-match is not retried. */
++    fp_dbg("fpstudio GPU attempt failed; reinitialising Vulkan helper");
++    result=gpu_auth_attempt(enrolled,probe);
++  }
++  return result;
 +}

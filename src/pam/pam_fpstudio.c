@@ -295,6 +295,15 @@ PAM_EXTERN int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc, cons
                 }
             } else if (message.event == FP_READY) {
                 if (!cli) feedback(conv, false, messages->ready);
+            } else if (message.event == FP_CONTACT) {
+                if (cli) terminal_prompt(&input, messages->contact, false);
+                else feedback(conv, false, messages->contact);
+            } else if (message.event == FP_PROGRESS) {
+                static const char *frames[] = {"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"};
+                char text[240];
+                snprintf(text, sizeof(text), messages->scanning, frames[message.attempt % 10]);
+                if (cli) terminal_progress(&input, text);
+                else feedback(conv, false, text);
             } else if (message.event == FP_RETRY) {
                 char text[240];
                 snprintf(text, sizeof(text), cli ? "(%d/20)" : messages->retry, message.attempt);

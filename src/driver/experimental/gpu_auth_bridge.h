@@ -1,6 +1,7 @@
 /* Root-managed, opt-in GPU gallery bridge. No PAM or enrollment format change.
- * Missing gallery retains SIGFM. An enabled gallery NEVER falls back to the
- * old matcher on rejection/error. Existing fprintd authorizes/selects the user.
+ * Missing gallery retains SIGFM. A GPU transport error retains the established
+ * SIGFM matcher; a completed GPU rejection remains a rejection. Existing
+ * fprintd authorizes/selects the user.
  */
 #include <errno.h>
 #include <sys/stat.h>
@@ -29,24 +30,10 @@ static gpointer gpu_auth_deadline(gpointer data) {
   return NULL;
 }
 
-/* -2 = no configured override; -1 = error; 0 = reject; 1 = accept. */
-static int gpu_auth_match(FpPrint *enrolled,FpPrint *probe) {
-  const char *username=fp_print_get_username(enrolled);
-  if(g_strcmp0(fp_print_get_driver(enrolled),"goodixtls55x4")!=0)return -2;
-  if(!username||!g_regex_match_simple("^[a-z_][a-z0-9_-]{0,31}$",username,0,0))return -2;
-  g_autofree char *enabled=g_strdup_printf("/etc/fpstudio-auth-users/%s",username);
-  struct stat st;
-  if(lstat(enabled,&st))return errno==ENOENT?-2:-1;
-  if(st.st_uid!=0||!S_ISREG(st.st_mode)||(st.st_mode&0022))return -1;
-  g_autofree char *bank=g_strdup_printf("/var/lib/fprint/fpstudio-gpu/%s",username);
-  if(lstat(bank,&st))return -1;
-  if(geteuid()!=0||st.st_uid!=0||!S_ISDIR(st.st_mode)||(st.st_mode&0077))return -1;
-  FpImage *image=fp_print_get_image(probe);
-  if(!image||fp_image_get_width(image)!=108||fp_image_get_height(image)!=88)return -1;
-  gsize length=0;const guchar *pixels=fp_image_get_data(image,&length);
-  if(!pixels||length!=9504)return -1;
-  const char *helper="/opt/fpstudio-auth/bin/fpstudio-auth-match";
-  if(lstat(helper,&st)||st.st_uid!=0||!S_ISREG(st.st_mode)||(st.st_mode&0022))return -1;
+/* One invocation owns one fresh Vulkan instance. Destroying the child also
+ * destroys its device/queue state, so a second invocation is a real GPU
+ * reinitialisation rather than reusing a potentially poisoned context. */
+static int gpu_auth_attempt(const char *helper,const char *username,const guchar *pixels) {
   g_autoptr(GSubprocessLauncher) launcher=g_subprocess_launcher_new(G_SUBPROCESS_FLAGS_STDIN_PIPE|G_SUBPROCESS_FLAGS_STDOUT_PIPE|G_SUBPROCESS_FLAGS_STDERR_PIPE);
   const char *env[]={"PATH=/usr/bin","LANG=C.UTF-8",NULL};
   g_subprocess_launcher_set_environ(launcher,(gchar **)env);
@@ -65,13 +52,9 @@ static int gpu_auth_match(FpPrint *enrolled,FpPrint *probe) {
   g_mutex_lock(&deadline.mutex);deadline.done=TRUE;g_cond_signal(&deadline.condition);g_mutex_unlock(&deadline.mutex);
   g_thread_join(thread);g_mutex_clear(&deadline.mutex);g_cond_clear(&deadline.condition);
   if(!communicated||!output||!g_subprocess_get_if_exited(child))return -1;
-  /* The helper emits one fixed-format, numeric-only diagnostic line. Capture
-   * it so a no-match can be diagnosed from the journal without retaining an
-   * image, gallery filename, username or any other biometric material. */
   if(diagnostics) {
     gsize diagnostic_size=0;const char *diagnostic=g_bytes_get_data(diagnostics,&diagnostic_size);
-    if(diagnostic_size>=24&&diagnostic_size<=512&&
-       memcmp(diagnostic,"fpstudio GPU v8 accepted=",24)==0) {
+    if(diagnostic_size>=24&&diagnostic_size<=512&&memcmp(diagnostic,"fpstudio GPU v8 accepted=",24)==0) {
       g_autofree char *line=g_strndup(diagnostic,diagnostic_size);
       g_strchomp(line);fp_dbg("%s",line);
     }
@@ -82,4 +65,30 @@ static int gpu_auth_match(FpPrint *enrolled,FpPrint *probe) {
   if(status==0&&size==strlen(accepted)&&memcmp(reply,accepted,size)==0)return 1;
   if(status==1)return 0;
   return -1;
+}
+
+/* -2 = no configured override; -1 = error; 0 = reject; 1 = accept. */
+static int gpu_auth_match(FpPrint *enrolled,FpPrint *probe) {
+  const char *username=fp_print_get_username(enrolled);
+  if(g_strcmp0(fp_print_get_driver(enrolled),"goodixtls55x4")!=0)return -2;
+  if(!username||!g_regex_match_simple("^[a-z_][a-z0-9_-]{0,31}$",username,0,0))return -2;
+  g_autofree char *enabled=g_strdup_printf("/etc/fpstudio-auth-users/%s",username);
+  struct stat st;
+  if(lstat(enabled,&st))return errno==ENOENT?-2:-1;
+  if(st.st_uid!=0||!S_ISREG(st.st_mode)||(st.st_mode&0022))return -1;
+  g_autofree char *bank=g_strdup_printf("/var/lib/fprint/fpstudio-gpu/%s",username);
+  if(lstat(bank,&st))return -1;
+  if(geteuid()!=0||st.st_uid!=0||!S_ISDIR(st.st_mode)||(st.st_mode&0077))return -1;
+  FpImage *image=fp_print_get_image(probe);
+  if(!image||fp_image_get_width(image)!=108||fp_image_get_height(image)!=88)return -1;
+  gsize length=0;const guchar *pixels=fp_image_get_data(image,&length);
+  if(!pixels||length!=9504)return -1;
+  const char *helper="/opt/fpstudio-auth/bin/fpstudio-auth-match";
+  if(lstat(helper,&st)||st.st_uid!=0||!S_ISREG(st.st_mode)||(st.st_mode&0022))return -1;
+  int result=gpu_auth_attempt(helper,username,pixels);
+  if(result<0) {
+    fp_dbg("fpstudio GPU attempt failed; reinitialising Vulkan helper");
+    result=gpu_auth_attempt(helper,username,pixels);
+  }
+  return result;
 }
