@@ -18,7 +18,7 @@ jobs:
       - name: Install build and software-Vulkan dependencies
         run: |
           pacman -Syu --noconfirm --needed \
-            cmake ninja qt6-base qt6-tools pkgconf glib2 libfprint \
+            cmake ninja git qt6-base qt6-tools pkgconf glib2 libfprint \
             vulkan-headers vulkan-icd-loader vulkan-swrast glslang \
             pam systemd python-dbus python-gobject dbus
 
