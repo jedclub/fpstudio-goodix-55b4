@@ -6,11 +6,14 @@
 [![Platform: Arch Linux](https://img.shields.io/badge/platform-Arch%20Linux-1793D1?logo=arch-linux&logoColor=white)](https://archlinux.org/)
 [![C++20](https://img.shields.io/badge/C%2B%2B-20-00599C?logo=c%2B%2B)](https://isocpp.org/)
 
-**FPStudio** is a local-first Linux setup, diagnostics and fingerprint-research
-toolkit for the **Goodix 27c6:55b4** reader found in several ThinkPad L14/L15
-Gen 1 systems. It packages a patched `libfprint` build recipe alongside a Qt 6
-application that guides device checks, collection, enrolment and reversible
-authentication setup.
+**FPStudio** is an open-source Linux fingerprint driver toolkit and setup wizard
+for the **Goodix 27c6:55b4** reader found in several ThinkPad L14/L15 Gen 1
+systems. It combines a patched `libfprint`/`fprintd` build recipe with a Qt 6
+application for guided device checks, enrolment and reversible integration with
+KDE Plasma lock screen, sudo, Polkit, TTY/PAM and optional Vulkan GPU matching.
+
+If FPStudio makes your `27c6:55b4` reader usable, please star the repository so
+other affected Linux users can find the tested path more easily.
 
 > [!WARNING]
 > This is hardware-specific, experimental software. A failing fingerprint
@@ -37,8 +40,9 @@ kept outside version control.
 - **Vulkan-assisted research matching** with contact anchors, ridge-region
   checks, bounded rotation and ±5% uniform-scale search. The coloured preview
   makes comparison evidence and uncertain alignment visible.
-- **Privacy-local research sessions**. Biometric frames and templates belong in
-  `local-private/`, which is excluded from Git.
+- **Privacy-local research sessions**. Installed builds store biometric frames
+  and templates under `~/.local/share/fpstudio/recognition/`; source-tree test
+  material under `local-private/` remains excluded from Git.
 - **Eleven UI languages**: English, Korean, Japanese, Simplified/Traditional
   Chinese, Spanish, German, French, Russian, Italian and Portuguese.
 - **Safe authentication boundary**: password fallback remains available;
@@ -76,8 +80,11 @@ cmake -S src/fpstudio -B build -G Ninja
 cmake --build build
 ctest --test-dir build --output-on-failure
 
-# 3. Open the setup wizard.
-./build/fpstudio
+# 3. Install the Release application and its self-contained wizard helpers.
+sudo cmake --install build --prefix /usr
+
+# 4. Open the setup wizard.
+fpstudio
 ```
 
 The GUI resolves its language from `--lang`, a remembered user choice, then
@@ -112,10 +119,12 @@ sessions and likely failure points with:
 /opt/fpstudio-auth/bin/fpstudio-auth-report --since today --json
 ```
 
-The main GUI catalogues and PAM notices cover eleven languages. PAM follows
-`LC_ALL`, `LC_MESSAGES`, then `LANG`, independently of the GUI language selector.
-Some advanced setup/recovery wizard messages remain Korean-only; catalogue
-completeness checks do not yet cover those hard-coded strings.
+The GUI and setup/recovery wizard route their shipped messages through the Qt
+catalogues. Korean and English setup text is complete; the other catalogues
+use an English fallback for newly added advanced setup details. PAM notices
+cover all eleven languages and follow `LC_ALL`, `LC_MESSAGES`, `LANGUAGE`, then
+`LANG`, independently of the GUI language selector. Colon-separated gettext
+preferences such as `LANGUAGE=ko:en` are supported.
 
 - **No biometrics in this repository or release assets.** The ignore rules
   exclude local research material, PGM frames, fingerprint templates, build
@@ -123,17 +132,21 @@ completeness checks do not yet cover those hard-coded strings.
 - **No firmware blob is shipped.** The repository contains source probes and
   build instructions only.
 - **System changes are explicit and reversible.** The wizard separates checks
-  from installation and preserves the password fallback. It does not alter
-  login authentication.
+  from installation and preserves the password fallback. Local TTY login and
+  `su` are supported only when their PAM profiles match the guarded patterns;
+  remote login, SSH and disk unlock are never modified.
 - **Research is not a security claim.** A high matcher score or consistent
   ridge pattern is not proof of identity, FAR, FRR or production readiness.
 
 ## Release contents
 
-Each tagged release publishes a source archive and SHA-256 checksum. It does
-not publish a prebuilt fingerprint driver: recipients build the pinned source
-with the supplied patches on their own Arch system. This keeps the driver,
-runtime dependencies and local security policy visible and reviewable.
+Each tagged release publishes source and Arch Linux x86-64 application bundles
+with SHA-256 checksums. It does not publish a prebuilt fingerprint driver:
+recipients build the pinned source with the supplied patches on their own Arch
+system. The application bundle contains translations, built authentication
+helpers and pinned setup recipes, so the installed wizard does not depend on
+the source checkout. This keeps the driver, runtime dependencies and local
+security policy visible and reviewable.
 
 The current driver source revision is
 [`c1937b99ec3db5abca05f619a95d2e37496d8810`](https://github.com/TheWeirdDev/libfprint/commit/c1937b99ec3db5abca05f619a95d2e37496d8810).
@@ -148,8 +161,17 @@ ctest --test-dir build --output-on-failure
 
 Pull requests and `main` changes run privacy checks, driver package builds,
 translation checks, a full CTest run and a release-readiness check. Pushing a
-`v*` tag builds a source archive, writes its checksum and publishes the
-matching release note from `docs/releases/`.
+`v*` tag rebuilds and tests the project, publishes source and application
+bundles with checksums, and uses the matching note from `docs/releases/`.
+
+## Help and contributing
+
+Start with the [setup guide](docs/00-setup.md). For a reproducible problem, use
+the structured [bug report](https://github.com/jedclub/fpstudio-goodix-55b4/issues/new?template=bug_report.yml);
+for improvements, see [CONTRIBUTING.md](CONTRIBUTING.md). Never attach biometric
+images, templates, passwords, device keys or raw private research sessions.
+Security-sensitive reports belong in a private GitHub security advisory, as
+described in [SECURITY.md](SECURITY.md).
 
 ## Documentation
 
@@ -159,7 +181,7 @@ matching release note from `docs/releases/`.
 - [Recognition and research workflow](docs/07-recognition.md)
 - [Vulkan matching design](docs/11-vulkan-matching.md)
 - [Contact-anchored v8 matcher](docs/20-contact-anchored-rotation-v8.md)
-- [v0.2.8 release notes](docs/releases/v0.2.8.md)
+- [v0.2.9 release notes](docs/releases/v0.2.9.md)
 
 ## Licence and third-party code
 

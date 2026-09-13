@@ -14,15 +14,15 @@ struct fp_messages {
  * Retry has exactly one %d argument in every language. */
 static const struct fp_messages fp_catalog[] = {
     {"en", "[Admin Auth] Password: ", "[Admin Auth] Password (input is hidden):\n",
-     "[Fingerprint] Starting sensor.", "[Fingerprint] No response. Use password.",
-     "[Fingerprint] Matched. Enter to finish.", "[Fingerprint] Touch sensor.", "[Fingerprint] Detected. Scanning.", "[Fingerprint] Scanning %s",
-     "[Fingerprint] Retry %d/20. Lift and touch.", "[Fingerprint] Ended. Use password.",
-     "[Fingerprint] Unavailable. Use password.", "[Fingerprint] Authenticated."},
+     "[Fingerprint] Starting sensor.", "[Fingerprint] No response. Enter your password.",
+     "[Fingerprint] Matched. Enter to finish.", "[Fingerprint] Ready. Touch the sensor.", "[Fingerprint] Finger detected. Checking.", "[Fingerprint] Checking %s",
+     "[Fingerprint] No match %d/20. Lift and touch again.", "[Fingerprint] Scanning ended. Enter your password.",
+     "[Fingerprint] Unavailable. Enter your password.", "[Fingerprint] Authenticated."},
     {"ko", "[Admin 인증] 비밀번호: ", "[Admin 인증] 비밀번호 (입력 내용은 표시되지 않음):\n",
-     "[지문] 준비 중", "[지문] 응답 없음 · 비밀번호 입력",
-     "[지문] 일치 · Enter로 완료", "[지문] 손가락을 대세요", "[지문] 감지됨 · 스캔 중", "[지문] 스캔 중 %s",
-     "[지문] 떼고 다시 대세요 (%d/20)", "[지문] 대기 종료 · 비밀번호 입력",
-     "[지문] 사용 불가 · 비밀번호 입력", "[지문] 인증 완료"},
+     "[지문] 센서 시작 중", "[지문] 응답 없음 · 비밀번호를 직접 입력하세요",
+     "[지문] 일치 · Enter로 완료", "[지문] 준비됨 · 센서에 손가락을 대세요", "[지문] 손가락 감지 · 확인 중", "[지문] 확인 중 %s",
+     "[지문] 불일치 %d/20 · 떼고 다시 대세요", "[지문] 인식 종료 · 비밀번호를 직접 입력하세요",
+     "[지문] 사용 불가 · 비밀번호를 직접 입력하세요", "[지문] 인증 완료"},
     {"ja", "[管理者認証] パスワード: ", "[管理者認証] パスワード（入力は非表示）:\n",
      "[指紋] 準備中", "[指紋] 応答なし・パスワードを入力",
      "[指紋] 一致・Enterで完了", "[指紋] 指を置いてください", "[指紋] 検出・スキャン中", "[指紋] スキャン中 %s",
@@ -74,6 +74,10 @@ static const struct fp_messages *fp_message_catalog(void)
 {
     const char *locale = getenv("LC_ALL");
     if (!locale || !*locale) locale = getenv("LC_MESSAGES");
+    /* Plasma/systemd user sessions may export gettext's LANGUAGE without an
+     * LC_MESSAGES override.  Accept its first supported tag (the usual value
+     * is a colon-separated preference list such as ko:en). */
+    if (!locale || !*locale) locale = getenv("LANGUAGE");
     if (!locale || !*locale) locale = getenv("LANG");
     if (!locale || strnlen(locale, 128) >= 128) return &fp_catalog[0];
     const char *tag = locale;
@@ -87,7 +91,7 @@ static const struct fp_messages *fp_message_catalog(void)
     for (size_t i = 0; i < sizeof(fp_catalog) / sizeof(fp_catalog[0]); ++i) {
         size_t length = strlen(fp_catalog[i].language);
         if (!strncasecmp(tag, fp_catalog[i].language, length) &&
-            (!tag[length] || strchr("_.-@", tag[length]))) return &fp_catalog[i];
+            (!tag[length] || strchr("_.-@:", tag[length]))) return &fp_catalog[i];
     }
     return &fp_catalog[0];
 }

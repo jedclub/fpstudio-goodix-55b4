@@ -32,6 +32,12 @@
 
 namespace {
 
+QString researchRoot()
+{
+    return QDir(QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation))
+        .absoluteFilePath(QStringLiteral("fpstudio/recognition"));
+}
+
 void printUsage()
 {
     std::fputs(
@@ -145,7 +151,7 @@ int main(int argc, char **argv)
         return 3;
     }
     if (args.contains(QStringLiteral("--live"))) {
-        const QString directory = QDir::cleanPath(QStringLiteral(FPSTUDIO_SOURCE_DIR "/../../local-private/recognition/live-")
+        const QString directory = QDir::cleanPath(researchRoot() + QStringLiteral("/live-")
                              + QDateTime::currentDateTime().toString("yyyyMMdd-HHmmss-zzz"));
         const int refAt=args.indexOf(QStringLiteral("--match-reference-dir"));
         const QString references=refAt>=0&&refAt+1<args.size()?args.at(refAt+1):QString();
@@ -163,7 +169,7 @@ int main(int argc, char **argv)
     if (args.contains(QStringLiteral("--research"))) {
         const int at = args.indexOf(QStringLiteral("--session-dir"));
         const QString directory = at >= 0 && at + 1 < args.size() ? args.at(at + 1)
-            : QDir::cleanPath(QStringLiteral(FPSTUDIO_SOURCE_DIR "/../../local-private/recognition/session-")
+            : QDir::cleanPath(researchRoot() + QStringLiteral("/session-")
                              + QDateTime::currentDateTime().toString("yyyyMMdd-HHmmss-zzz"));
         fpstudio::ResearchWindow window(directory, nullptr, {}, 5000, 4000,
                                          !args.contains(QStringLiteral("--preview")));

@@ -38,13 +38,14 @@ QString selfPath()
 // The repo's own files, needed by the fixes. Found relative to the binary so a
 // build tree and an install both work; empty when neither has them, which is
 // what turns a fixable step into a manual one.
-QString repoFile(const QString &relative)
+QString resourceFile(const QString &relative)
 {
     const QString bin = QFileInfo(QCoreApplication::applicationFilePath()).absolutePath();
     const QStringList roots = {
-        bin + QStringLiteral("/.."),                       // build tree
-        bin + QStringLiteral("/../share/fpstudio"),        // installed
-        QStringLiteral(FPSTUDIO_SOURCE_DIR),               // configured at build
+        bin + QStringLiteral("/../share/fpstudio/setup"),  // installed
+        bin,                                                // in-tree root build
+        bin + QStringLiteral("/.."),                       // sibling root build
+        bin + QStringLiteral("/../../.."),                 // src/fpstudio/build
     };
     for (const QString &root : roots) {
         const QString path = QDir(root).absoluteFilePath(relative);
@@ -101,7 +102,7 @@ StepResult driver()
         return r;
     }
 
-    const QString pkgbuild = repoFile(QStringLiteral("../driver/PKGBUILD"));
+    const QString pkgbuild = resourceFile(QStringLiteral("src/driver/PKGBUILD"));
     if (pkgbuild.isEmpty()) {
         r.state = StepState::Manual;
         r.summary = QCoreApplication::translate("fpstudio", "Patched driver is not installed");
@@ -119,7 +120,7 @@ StepResult driver()
                    "Install fprintd afterwards, not before: installing it "
                    "first pulls in the stock libfprint and undoes this.");
     r.action = QCoreApplication::translate("fpstudio", "Build and install the patched libfprint");
-    r.commands = {QStringLiteral("python %1").arg(repoFile(QStringLiteral("../../tools/driver_build.py")))};
+    r.commands = {QStringLiteral("python %1").arg(resourceFile(QStringLiteral("tools/driver_build.py")))};
     return r;
 }
 
@@ -152,7 +153,7 @@ StepResult udevRule()
         return r;
     }
 
-    const QString rule = repoFile(QStringLiteral("99-fpstudio-goodix.rules"));
+    const QString rule = resourceFile(QStringLiteral("src/fpstudio/99-fpstudio-goodix.rules"));
     r.state = rule.isEmpty() ? StepState::Manual : StepState::Missing;
     r.summary = present ? QCoreApplication::translate("fpstudio", "udev rule is installed but has not taken effect")
                         : QCoreApplication::translate("fpstudio", "Every sensor operation will ask for a password");
@@ -192,9 +193,9 @@ StepResult tlsSession(const QString &probe)
     StepResult r{StepId::TlsSession};
     if(probe.isEmpty()) {
         r.state=StepState::Unknown;
-        r.summary=QStringLiteral("장치 통신은 아직 시험하지 않았습니다");
-        r.detail=QStringLiteral("다른 인증 요청을 닫고 영상 시험을 실행하세요. 위저드를 열거나 새로고침할 때 센서를 자동 점유하지 않습니다.");
-        r.action=QStringLiteral("센서 통신·영상 시험");
+        r.summary=QCoreApplication::translate("fpstudio", "Device communication has not been tested yet");
+        r.detail=QCoreApplication::translate("fpstudio", "Close other authentication requests, then run the image test. Opening or refreshing the wizard never claims the sensor automatically.");
+        r.action=QCoreApplication::translate("fpstudio", "Test sensor communication and image capture");
         return r;
     }
 
@@ -240,12 +241,12 @@ StepResult psk(const StepResult &tls)
     if(!lastHardwareProbe.contains(QStringLiteral("Invalid device PSK:"))) {
         r.state=StepState::Unknown;
         r.irreversible=false;
-        r.summary=QStringLiteral("키 변경 필요 여부 미확인 — 자동 쓰기 금지");
-        r.detail=QStringLiteral("USB 오류나 센서 점유를 키 불일치로 간주하지 않습니다. 먼저 통신 시험을 완료하세요.");
+        r.summary=QCoreApplication::translate("fpstudio", "Key status is unknown — automatic writing is disabled");
+        r.detail=QCoreApplication::translate("fpstudio", "A USB error or a busy sensor is not treated as a key mismatch. Complete the communication test first.");
         return r;
     }
 
-    const QString script = repoFile(QStringLiteral("../firmware/probes/write_psk_only.py"));
+    const QString script = resourceFile(QStringLiteral("src/firmware/probes/write_psk_only.py"));
     r.state = script.isEmpty() ? StepState::Manual : StepState::Missing;
     r.summary = QCoreApplication::translate("fpstudio", "The sensor needs the all-zero key written");
     r.detail = QCoreApplication::translate("fpstudio", "This cannot be undone.\n\n"
@@ -354,20 +355,20 @@ StepResult gpuAuth()
                     QStringLiteral("auth-v8-contact-anchored-ridge-roi-uniform-scale-5pct")&&
                     data.value("artifact_sha256").isObject();
             if(current) {
-                r.state=StepState::Ok;r.summary=QStringLiteral("GPU 인증 연결 설치됨 · 기준 %1장").arg(data.value("references").toInt());
-                r.detail=QStringLiteral("실험적 인증입니다. 설정 설치와 실제 sudo/KDE 인증 성공은 별개입니다. 복구 위치: %1").arg(data.value("backup").toString());
+                r.state=StepState::Ok;r.summary=QCoreApplication::translate("fpstudio", "GPU authentication installed · %1 references").arg(data.value("references").toInt());
+                r.detail=QCoreApplication::translate("fpstudio", "This is experimental authentication. A valid installation does not by itself prove successful sudo/KDE authentication. Recovery location: %1").arg(data.value("backup").toString());
                 return r;
             }
             r.state=StepState::Missing;
-            r.summary=QStringLiteral("GPU 인증 엔진 업데이트 필요");
-            r.action=QStringLiteral("최신 GPU 인증 엔진 배포");
-            r.detail=QStringLiteral("기존 기준 %1장·fprintd 등록·PAM 설정은 보존합니다. 최신 매처·셰이더·드라이버 브리지만 교체하고, 기준 영상 자기 비교가 통과할 때만 적용합니다.").arg(data.value("references").toInt());
+            r.summary=QCoreApplication::translate("fpstudio", "GPU authentication engine needs an update");
+            r.action=QCoreApplication::translate("fpstudio", "Deploy the latest GPU authentication engine");
+            r.detail=QCoreApplication::translate("fpstudio", "The existing %1 references, fprintd enrolment and PAM settings are preserved. Only the matcher, shader and driver bridge are replaced, and the update is applied only after reference self-checks pass.").arg(data.value("references").toInt());
             return r;
         }
     }
-    r.state=StepState::Missing;r.summary=QStringLiteral("저장 지문과 새 GPU 엔진을 시스템 인증에 연결");
-    r.action=QStringLiteral("저장 지문 가져오기 · sudo/KDE 연결");
-    r.detail=QStringLiteral("본인의 저장 지문 폴더를 선택합니다. 기존 fprintd 등록은 보존하고, root 전용 기준 데이터로 가져옵니다. sudo·관리자 창·KDE 잠금 화면을 함께 연결하며 10회/30초 제한과 비밀번호 경로를 유지합니다. 다른 지문 거절 성능은 아직 검증되지 않은 실험적 기능입니다.");
+    r.state=StepState::Missing;r.summary=QCoreApplication::translate("fpstudio", "Connect saved fingerprints and the GPU engine to system authentication");
+    r.action=QCoreApplication::translate("fpstudio", "Import saved fingerprints and connect sudo/KDE");
+    r.detail=QCoreApplication::translate("fpstudio", "Select a folder containing your own saved fingerprints. Existing fprintd enrolment is preserved and the references are imported into root-only storage. sudo, administrator dialogs, TTY login and the KDE lock screen are connected with a 20-attempt/60-second limit and a password path. Rejection of other fingers remains experimental.");
     return r;
 }
 
@@ -378,9 +379,9 @@ StepResult pamKde()
     const QString text=f.open(QIODevice::ReadOnly)?QString::fromUtf8(f.readAll()):QString();
     const QRegularExpression entry(QStringLiteral("(?m)^-?auth\\s+required\\s+/opt/fpstudio-auth/lib/pam_fpstudio\\.so\\s+fingerprint-only[ \\t]*$"));
     r.state=entry.match(text).hasMatch()?StepState::Ok:StepState::Missing;
-    r.summary=r.state==StepState::Ok?QStringLiteral("KDE 지문·비밀번호 병렬 경로 설정됨"):QStringLiteral("지문·비밀번호 동시 입력 설정 필요");
-    r.detail=QStringLiteral("지문은 전체 30초·최대 20회 검사하며 준비·재시도·종료 결과를 표시합니다. KDE의 별도 비밀번호 입력은 계속 사용할 수 있습니다. 실제 잠금 해제 성공은 별도 확인이 필요합니다.");
-    if(r.state!=StepState::Ok)r.action=QStringLiteral("지문·비밀번호 동시 입력 적용");
+    r.summary=r.state==StepState::Ok?QCoreApplication::translate("fpstudio", "KDE fingerprint and password paths are configured in parallel"):QCoreApplication::translate("fpstudio", "Simultaneous fingerprint and password input needs configuration");
+    r.detail=QCoreApplication::translate("fpstudio", "Fingerprint scanning runs for up to 60 seconds or 20 failed contacts and reports ready, retry and final states. KDE's separate password field remains available. Confirm actual lock-screen unlocking separately.");
+    if(r.state!=StepState::Ok)r.action=QCoreApplication::translate("fpstudio", "Enable simultaneous fingerprint and password input");
     return r;
 }
 
@@ -393,38 +394,20 @@ StepResult pamPolkit()
     QFile f(installed);
     if (f.open(QIODevice::ReadOnly)) {
         const QString text = QString::fromUtf8(f.readAll());
-        if (text.contains(QStringLiteral("auth sufficient /opt/fpstudio-auth/lib/pam_fpstudio.so"))&&
-            QRegularExpression(QStringLiteral("(?m)^auth\\s+include\\s+system-auth[ \\t]*$")).match(text).hasMatch()) {
+        if (simultaneousPamConfigured(text)) {
             r.state = StepState::Ok;
-            r.summary = QStringLiteral("관리자 창 지문·비밀번호 동시 입력 설정됨");
+            r.summary = QCoreApplication::translate("fpstudio", "Administrator dialogs accept fingerprint and password simultaneously");
             return r;
         }
     }
 
-    if (!QFileInfo::exists(QStringLiteral("/usr/lib/security/pam_fprintd.so")) &&
-        !QFileInfo::exists(QStringLiteral("/lib/x86_64-linux-gnu/security/pam_fprintd.so"))) {
-        r.state = StepState::Manual;
-        r.summary = QCoreApplication::translate("fpstudio", "pam_fprintd is not installed");
-        r.detail = QCoreApplication::translate("fpstudio", "The PAM module that lets authentication use a "
-                       "fingerprint is missing. It usually ships with fprintd.");
-        return r;
-    }
-
-    const QString stack = repoFile(QStringLiteral("pam/polkit-1"));
-    const QString notice = repoFile(QStringLiteral("pam/admin-auth-notice.txt"));
-    r.state = stack.isEmpty() || notice.isEmpty() ? StepState::Manual : StepState::Missing;
-    r.summary = QCoreApplication::translate("fpstudio", "polkit still asks for a password");
-    r.detail = QCoreApplication::translate("fpstudio", "This adds one line to the stack polkit uses, so pkexec and "
-                   "the desktop's authentication dialog try the fingerprint "
-                   "first.\n\n"
-                   "Login and sudo are deliberately left alone, so a sensor "
-                   "that stops working can never lock you out of the machine. "
-                   "The line is 'sufficient': if the fingerprint fails for any "
-                   "reason, you are asked for the password exactly as before.");
+    const QString helper = resourceFile(QStringLiteral("tools/dual_auth_install.py"));
+    r.state = helper.isEmpty() ? StepState::Manual : StepState::Missing;
+    r.summary = QCoreApplication::translate("fpstudio", "Administrator dialogs are not connected to simultaneous authentication");
+    r.detail = QCoreApplication::translate("fpstudio", "The guarded PAM module scans a fingerprint while keeping the normal password path available. It backs up every changed file, validates the KDE password service first, and fails closed on module errors. The sensor is limited to 60 seconds or 20 failed contacts.");
     if (r.state == StepState::Missing) {
-        r.action = QCoreApplication::translate("fpstudio", "Let polkit accept a fingerprint");
-        r.commands = {QStringLiteral("install -Dm644 %1 /etc/security/fpstudio-admin-auth.txt").arg(notice),
-                      QStringLiteral("install -Dm644 %1 %2").arg(stack, installed)};
+        r.action = QCoreApplication::translate("fpstudio", "Connect administrator dialogs to fingerprint and password");
+        r.commands = {QStringLiteral("python %1 --apply").arg(helper)};
     }
     return r;
 }
@@ -437,49 +420,48 @@ StepResult pamSudo()
     QFile f(QStringLiteral("/etc/pam.d/sudo"));
     if (f.open(QIODevice::ReadOnly)) {
         const QString text = QString::fromUtf8(f.readAll());
-        if (text.contains(QStringLiteral("auth sufficient /opt/fpstudio-auth/lib/pam_fpstudio.so"))&&
-            QRegularExpression(QStringLiteral("(?m)^auth\\s+include\\s+system-auth[ \\t]*$")).match(text).hasMatch()) {
+        if (simultaneousPamConfigured(text)) {
             r.state = StepState::Ok;
-            r.summary = QStringLiteral("sudo 지문·비밀번호 동시 입력 설정됨");
+            r.summary = QCoreApplication::translate("fpstudio", "sudo accepts fingerprint and password simultaneously");
             return r;
         }
     }
 
-    if (!QFileInfo::exists(QStringLiteral("/usr/lib/security/pam_fprintd.so")) &&
-        !QFileInfo::exists(QStringLiteral("/lib/x86_64-linux-gnu/security/pam_fprintd.so"))) {
-        r.state = StepState::Manual;
-        r.summary = QCoreApplication::translate("fpstudio", "pam_fprintd is not installed");
-        r.detail = QCoreApplication::translate("fpstudio", "The PAM module that lets authentication use a "
-                       "fingerprint is missing. It usually ships with fprintd.");
-        return r;
-    }
-
-    // Opt-in and deliberately excluded from allReady() - sudo is usually the
-    // way back in when something else on the machine breaks, so this asks
-    // rather than assumes. See the detail text below for why extending
-    // fingerprint auth to it is still safe.
-    const QString stack = repoFile(QStringLiteral("pam/sudo"));
-    const QString notice = repoFile(QStringLiteral("pam/admin-auth-notice.txt"));
-    r.state = stack.isEmpty() || notice.isEmpty() ? StepState::Manual : StepState::Missing;
-    r.summary = QCoreApplication::translate("fpstudio", "Terminal sudo still asks for a password only");
-    r.detail = QCoreApplication::translate("fpstudio", "Optional, and a step further than the polkit rule "
-                   "above: sudo is usually the way back in when something "
-                   "else on the machine is broken, so extending fingerprint "
-                   "auth to it is worth doing deliberately rather than by "
-                   "default.\n\n"
-                   "The safety net is the same either way. The line added is "
-                   "'sufficient', so a failing fingerprint falls back to the "
-                   "password exactly as before. sudo itself never stops "
-                   "working - only the fingerprint shortcut can.");
+    const QString helper = resourceFile(QStringLiteral("tools/dual_auth_install.py"));
+    r.state = helper.isEmpty() ? StepState::Manual : StepState::Missing;
+    r.summary = QCoreApplication::translate("fpstudio", "Terminal sudo is not connected to simultaneous authentication");
+    r.detail = QCoreApplication::translate("fpstudio", "The terminal keeps input hidden and accepts either a completed fingerprint match or an explicitly submitted password. Typing selects the password path; otherwise a fingerprint match completes immediately. The original PAM files are backed up before the guarded module is installed.");
     if (r.state == StepState::Missing) {
-        r.action = QCoreApplication::translate("fpstudio", "Let sudo accept a fingerprint");
-        r.commands = {QStringLiteral("install -Dm644 %1 /etc/security/fpstudio-admin-auth.txt").arg(notice),
-                      QStringLiteral("install -Dm644 %1 /etc/pam.d/sudo").arg(stack)};
+        r.action = QCoreApplication::translate("fpstudio", "Connect sudo to fingerprint and password");
+        r.commands = {QStringLiteral("python %1 --apply").arg(helper)};
     }
     return r;
 }
 
 } // namespace
+
+QString setupResource(const QString &relative)
+{
+    return resourceFile(relative);
+}
+
+bool simultaneousPamConfigured(const QString &text)
+{
+    // `sufficient` was used by the early serial implementation. It must not
+    // be reported as current: the simultaneous module returns PAM_IGNORE for
+    // password selection and therefore needs the explicit fail-closed jump
+    // table installed by dual_auth_install.py.
+    static const QRegularExpression module(QStringLiteral(
+        "(?m)^auth[ \\t]+\\[success=done[ \\t]+ignore=ignore[ \\t]+abort=die[ \\t]+"
+        "auth_err=die[ \\t]+default=die\\][ \\t]+"
+        "/opt/fpstudio-auth/lib/pam_fpstudio\\.so[ \\t]*$"));
+    static const QRegularExpression lock(QStringLiteral(
+        "(?m)^auth[ \\t]+requisite[ \\t]+pam_faillock\\.so[ \\t]+preauth[ \\t]*$"));
+    static const QRegularExpression password(QStringLiteral(
+        "(?m)^auth[ \\t]+include[ \\t]+system-auth[ \\t]*$"));
+    return module.match(text).hasMatch() && lock.match(text).hasMatch() &&
+           password.match(text).hasMatch();
+}
 
 QString stepKey(StepId id)
 {
@@ -510,9 +492,9 @@ QString stepTitle(StepId id)
     case StepId::Capture:    return QCoreApplication::translate("fpstudio", "Image quality");
     case StepId::Enrolment:  return QCoreApplication::translate("fpstudio", "Enrolment");
     case StepId::PamPolkit:  return QCoreApplication::translate("fpstudio", "Unlocking");
-    case StepId::PamSudo:    return QCoreApplication::translate("fpstudio", "Terminal sudo (optional)");
-    case StepId::GpuAuth:    return QStringLiteral("저장 지문 · GPU 인증 연결");
-    case StepId::PamKde:     return QStringLiteral("KDE 잠금 화면");
+    case StepId::PamSudo:    return QCoreApplication::translate("fpstudio", "Terminal sudo");
+    case StepId::GpuAuth:    return QCoreApplication::translate("fpstudio", "Saved fingerprints · GPU authentication");
+    case StepId::PamKde:     return QCoreApplication::translate("fpstudio", "KDE lock screen");
     }
     return QString();
 }

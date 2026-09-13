@@ -31,6 +31,7 @@ FINGER=${1:-right-index-finger}
 
 # The binary beside this script, so a build tree and an install both work.
 FPSTUDIO=${FPSTUDIO:-$(dirname "$(readlink -f "$0")")/build/fpstudio}
+[ -x "$FPSTUDIO" ] || FPSTUDIO=$(dirname "$(readlink -f "$0")")/../../../../../bin/fpstudio
 [ -x "$FPSTUDIO" ] || FPSTUDIO=$(command -v fpstudio || echo "")
 LANGOPT=()
 [ -n "${FPSTUDIO_LANG:-}" ] && LANGOPT=(--lang "$FPSTUDIO_LANG")

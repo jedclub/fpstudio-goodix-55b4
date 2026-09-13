@@ -5,6 +5,7 @@
 #include <QFileInfo>
 #include <QFile>
 #include <QFileDialog>
+#include <QDir>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QTimer>
@@ -62,14 +63,8 @@ QString colour(StepState s)
 // a build tree, under share/ once installed.
 QString enrolmentScript()
 {
-    const QString bin = QFileInfo(QCoreApplication::applicationFilePath()).absolutePath();
-    for (const QString &c : {bin + QStringLiteral("/../fprintd-beacon.sh"),
-                             bin + QStringLiteral("/../share/fpstudio/fprintd-beacon.sh"),
-                             QStringLiteral(FPSTUDIO_SOURCE_DIR "/fprintd-beacon.sh")}) {
-        if (QFileInfo(c).isExecutable())
-            return QFileInfo(c).canonicalFilePath();
-    }
-    return QString();
+    const QString script = setupResource(QStringLiteral("src/fpstudio/fprintd-beacon.sh"));
+    return QFileInfo(script).isExecutable() ? script : QString();
 }
 
 } // namespace
@@ -89,7 +84,7 @@ void SetupWizard::openDiagnostics()
 
 SetupWizard::SetupWizard(QWidget *parent) : QDialog(parent)
 {
-    setWindowTitle(QStringLiteral("FPStudio · 지문 인증 통합 설정"));
+    setWindowTitle(tr("FPStudio · Integrated fingerprint authentication setup"));
     resize(1050, 740);
 
     m_list = new QListWidget;
@@ -123,7 +118,7 @@ SetupWizard::SetupWizard(QWidget *parent) : QDialog(parent)
     m_fix->setMinimumHeight(40);
     m_fix->setStyleSheet(QStringLiteral("QPushButton {background:#1769c2;color:white;border:0;border-radius:6px;padding:8px 16px;font-weight:bold;} QPushButton:disabled {background:#a0a8b0;color:#e8e8e8;}"));
     m_skip   = new QPushButton(tr("Skip"));
-    m_rescan = new QPushButton(QStringLiteral("상태 다시 확인"));
+    m_rescan = new QPushButton(tr("Check status again"));
     connect(m_fix,    &QPushButton::clicked, this, &SetupWizard::runCurrentFix);
     connect(m_skip,   &QPushButton::clicked, this, &SetupWizard::skipCurrent);
     connect(m_rescan, &QPushButton::clicked, this, &SetupWizard::rescan);
@@ -135,7 +130,7 @@ SetupWizard::SetupWizard(QWidget *parent) : QDialog(parent)
     // A quiet checklist of green marks does not say "you are done" on its
     // own - this does, and Finish is the one button in the dialog whose whole
     // job is to end the wizard on purpose.
-    m_completionText = new QLabel(QStringLiteral("설정 단계 완료 · 실제 sudo/KDE 인증과 비밀번호 복구 시험은 별도 확인이 필요합니다."));
+    m_completionText = new QLabel(tr("Setup steps complete · Verify real sudo/KDE authentication and password recovery separately."));
     m_completionText->setWordWrap(true);
     m_finish = new QPushButton(tr("Finish"));
     connect(m_finish, &QPushButton::clicked, this, &QDialog::accept);
@@ -163,14 +158,14 @@ SetupWizard::SetupWizard(QWidget *parent) : QDialog(parent)
     m_completion->hide();
 
     auto *btns = new QHBoxLayout;
-    m_stopOperation=new QPushButton(QStringLiteral("중단"));
+    m_stopOperation=new QPushButton(tr("Stop"));
     m_stopOperation->hide();
     connect(m_stopOperation,&QPushButton::clicked,this,[this]{
-        if(m_operation){m_verdict->setText(QStringLiteral("지문 시험을 중단합니다. 손을 떼셔도 됩니다."));m_operation->terminate();}
+        if(m_operation){m_verdict->setText(tr("Stopping the fingerprint test. You may lift your finger."));m_operation->terminate();}
     });
     btns->addWidget(m_stopOperation);
-    m_recover=new QPushButton(QStringLiteral("인증 설정 복구"));
-    m_verify=new QPushButton(QStringLiteral("시스템 지문 시험"));
+    m_recover=new QPushButton(tr("Restore authentication settings"));
+    m_verify=new QPushButton(tr("Test system fingerprint"));
     connect(m_recover,&QPushButton::clicked,this,&SetupWizard::runRecovery);
     connect(m_verify,&QPushButton::clicked,this,&SetupWizard::runSystemVerify);
     btns->addWidget(m_recover);
@@ -221,7 +216,7 @@ void SetupWizard::rescan()
     if(m_operation||m_scanning)return;
     m_scanning=true;
     m_busy->show();
-    m_verdict->setText(QStringLiteral("장치와 설치 상태 확인 중입니다. 손가락은 아직 대지 마세요."));
+    m_verdict->setText(tr("Checking the device and installation. Keep your finger off the sensor for now."));
     m_fix->setEnabled(false);m_rescan->setEnabled(false);m_list->setEnabled(false);
     m_skip->setEnabled(false);m_verify->setEnabled(false);m_recover->setEnabled(false);
     auto *watcher=new QFutureWatcher<QVector<StepResult>>(this);
@@ -315,8 +310,8 @@ void SetupWizard::showStep(int index)
     if (r.needsRoot && fixable)
         m_verdict->setText(tr("This will ask for your password."));
     else
-        m_verdict->setText(r.state==StepState::Ok?QStringLiteral("이 단계는 확인됐습니다. 다음 필요한 단계로 진행하세요."):
-            !r.action.isEmpty()?QStringLiteral("다음 행동: ")+r.action:QStringLiteral("안내를 확인하세요. 아직 완료로 판정하지 않은 단계입니다."));
+        m_verdict->setText(r.state==StepState::Ok?tr("This step is confirmed. Continue to the next required step."):
+            !r.action.isEmpty()?tr("Next action: %1").arg(r.action):tr("Review the guidance. This step is not confirmed yet."));
 }
 
 bool SetupWizard::confirmIrreversible(const StepResult &r)
@@ -367,12 +362,12 @@ void SetupWizard::runEnrolment()
     p->setProcessChannelMode(QProcess::MergedChannels);
     connect(p,&QProcess::readyReadStandardOutput,this,[this,p]{
         const auto out=QString::fromUtf8(p->readAllStandardOutput());
-        m_verdict->setText(QStringLiteral("등록 진행 · 안내에 따라 같은 손가락을 대고 떼세요\n")+out.right(500));
+        m_verdict->setText(tr("Enrolment in progress · Present and lift the same finger as instructed\n")+out.right(500));
     });
     connect(p,&QProcess::errorOccurred,this,[this,p](QProcess::ProcessError error){
         if(error!=QProcess::FailedToStart||m_operation!=p)return;
         m_operation=nullptr;m_diagnostics->setEnabled(true);
-        setProperty("scanResultMessage",QStringLiteral("등록 도구를 시작하지 못했습니다: ")+p->errorString());
+        setProperty("scanResultMessage",tr("Could not start the enrolment tool: %1").arg(p->errorString()));
         p->deleteLater();rescan();
     });
     connect(p, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), this,
@@ -408,7 +403,7 @@ void SetupWizard::runCaptureTest()
     connect(p,&QProcess::errorOccurred,this,[this,p](QProcess::ProcessError error){
         if(error!=QProcess::FailedToStart||m_operation!=p)return;
         m_operation=nullptr;m_diagnostics->setEnabled(true);
-        setProperty("scanResultMessage",QStringLiteral("영상 도구를 시작하지 못했습니다: ")+p->errorString());
+        setProperty("scanResultMessage",tr("Could not start the image tool: %1").arg(p->errorString()));
         p->deleteLater();rescan();
     });
     connect(p, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), this,
@@ -437,7 +432,7 @@ void SetupWizard::runCurrentFix()
     if(m_operation||m_scanning)return;
     StepResult r = m_steps[m_current];
     if(r.id==StepId::Driver) {
-        runManagedAction({QStringLiteral("/usr/bin/python"),QStringLiteral(FPSTUDIO_SOURCE_DIR "/../../tools/driver_build.py")},false);return;
+        runManagedAction({QStringLiteral("/usr/bin/python"),setupResource(QStringLiteral("tools/driver_build.py"))},false);return;
     }
     if(r.id==StepId::GpuAuth) { runGpuInstall();return; }
     if(r.id==StepId::PamKde||r.id==StepId::PamPolkit||r.id==StepId::PamSudo) {
@@ -477,11 +472,11 @@ void SetupWizard::runCurrentFix()
 }
 
 void SetupWizard::reject() {
-    if(m_operation){m_verdict->setText(QStringLiteral("작업이 끝나거나 인증 요청이 취소될 때까지 기다려 주세요. 설정 기록과 복구 정보를 보호하고 있습니다."));return;}
+    if(m_operation){m_verdict->setText(tr("Wait for the operation to finish or cancel its authentication request. Setup records and recovery information are being protected."));return;}
     QDialog::reject();
 }
 void SetupWizard::done(int result) {
-    if(m_operation){m_verdict->setText(QStringLiteral("실행 중인 설정 작업을 완료하거나 인증 요청을 취소한 뒤 닫아 주세요."));return;}
+    if(m_operation){m_verdict->setText(tr("Finish the running setup operation or cancel its authentication request before closing."));return;}
     QDialog::done(result);
 }
 
@@ -497,14 +492,14 @@ void SetupWizard::runManagedAction(const QStringList &arguments,bool privileged)
         const QString output=QString::fromUtf8(p->readAll()).right(2400);
         m_operation=nullptr;m_busy->hide();m_fix->setEnabled(true);m_rescan->setEnabled(true);
         m_skip->setEnabled(true);m_verify->setEnabled(true);m_list->setEnabled(true);m_diagnostics->setEnabled(true);
-        setProperty("scanResultMessage",ok?QStringLiteral("설정 작업 완료. 시스템 지문 시험으로 실제 경로를 확인하세요."):QStringLiteral("설정 미완료·취소: ")+output);
+        setProperty("scanResultMessage",ok?tr("Setup operation complete. Use the system fingerprint test to verify the real path."):tr("Setup incomplete or cancelled: %1").arg(output));
         rescan();
         p->deleteLater();
     };
     connect(p,qOverload<int,QProcess::ExitStatus>(&QProcess::finished),this,[finish](int code,QProcess::ExitStatus status){finish(status==QProcess::NormalExit&&code==0);});
     connect(p,&QProcess::errorOccurred,this,[finish](QProcess::ProcessError error){if(error==QProcess::FailedToStart)finish(false);});
-    m_verdict->setText(privileged?QStringLiteral("관리자 권한 요청 후 자동 설치·검사합니다. 인증 연결 설치가 실패하면 원래 설정을 복구합니다."):
-        QStringLiteral("일반 사용자 권한으로 드라이버를 빌드합니다. 의존성과 패키지 설치 때만 관리자 권한을 요청합니다."));
+    m_verdict->setText(privileged?tr("After administrator authorization, installation and checks run automatically. Authentication settings are restored if installation fails."):
+        tr("The driver is built as the current user. Administrator authorization is requested only for dependencies and package installation."));
     if(privileged)p->start(QStringLiteral("/usr/bin/pkexec"),QStringList{QStringLiteral("--disable-internal-agent")}+arguments);
     else p->start(arguments.first(),arguments.mid(1));
 }
@@ -514,10 +509,10 @@ void SetupWizard::runGpuInstall() {
     if(state.open(QIODevice::ReadOnly)) {
         const auto installed=QJsonDocument::fromJson(state.readAll()).object();
         if(installed.value("installed").toBool()&&installed.value("username").toString()==qEnvironmentVariable("USER")) {
-            if(QMessageBox::question(this,QStringLiteral("GPU 인증 엔진 업데이트"),
-                QStringLiteral("기존 지문 기준·fprintd 등록·PAM 설정은 바꾸지 않습니다. 최신 매처·셰이더·드라이버 브리지만 교체하고 기준 영상 자기 비교를 실행합니다. 변경 전 파일은 별도 백업합니다. 적용할까요?"))!=QMessageBox::Yes)return;
+            if(QMessageBox::question(this,tr("Update GPU authentication engine"),
+                tr("Existing fingerprint references, fprintd enrolment and PAM settings will not change. Only the matcher, shader and driver bridge are replaced, followed by reference self-checks. Changed files are backed up separately. Apply the update?"))!=QMessageBox::Yes)return;
             runManagedAction({QStringLiteral("/usr/bin/python"),
-                              QStringLiteral(FPSTUDIO_SOURCE_DIR "/../../tools/auth_install.py"),
+                              setupResource(QStringLiteral("tools/auth_install.py")),
                               QStringLiteral("--refresh-experimental-auth"),QStringLiteral("--apply")});
             return;
         }
@@ -526,13 +521,13 @@ void SetupWizard::runGpuInstall() {
     const auto options=QCoreApplication::arguments();
     for(int i=0;i+1<options.size();++i)if(options[i]=="--auth-reference-dir")directories<<options[++i];
     if(directories.isEmpty()) {
-        const QString directory=QFileDialog::getExistingDirectory(this,QStringLiteral("본인의 저장 지문 세션 선택"),QStringLiteral(FPSTUDIO_SOURCE_DIR "/../../local-private/recognition"));
+        const QString directory=QFileDialog::getExistingDirectory(this,tr("Select your saved fingerprint session"),QDir::homePath());
         if(directory.isEmpty())return;
         directories<<directory;
     }
-    if(QMessageBox::question(this,QStringLiteral("실험적 GPU 인증 연결"),
-        QStringLiteral("선택한 폴더의 지문이 현재 사용자 본인의 것인지 확인하세요.\n%1\n\n기존 등록은 보존하고 sudo·KDE 인증에 GPU 비교를 사용합니다. 최대 10회/30초 후 비밀번호 경로를 유지합니다. 다른 지문 거절 성능은 미검증입니다. 설정 백업 후 적용할까요?").arg(directories.join('\n')))!=QMessageBox::Yes)return;
-    QStringList args{QStringLiteral("/usr/bin/python"),QStringLiteral(FPSTUDIO_SOURCE_DIR "/../../tools/auth_install.py"),"--user",qEnvironmentVariable("USER"),"--enable-experimental-auth","--apply"};
+    if(QMessageBox::question(this,tr("Experimental GPU authentication"),
+        tr("Confirm that the selected folders contain this user's fingerprints.\n%1\n\nExisting enrolment is preserved and GPU comparison is used for sudo and KDE authentication. After at most 20 failed contacts or 60 seconds, the password path remains available. Rejection of other fingers is not fully validated. Back up the settings and apply?").arg(directories.join('\n')))!=QMessageBox::Yes)return;
+    QStringList args{QStringLiteral("/usr/bin/python"),setupResource(QStringLiteral("tools/auth_install.py")),"--user",qEnvironmentVariable("USER"),"--enable-experimental-auth","--apply"};
     for(const auto &dir:directories)args<<"--reference-dir"<<dir;
     runManagedAction(args);
 }
@@ -542,7 +537,7 @@ void SetupWizard::runPamRepair() {
     // installs the supported local PAM paths and first checks KDE's
     // separate password service, which keeps its password field available.
     runManagedAction({QStringLiteral("/usr/bin/python"),
-                      QStringLiteral(FPSTUDIO_SOURCE_DIR "/../../tools/dual_auth_install.py"),
+                      setupResource(QStringLiteral("tools/dual_auth_install.py")),
                       QStringLiteral("--apply")});
 }
 
@@ -550,8 +545,8 @@ void SetupWizard::runRecovery() {
     QFile file(QStringLiteral("/etc/fpstudio-auth.json"));if(!file.open(QIODevice::ReadOnly))return;
     const auto path=QJsonDocument::fromJson(file.readAll()).object().value("backup").toString();
     if(path.isEmpty())return;
-    if(QMessageBox::question(this,QStringLiteral("인증 설정 복구"),QStringLiteral("설치 전 sudo·KDE·fprintd 설정을 복구할까요? 기존 지문 등록은 삭제하지 않습니다."))!=QMessageBox::Yes)return;
-    runManagedAction({QStringLiteral("/usr/bin/python"),QStringLiteral(FPSTUDIO_SOURCE_DIR "/../../tools/auth_install.py"),"--rollback",path});
+    if(QMessageBox::question(this,tr("Restore authentication settings"),tr("Restore the sudo, KDE and fprintd settings from before installation? Existing fingerprint enrolment is not deleted."))!=QMessageBox::Yes)return;
+    runManagedAction({QStringLiteral("/usr/bin/python"),setupResource(QStringLiteral("tools/auth_install.py")),"--rollback",path});
 }
 
 void SetupWizard::runSystemVerify() {
@@ -576,10 +571,10 @@ void SetupWizard::runSystemVerify() {
         const bool thermal=output.contains(QStringLiteral("overheating"),Qt::CaseInsensitive)||
                            output.contains(QStringLiteral("prevent overheating"),Qt::CaseInsensitive);
         const bool timedOut=p->property("fpstudioTimedOut").toBool();
-        m_verdict->setText(matched?QStringLiteral("지문 비교 성공. 손가락을 계속 대고 있어도 결과가 이미 전달됐습니다. sudo/KDE 대화창과 비밀번호 폴백은 별도 시험이 필요합니다."):
-            thermal?QStringLiteral("센서 과열 보호가 시험을 중단했습니다. 잠시 손을 떼고 식힌 뒤 다시 시도하세요."):
-            timedOut?QStringLiteral("30초 동안 손가락 감지가 없었습니다. 센서를 비운 뒤 안내가 뜨면 등록한 오른쪽 검지를 중앙에 1~2초 올려 보세요."):
-            QStringLiteral("시스템 지문 시험 미완료: ")+output.right(1000));p->deleteLater();
+        m_verdict->setText(matched?tr("Fingerprint match succeeded. The result was delivered while the finger remained in place. Test the sudo/KDE dialog and password fallback separately."):
+            thermal?tr("Sensor thermal protection stopped the test. Lift your finger, let it cool briefly, then try again."):
+            timedOut?tr("No finger was detected during this 30-second one-shot test. Clear the sensor, then place the enrolled finger in the centre for one or two seconds when prompted."):
+            tr("System fingerprint test incomplete: %1").arg(output.right(1000)));p->deleteLater();
     };
     connect(p,qOverload<int,QProcess::ExitStatus>(&QProcess::finished),this,[finish](int code,QProcess::ExitStatus status){finish(code==0&&status==QProcess::NormalExit);});
     connect(p,&QProcess::errorOccurred,this,[finish](QProcess::ProcessError error){if(error==QProcess::FailedToStart)finish(false);});
@@ -589,17 +584,18 @@ void SetupWizard::runSystemVerify() {
         if(output.contains(QStringLiteral("verify-match"))) {
             // Show the actual match as soon as fprintd emits it, rather than
             // making the person wait for the sensor's cleanup/release phase.
-            m_verdict->setText(QStringLiteral("[시스템 지문 시험] 일치했습니다. 손가락을 유지한 상태에서 결과가 확인됐습니다.\n")+output.right(700));
+            m_verdict->setText(tr("[System fingerprint test] Match confirmed while the finger remained in place.\n")+output.right(700));
         } else if(output.contains(QStringLiteral("verify-no-match"))) {
-            m_verdict->setText(QStringLiteral("[시스템 지문 시험] 일치하지 않습니다. 이 접촉은 기록·등록하지 않았습니다.\n")+output.right(700));
+            m_verdict->setText(tr("[System fingerprint test] No match. This contact was not recorded or enrolled.\n")+output.right(700));
         } else {
-            m_verdict->setText(QStringLiteral("[시스템 지문 시험] 손가락을 센서 중앙에 올린 뒤 결과가 표시될 때까지 그대로 유지하세요. 떼는 동작은 필요 없습니다.\n")+output.right(700));
+            m_verdict->setText(tr("[System fingerprint test] Place the finger in the centre and hold it until a result appears. You do not need to lift it.\n")+output.right(700));
         }
     });
     // A no-touch verification used to run for 95 seconds. On this sensor that
     // is long enough to enter its own thermal protection, turning a missed
-    // prompt into a misleading "disconnected" result. Stop at the same safe
-    // 30-second bound used by the PAM paths, and let fprintd release cleanly.
+    // prompt into a misleading "disconnected" result. This diagnostic is a
+    // shorter one-shot test than the 60-second PAM window, and releases
+    // fprintd cleanly after 30 seconds.
     QTimer::singleShot(30000,p,[p]{
         if(p->state()!=QProcess::NotRunning) {
             p->setProperty("fpstudioTimedOut",true);
@@ -607,7 +603,7 @@ void SetupWizard::runSystemVerify() {
             QTimer::singleShot(2000,p,[p]{if(p->state()!=QProcess::NotRunning)p->kill();});
         }
     });
-    m_verdict->setText(QStringLiteral("[시스템 지문 시험] 처음에는 센서에서 손을 떼고, 지문 요청이 뜨면 등록한 같은 손가락을 올린 뒤 결과가 표시될 때까지 유지하세요. 떼는 동작은 필요 없습니다."));
+    m_verdict->setText(tr("[System fingerprint test] Start with the sensor clear. When prompted, place the same enrolled finger and hold it until the result appears. You do not need to lift it."));
     p->start(QStringLiteral("/usr/bin/fprintd-verify"),{qEnvironmentVariable("USER")});
 }
 

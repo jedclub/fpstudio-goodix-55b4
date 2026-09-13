@@ -16,5 +16,18 @@ int main(int argc,char **argv) {
     if(unknown.irreversible||!unknown.action.isEmpty()||unknown.state!=StepState::Unknown)return 1;
     parseCaptureOutput("SWITCH TO FDT MODE");
     if(probe(StepId::Psk).state!=StepState::Ok||probe(StepId::TlsSession).state!=StepState::Ok)return 1;
+    const QString current = QStringLiteral(
+        "auth requisite pam_faillock.so preauth\n"
+        "auth [success=done ignore=ignore abort=die auth_err=die default=die] "
+        "/opt/fpstudio-auth/lib/pam_fpstudio.so\n"
+        "auth include system-auth\n");
+    if(!simultaneousPamConfigured(current))return 1;
+    if(simultaneousPamConfigured(QStringLiteral(
+        "auth sufficient /opt/fpstudio-auth/lib/pam_fpstudio.so\n"
+        "auth include system-auth\n")))return 1;
+    if(simultaneousPamConfigured(current.section('\n', 1)))return 1;
+    if(setupResource(QStringLiteral("tools/driver_build.py")).isEmpty())return 1;
+    if(setupResource(QStringLiteral("tools/dual_auth_install.py")).isEmpty())return 1;
+    if(!setupResource(QStringLiteral("does/not/exist")).isEmpty())return 1;
     return 0;
 }

@@ -37,6 +37,7 @@ namespace fpstudio {
 // Nearest-neighbour on purpose: this sensor is 88x108, and smoothing a frame
 // that small hides exactly the ridge detail the tool exists to show.
 class ImageView : public QWidget {
+    Q_OBJECT
 public:
     explicit ImageView(QWidget *parent = nullptr) : QWidget(parent)
     {
@@ -635,3 +636,5 @@ void MainWindow::onFailed(const QString &error)
 }
 
 } // namespace fpstudio
+
+#include "mainwindow.moc"

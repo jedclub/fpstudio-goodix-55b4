@@ -25,6 +25,12 @@
 namespace fpstudio {
 namespace {
 
+QString researchRoot()
+{
+    return QDir(QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation))
+        .absoluteFilePath(QStringLiteral("fpstudio/recognition"));
+}
+
 void emitJson(const QJsonObject &o)
 {
     std::cout << QJsonDocument(o).toJson(QJsonDocument::Compact).toStdString()
@@ -396,13 +402,13 @@ QJsonObject mcpCall(const QString &name, const QJsonObject &a)
         QLockFile gui(QStandardPaths::writableLocation(QStandardPaths::RuntimeLocation) + "/fpstudio-gui.lock");
         if (!gui.tryLock()) return fail(QStringLiteral("A fpstudio GUI is already running. Use that window or close it before starting research."));
         gui.unlock();
-        collectionDir = QDir::cleanPath(QStringLiteral(FPSTUDIO_SOURCE_DIR "/../../local-private/recognition/session-")
+        collectionDir = QDir::cleanPath(researchRoot() + QStringLiteral("/session-")
                                         + QDateTime::currentDateTime().toString("yyyyMMdd-HHmmss-zzz"));
         if (!QDir().mkpath(collectionDir)) return fail(QStringLiteral("Cannot create private session directory"));
         QFile::setPermissions(collectionDir, QFileDevice::ReadOwner | QFileDevice::WriteOwner | QFileDevice::ExeOwner);
         qint64 pid = 0;
         if (!QProcess::startDetached(QCoreApplication::applicationFilePath(),
-                                     {"--research", "--lang", "ko", "--session-dir", collectionDir}, QString(), &pid))
+                                     {"--research", "--session-dir", collectionDir}, QString(), &pid))
             return fail(QStringLiteral("Could not open research window"));
         return QJsonObject{{"ok", true}, {"pid", pid}, {"session_dir", collectionDir}, {"state", "launching"}};
     }

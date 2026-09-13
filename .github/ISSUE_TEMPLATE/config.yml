@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Private security report
+    url: https://github.com/jedclub/fpstudio-goodix-55b4/security/advisories/new
+    about: Report authentication bypasses, data exposure and other vulnerabilities privately.

@@ -172,7 +172,8 @@ private slots:
         const auto contacts=result.value("contacts").toArray();
         QCOMPARE(contacts.size(),33);
         QVERIFY(!contacts[0].toObject().value("candidate_saved").toBool());
-        QCOMPARE(contacts[0].toObject().value("last_quality_reason").toString(),QStringLiteral("접촉 면적 부족"));
+        QCOMPARE(contacts[0].toObject().value("last_quality_reason").toString(),
+                 QStringLiteral("Insufficient contact area"));
         for(int n=1;n<=32;++n) {
             QFile f(dir.path()+QString("/gpu-match-%1.json").arg(n,4,10,QLatin1Char('0')));
             QVERIFY(f.open(QIODevice::ReadOnly));

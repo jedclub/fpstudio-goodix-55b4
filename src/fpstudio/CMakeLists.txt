@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.21)
-project(fpstudio VERSION 0.2.8 LANGUAGES C CXX)
+project(fpstudio VERSION 0.2.9 LANGUAGES C CXX)
+
+include(GNUInstallDirs)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -9,11 +11,21 @@ if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Release CACHE STRING "" FORCE)
 endif()
 
-# -O2 plus LTO. The hot path is decoding an 88x108 frame and scaling it for
-# display, which is small; the reason to optimise is latency during a capture,
-# not throughput.
+# CMake's Release profile supplies -O3; IPO adds LTO where the compiler
+# supports it. The CPU-side hot path is deliberately kept small because the
+# expensive comparison search is dispatched to the persistent Vulkan worker.
 set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_RELEASE ON)
 add_compile_options(-Wall -Wextra -Wno-unused-parameter)
+
+# Authentication logs may include __FILE__ through libsystemd's journal
+# macros.  Strip the build machine's absolute checkout path from every target
+# so Release binaries are reproducible and never disclose a user/home name.
+get_filename_component(FPSTUDIO_REPOSITORY_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/../.." ABSOLUTE)
+add_compile_options(
+  "-ffile-prefix-map=${FPSTUDIO_REPOSITORY_ROOT}=."
+  "-fmacro-prefix-map=${FPSTUDIO_REPOSITORY_ROOT}=."
+  "-fdebug-prefix-map=${FPSTUDIO_REPOSITORY_ROOT}=."
+)
 
 find_package(Qt6 6.5 REQUIRED COMPONENTS Core Gui Widgets Concurrent LinguistTools)
 find_package(PkgConfig REQUIRED)
@@ -60,14 +72,6 @@ qt_add_translations(fpstudio
 
 # Where a build tree keeps its .qm files, so the binary can find them before
 # being installed. Quoted through to C++ as a string literal.
-target_compile_definitions(fpstudio PRIVATE
-  FPSTUDIO_TRANSLATIONS_DIR="${CMAKE_BINARY_DIR}"
-  # The setup checks offer to install files that live in this tree - the udev
-  # rule, the PAM stack, the driver PKGBUILD. A build tree finds them relative
-  # to the binary; this covers the case where it cannot.
-  FPSTUDIO_SOURCE_DIR="${CMAKE_SOURCE_DIR}"
-)
-
 # The installed fp-image.h does `#include "sigfm/sigfm.hpp"`, but the fork's
 # package does not ship that header - a packaging gap, not something wrong
 # with our build. It is a dependency-free declaration block (typedefs plus an
@@ -81,14 +85,40 @@ target_link_libraries(fpstudio PRIVATE
   PkgConfig::GLIB
 )
 
-install(TARGETS fpstudio RUNTIME DESTINATION bin)
-install(FILES ${FPSTUDIO_QM_FILES} DESTINATION share/fpstudio/translations)
+install(TARGETS fpstudio RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+install(FILES ${FPSTUDIO_QM_FILES} DESTINATION ${CMAKE_INSTALL_DATADIR}/fpstudio/translations)
+
+# Keep the setup wizard useful after installation.  The helper scripts derive
+# their project root from their own location, so preserve the small subset of
+# the repository layout they need under one versioned, read-only data tree.
+set(FPSTUDIO_SETUP_DIR ${CMAKE_INSTALL_DATADIR}/fpstudio/setup)
+install(PROGRAMS
+  ../../tools/driver_build.py
+  ../../tools/auth_install.py
+  ../../tools/dual_auth_install.py
+  ../../tools/admin_notice.py
+  ../../tools/auth_log_report.py
+  DESTINATION ${FPSTUDIO_SETUP_DIR}/tools)
+install(PROGRAMS fprintd-beacon.sh DESTINATION ${FPSTUDIO_SETUP_DIR}/src/fpstudio)
+install(FILES 99-fpstudio-goodix.rules DESTINATION ${FPSTUDIO_SETUP_DIR}/src/fpstudio)
+install(FILES pam/admin-auth-notice.txt
+        DESTINATION ${FPSTUDIO_SETUP_DIR}/src/fpstudio/pam)
+install(FILES ../driver/PKGBUILD DESTINATION ${FPSTUDIO_SETUP_DIR}/src/driver)
+install(DIRECTORY ../driver/patches/ DESTINATION ${FPSTUDIO_SETUP_DIR}/src/driver/patches
+        FILES_MATCHING PATTERN "*.patch")
+install(FILES
+  ../../README.md
+  ../../LICENSE
+  ../../THIRD_PARTY_NOTICES.md
+  ../../docs/00-setup.md
+  ../../docs/21-simultaneous-auth.md
+  ../../docs/releases/v0.2.9.md
+  DESTINATION ${CMAKE_INSTALL_DATADIR}/doc/fpstudio)
 
 include(CTest)
 if(BUILD_TESTING)
   add_executable(fpstudio-setup-policy-test tests/setup_policy_test.cpp src/setupcheck.cpp)
   target_include_directories(fpstudio-setup-policy-test PRIVATE src)
-  target_compile_definitions(fpstudio-setup-policy-test PRIVATE FPSTUDIO_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
   target_link_libraries(fpstudio-setup-policy-test PRIVATE Qt6::Core)
   add_test(NAME setup-policy-safety COMMAND fpstudio-setup-policy-test)
   find_package(Qt6 REQUIRED COMPONENTS Test)

@@ -1,4 +1,4 @@
-# 시스템 연동 — 비밀번호 대신 지문
+# 시스템 연동 — 지문과 비밀번호 동시 인증
 
 드라이버가 동작하고 fpstudio 로 등록·검증이 되는 것과, 실제로 비밀번호를
 대체하는 것은 별개다. 이 문서는 그 간극을 메우는 두 단계를 다룬다.
@@ -23,38 +23,26 @@ fprintd-verify                            # 데몬 경로 확인
 
 ## PAM
 
-polkit 은 `/usr/lib/pam.d/polkit-1` 을 쓰고, 내용은 `system-auth` 를 네 번
-include 하는 것이 전부다. Arch 에서는 `/etc/pam.d/` 가 이를 덮으므로 거기에
-한 줄 얹은 사본을 두면 된다. `src/fpstudio/pam/polkit-1` 이 그 파일이다.
+표준 `pam_fprintd`를 비밀번호 모듈 앞에 직렬로 두면 지문 작업이 끝날 때까지
+비밀번호를 입력할 수 없다. FPStudio는 이 구성을 직접 복사하지 않고, 지원하는
+PAM 원본 형태를 검사한 다음 동시입력 모듈을 트랜잭션으로 설치한다.
 
 ```
-auth       sufficient   pam_fprintd.so
-auth       include      system-auth
-account    include      system-auth
-password   include      system-auth
-session    include      system-auth
+python tools/dual_auth_install.py
+sudo python tools/dual_auth_install.py --apply
 ```
 
 ```
-sudo install -Dm644 src/fpstudio/pam/polkit-1 /etc/pam.d/polkit-1
-```
+첫 명령은 읽기 전용 미리보기다. 적용 시 sudo/sudo-i, Polkit, 로컬 TTY login,
+su/su-l 및 KDE 지문 서비스를 함께 검사한다. 각 원본은
+`/var/backups/fpstudio-dual-auth/` 아래에 보존되며 하나라도 예상 구조와 다르면
+아무 설정도 추측해서 고치지 않는다. 내부 오류는 성공으로 간주하지 않는
+fail-closed 제어를 사용하면서 기존 `system-auth` 비밀번호 검증을 유지한다.
 
-되돌리는 것은 `sudo rm /etc/pam.d/polkit-1` 하나다. 데몬 재시작도 필요 없다 —
-PAM 은 인증할 때마다 스택을 읽는다.
-
-### 왜 polkit 에만 넣는가
-
-없애고 싶은 비밀번호는 pkexec 와 KDE 인증 창이 띄우는 것들이다. 로그인과
-sudo 까지 건드릴 이유가 없고, 건드리지 않으면 **센서가 죽어도 기계에서
-잠기지 않는다.** 커널 업데이트로 드라이버가 깨지든, 리더를 뽑든, 이 저장소의
-패치를 다시 빌드하다 실수하든, 로그인 경로는 영향을 받지 않는다.
-
-`sufficient` 도 같은 이유다. `pam_fprintd` 가 어떤 이유로든 실패하면 PAM 은
-`system-auth` 로 넘어가 예전과 똑같이 비밀번호를 묻는다. 되던 인증이 안 되게
-만드는 경우가 없다.
-
-등록된 지문이 없어도 마찬가지다 — 그냥 비밀번호를 묻는다. 그래서 PAM 파일을
-먼저 깔고 등록을 나중에 해도 순서 문제가 없다.
+터미널에서는 키를 누르기 전까지 지문 일치가 즉시 인증을 완료한다. 키 입력을
+시작하면 입력은 `*`로 가려지고 Enter를 눌러 기존 비밀번호 검증기로 제출된다.
+KDE 잠금 화면은 별도의 비밀번호 서비스와 fingerprint-only 서비스를 병렬로
+유지한다. SSH, 원격 로그인, 디스크 암호화 및 KWallet은 변경하지 않는다.
 
 ## 온도
 

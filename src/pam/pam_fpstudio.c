@@ -136,7 +136,8 @@ static void wipe_response(struct pam_response *response)
     free(response);
 }
 
-static void feedback(const struct pam_conv *conv, bool terminal, const char *message)
+static void feedback(const struct pam_conv *conv, bool terminal, int style,
+                     const char *message)
 {
     /* A password conversation has no trailing newline. Start terminal status
      * on its own line; never append sensor text to that input prompt. Do not
@@ -144,11 +145,23 @@ static void feedback(const struct pam_conv *conv, bool terminal, const char *mes
      * receive plain TEXT_INFO, separately from their password field. */
     char line[512];
     snprintf(line, sizeof(line), "%s%s", terminal ? "\n" : "", message);
-    struct pam_message info = {PAM_TEXT_INFO, line};
+    struct pam_message info = {style, line};
     const struct pam_message *messages = &info;
     struct pam_response *response = NULL;
     conv->conv(1, &messages, &response, conv->appdata_ptr);
     wipe_response(response);
+}
+
+static void sensor_feedback(const struct pam_conv *conv, bool terminal,
+                            bool fingerprint_only, const char *message)
+{
+    /* Plasma 6.7 forwards non-interactive PAM_TEXT_INFO as
+     * `noninteractiveInfo`, but its shipped lock-screen QML only renders
+     * `noninteractiveError`. Use that display channel for the dedicated KDE
+     * fingerprint service. This affects presentation only; the PAM return
+     * value below remains the sole authentication decision. */
+    feedback(conv, terminal, fingerprint_only ? PAM_ERROR_MSG : PAM_TEXT_INFO,
+             message);
 }
 
 static int sockets(int pair[2])
@@ -174,9 +187,11 @@ static void stop_worker(pid_t pid, int socket)
 {
     if (pid <= 0) return;
     /* Closing this private socket cancels the worker even if the caller dies.
-     * The worker bounds D-Bus calls and exits on HUP. */
+     * Cleanup can make two bounded 400 ms D-Bus calls (VerifyStop, Release).
+     * Give both calls room to finish; the former 500 ms grace could kill the
+     * worker between them and leave fprintd's device claim stuck. */
     shutdown(socket, SHUT_RDWR);
-    for (int i = 0; i < 50; ++i) {
+    for (int i = 0; i < 150; ++i) {
         pid_t waited = waitpid(pid, NULL, WNOHANG);
         if (waited == pid || (waited < 0 && errno == ECHILD)) return;
         usleep(10000);
@@ -262,10 +277,14 @@ PAM_EXTERN int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc, cons
     int sensor[2], password[2];
     if (sockets(sensor)) {
         audit_event(pamh, session, "request_failed", "stage=sensor_socket");
+        if (fingerprint_only)
+            sensor_feedback(conv, false, true, fp_message_catalog()->unavailable);
         return PAM_IGNORE;
     }
     if (sockets(password)) {
         audit_event(pamh, session, "request_failed", "stage=password_socket");
+        if (fingerprint_only)
+            sensor_feedback(conv, false, true, fp_message_catalog()->unavailable);
         close(sensor[0]); close(sensor[1]); return PAM_IGNORE;
     }
     char *worker_args[] = {FP_WORKER, (char *)user, NULL};
@@ -296,6 +315,8 @@ PAM_EXTERN int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc, cons
         char detail[64];
         snprintf(detail, sizeof(detail), "stage=worker_spawn code=%d", spawned);
         audit_event(pamh, session, "request_failed", detail);
+        if (fingerprint_only)
+            sensor_feedback(conv, false, true, fp_message_catalog()->unavailable);
         close(sensor[0]); close(password[0]); close(password[1]);
         return PAM_IGNORE;
     }
@@ -324,8 +345,8 @@ PAM_EXTERN int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc, cons
         }
     }
     const char *prompt = messages->prompt;
-    if (!fingerprint_only && !cli)
-        feedback(conv, false, messages->starting);
+    if (!cli)
+        sensor_feedback(conv, false, fingerprint_only, messages->starting);
     pid_t owner = getpid();
     pid_t reader = fingerprint_only ? -1 : fork();
     if (reader == 0) {
@@ -434,11 +455,24 @@ PAM_EXTERN int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc, cons
                 password_done = true;
                 if (length > 0 && secret[length - 1] == '\0' &&
                     strlen(secret) == (size_t)length - 1) {
-                    if (secret[0])
-                        result = pam_set_item(pamh, PAM_AUTHTOK, secret) == PAM_SUCCESS ?
-                            PAM_IGNORE : PAM_AUTH_ERR;
+                    if (secret[0]) {
+                        int token_status = pam_set_item(pamh, PAM_AUTHTOK, secret);
+                        result = token_status == PAM_SUCCESS ? PAM_IGNORE : PAM_AUTH_ERR;
+                        if (token_status != PAM_SUCCESS) {
+                            char detail[64];
+                            snprintf(detail, sizeof(detail), "stage=password_token code=%d", token_status);
+                            audit_event(pamh, session, "request_failed", detail);
+                        }
+                    }
                     else result = PAM_AUTH_ERR;
-                } else result = PAM_AUTH_ERR;
+                } else {
+                    result = PAM_AUTH_ERR;
+                    char detail[96];
+                    snprintf(detail, sizeof(detail),
+                             "stage=password_packet length=%ld terminated=%d",
+                             (long)length, length > 0 && secret[length - 1] == '\0');
+                    audit_event(pamh, session, "request_failed", detail);
+                }
                 explicit_bzero(secret, sizeof(secret));
                 audit_event(pamh, session, result == PAM_IGNORE ? "password_selected" :
                             "input_rejected", NULL);
@@ -454,7 +488,7 @@ PAM_EXTERN int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc, cons
                 audit_event(pamh, session, "sensor_ended", "reason=worker_channel_closed");
                 stop_worker(scanner, sensor[0]); scanner = -1;
                 if (cli) notify_input(password[0], FP_UNAVAILABLE, 0);
-                else feedback(conv, false, messages->no_response);
+                else sensor_feedback(conv, false, fingerprint_only, messages->no_response);
                 if (fingerprint_only) break;
             } else if (message.event == FP_MATCH) {
                 audit_event(pamh, session, "fingerprint_match", NULL);
@@ -470,18 +504,18 @@ PAM_EXTERN int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc, cons
             } else if (message.event == FP_READY) {
                 audit_event(pamh, session, "sensor_ready", NULL);
                 if (cli) notify_input(password[0], message.event, message.attempt);
-                else feedback(conv, false, messages->ready);
+                else sensor_feedback(conv, false, fingerprint_only, messages->ready);
             } else if (message.event == FP_CONTACT) {
                 audit_event(pamh, session, "finger_contact", NULL);
                 if (cli) notify_input(password[0], message.event, message.attempt);
-                else feedback(conv, false, messages->contact);
+                else sensor_feedback(conv, false, fingerprint_only, messages->contact);
             } else if (message.event == FP_PROGRESS) {
                 if (cli) notify_input(password[0], message.event, message.attempt);
                 else {
                     static const char *frames[] = {"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"};
                     char text[240];
                     snprintf(text, sizeof(text), messages->scanning, frames[message.attempt % 10]);
-                    feedback(conv, false, text);
+                    sensor_feedback(conv, false, fingerprint_only, text);
                 }
             } else if (message.event == FP_RETRY) {
                 char detail[64];
@@ -491,7 +525,7 @@ PAM_EXTERN int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc, cons
                 else {
                     char text[240];
                     snprintf(text, sizeof(text), messages->retry, message.attempt);
-                    feedback(conv, false, text);
+                    sensor_feedback(conv, false, fingerprint_only, text);
                 }
             } else {
                 sensor_open = false;
@@ -502,7 +536,7 @@ PAM_EXTERN int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc, cons
                 stop_worker(scanner, sensor[0]); scanner = -1;
                 const char *status = message.event == FP_TIMEOUT ? messages->ended : messages->unavailable;
                 if (cli) notify_input(password[0], message.event, message.attempt);
-                else feedback(conv, false, status);
+                else sensor_feedback(conv, false, fingerprint_only, status);
                 if (fingerprint_only) break;
             }
         }
@@ -518,7 +552,8 @@ cleanup:
     stop_reader(reader, password[0], cli, password_done);
     stop_worker(scanner, sensor[0]);
     close(sensor[0]); close(password[0]);
-    if (!cli && matched) feedback(conv, false, messages->authenticated);
+    if (!cli && matched)
+        sensor_feedback(conv, false, fingerprint_only, messages->authenticated);
     if (result == PAM_ABORT) {
         audit_event(pamh, session, "request_finished", "outcome=cancelled source=input-child");
         return PAM_ABORT;

@@ -11,6 +11,9 @@ target_link_libraries(fpstudio-fprint-worker PRIVATE PkgConfig::SYSTEMD)
 add_library(pam_fpstudio MODULE pam_fpstudio.c)
 set_target_properties(pam_fpstudio PROPERTIES PREFIX "")
 target_link_libraries(pam_fpstudio PRIVATE pam PkgConfig::SYSTEMD)
+install(TARGETS fpstudio-fprint-worker pam_fpstudio
+        RUNTIME DESTINATION share/fpstudio/setup/build/pam
+        LIBRARY DESTINATION share/fpstudio/setup/build/pam)
 include(CTest)
 if(BUILD_TESTING)
   find_package(Python3 REQUIRED COMPONENTS Interpreter)
@@ -35,7 +38,7 @@ if(BUILD_TESTING)
   add_executable(pam-conversation-test test_conversation.c)
   find_package(Threads REQUIRED)
   target_link_libraries(pam-conversation-test PRIVATE pam pam_misc Threads::Threads)
-  foreach(mode password match failure cancel unavailable timeout malformed repeat kde-match kde-unavailable kde-timeout kde-malformed)
+  foreach(mode password match failure cancel unavailable timeout malformed repeat kde-match kde-unavailable kde-timeout kde-malformed kde-feedback)
     add_test(NAME simultaneous-${mode} COMMAND pam-conversation-test
       $<TARGET_FILE:pam_fpstudio_test> ${mode} $<TARGET_FILE:pam_test_token>)
     set_tests_properties(simultaneous-${mode} PROPERTIES TIMEOUT 10)

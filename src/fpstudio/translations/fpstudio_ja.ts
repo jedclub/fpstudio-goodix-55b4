@@ -31,7 +31,7 @@
     <message>
         <location filename="../src/engine.cpp" line="124"/>
         <location filename="../src/engine.cpp" line="134"/>
-        <location filename="../src/headless.cpp" line="476"/>
+        <location filename="../src/headless.cpp" line="482"/>
         <source>Captured — now lift your finger</source>
         <translation>取得完了 — 指を離してください</translation>
     </message>
@@ -42,7 +42,7 @@
     </message>
     <message>
         <location filename="../src/engine.cpp" line="144"/>
-        <location filename="../src/setupcheck.cpp" line="209"/>
+        <location filename="../src/setupcheck.cpp" line="210"/>
         <source>Secure channel to the sensor established</source>
         <translation>センサーとの安全な通信が確立しました</translation>
     </message>
@@ -52,79 +52,79 @@
         <translation>センサー準備完了</translation>
     </message>
     <message>
-        <location filename="../src/engine.cpp" line="417"/>
-        <location filename="../src/engine.cpp" line="498"/>
-        <location filename="../src/engine.cpp" line="574"/>
+        <location filename="../src/engine.cpp" line="418"/>
+        <location filename="../src/engine.cpp" line="499"/>
+        <location filename="../src/engine.cpp" line="575"/>
         <source>Gave up after %1 seconds</source>
         <translation>%1 秒以内に完了せず中断しました</translation>
     </message>
     <message>
-        <location filename="../src/engine.cpp" line="460"/>
+        <location filename="../src/engine.cpp" line="461"/>
         <source>Enrol %1/%2 — lift your finger and press again</source>
         <translation>登録 %1/%2 — 指を離してもう一度置いてください</translation>
     </message>
     <message>
         <location filename="../src/engine.cpp" line="79"/>
-        <location filename="../src/headless.cpp" line="87"/>
-        <location filename="../src/headless.cpp" line="436"/>
+        <location filename="../src/headless.cpp" line="93"/>
+        <location filename="../src/headless.cpp" line="442"/>
         <source>Put your finger on the sensor and hold it there</source>
         <translation>センサーに指を置いて、そのまま保持してください</translation>
     </message>
     <message>
-        <location filename="../src/headless.cpp" line="89"/>
-        <location filename="../src/headless.cpp" line="437"/>
+        <location filename="../src/headless.cpp" line="95"/>
+        <location filename="../src/headless.cpp" line="443"/>
         <source>Enrolling — press and lift your finger repeatedly</source>
         <translation>登録中です — 指を置いて離すを繰り返してください</translation>
     </message>
     <message>
-        <location filename="../src/headless.cpp" line="91"/>
-        <location filename="../src/headless.cpp" line="438"/>
+        <location filename="../src/headless.cpp" line="97"/>
+        <location filename="../src/headless.cpp" line="444"/>
         <source>Put the enrolled finger on the sensor</source>
         <translation>登録した指をセンサーに置いてください</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="64"/>
+        <location filename="../src/setupcheck.cpp" line="65"/>
         <source>Goodix 27c6:55b4 found</source>
         <translation>Goodix 27c6:55b4 を検出</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="73"/>
+        <location filename="../src/setupcheck.cpp" line="74"/>
         <source>A different Goodix sensor is present</source>
         <translation>別の Goodix センサーが存在します</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="74"/>
+        <location filename="../src/setupcheck.cpp" line="75"/>
         <source>This build only covers 27c6:55b4. Found 27c6:%1.</source>
         <translation>このビルドは 27c6:55b4 のみ対応しています。検出: 27c6:%1。</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="80"/>
+        <location filename="../src/setupcheck.cpp" line="81"/>
         <source>No Goodix fingerprint sensor found</source>
         <translation>Goodix 指紋センサーが見つかりません</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="81"/>
+        <location filename="../src/setupcheck.cpp" line="82"/>
         <source>Nothing on the USB bus answers to vendor 27c6. If the machine has a reader, it may be disabled in firmware settings, or it may be a different make.</source>
         <translation>USB バス上にベンダー 27c6 に応答するデバイスがありません。リーダーが搭載されている場合、ファームウェア設定で無効になっているか、別のメーカー製の可能性があります。</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="100"/>
+        <location filename="../src/setupcheck.cpp" line="101"/>
         <source>Patched driver is active</source>
         <translation>パッチ済みドライバーが有効です</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="107"/>
-        <location filename="../src/setupcheck.cpp" line="115"/>
+        <location filename="../src/setupcheck.cpp" line="108"/>
+        <location filename="../src/setupcheck.cpp" line="116"/>
         <source>Patched driver is not installed</source>
         <translation>パッチ済みドライバーがインストールされていません</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="108"/>
+        <location filename="../src/setupcheck.cpp" line="109"/>
         <source>libfprint does not recognise this sensor. The patched fork has to be built and installed; this copy of the program does not ship the sources to do it.</source>
         <translation>libfprint がこのセンサーを認識しません。パッチ済みフォークをビルド・インストールする必要がありますが、このプログラムにはそのソースが含まれていません。</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="116"/>
+        <location filename="../src/setupcheck.cpp" line="117"/>
         <source>libfprint does not recognise this sensor. The patched fork adds it. Building takes a few minutes and replaces the system libfprint, which is why it needs a password.
 
 Install fprintd afterwards, not before: installing it first pulls in the stock libfprint and undoes this.</source>
@@ -133,32 +133,32 @@ Install fprintd afterwards, not before: installing it first pulls in the stock l
 fprintd はこの後にインストールしてください。先にインストールすると純正の libfprint が入り、この変更が元に戻ります。</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="121"/>
+        <location filename="../src/setupcheck.cpp" line="122"/>
         <source>Build and install the patched libfprint</source>
         <translation>パッチ済み libfprint をビルドしてインストール</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="151"/>
+        <location filename="../src/setupcheck.cpp" line="152"/>
         <source>Sensor is reachable without a password</source>
         <translation>パスワードなしでセンサーにアクセスできます</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="157"/>
+        <location filename="../src/setupcheck.cpp" line="158"/>
         <source>udev rule is installed but has not taken effect</source>
         <translation>udev ルールはインストール済みですが、まだ有効になっていません</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="158"/>
+        <location filename="../src/setupcheck.cpp" line="159"/>
         <source>Every sensor operation will ask for a password</source>
         <translation>センサーの操作のたびにパスワードが必要になります</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="160"/>
+        <location filename="../src/setupcheck.cpp" line="161"/>
         <source>The rule file is in place but the device node still belongs to root. It applies on the next add event; replugging the reader or reloading udev will do it.</source>
         <translation>ルールファイルは配置済みですが、デバイスノードはまだ root 所有です。次の add イベントで適用されます。リーダーを挿し直すか udev を再読み込みしてください。</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="163"/>
+        <location filename="../src/setupcheck.cpp" line="164"/>
         <source>Without a rule, libusb cannot open the sensor except as root, so every capture goes through a password prompt.
 
 This grants the wheel group read and write on the sensor. On a single-user laptop that is the same person who could already do it through pkexec; on a shared machine it is not. Skipping this is safe - it only means more prompts.</source>
@@ -167,42 +167,67 @@ This grants the wheel group read and write on the sensor. On a single-user lapto
 このルールは wheel グループにセンサーの読み書き権限を与えます。シングルユーザーのノートPCでは pkexec で既にできたのと同じ人物ですが、共有マシンでは違います。スキップしても安全です — パスワード入力が増えるだけです。</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="173"/>
+        <location filename="../src/setupcheck.cpp" line="174"/>
         <source>Install the udev rule and reload</source>
         <translation>udev ルールをインストールして再読み込み</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="216"/>
+        <location filename="../src/setupcheck.cpp" line="196"/>
+        <source>Device communication has not been tested yet</source>
+        <translation>Device communication has not been tested yet</translation>
+    </message>
+    <message>
+        <location filename="../src/setupcheck.cpp" line="197"/>
+        <source>Close other authentication requests, then run the image test. Opening or refreshing the wizard never claims the sensor automatically.</source>
+        <translation>Close other authentication requests, then run the image test. Opening or refreshing the wizard never claims the sensor automatically.</translation>
+    </message>
+    <message>
+        <location filename="../src/setupcheck.cpp" line="198"/>
+        <source>Test sensor communication and image capture</source>
+        <translation>Test sensor communication and image capture</translation>
+    </message>
+    <message>
+        <location filename="../src/setupcheck.cpp" line="217"/>
         <source>The sensor answered, but the handshake did not complete</source>
         <translation>センサーは応答しましたが、ハンドシェイクが完了しませんでした</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="217"/>
+        <location filename="../src/setupcheck.cpp" line="218"/>
         <source>The sensor holds a key this driver does not have. Writing the all-zero key is the next step, and it cannot be undone.</source>
         <translation>センサーはこのドライバーが持っていないキーを保持しています。次のステップは全ゼロキーの書き込みで、これは元に戻せません。</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="223"/>
+        <location filename="../src/setupcheck.cpp" line="224"/>
         <source>Could not talk to the sensor</source>
         <translation>センサーと通信できませんでした</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="224"/>
+        <location filename="../src/setupcheck.cpp" line="225"/>
         <source>The handshake did not get far enough to say why. Check the driver and permission steps above first.</source>
         <translation>ハンドシェイクが原因を特定できるほど進みませんでした。まず上の「ドライバー」「権限」の項目を確認してください。</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="237"/>
+        <location filename="../src/setupcheck.cpp" line="238"/>
         <source>The sensor already holds a usable key</source>
         <translation>センサーはすでに使用可能なキーを保持しています</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="250"/>
+        <location filename="../src/setupcheck.cpp" line="244"/>
+        <source>Key status is unknown — automatic writing is disabled</source>
+        <translation>Key status is unknown — automatic writing is disabled</translation>
+    </message>
+    <message>
+        <location filename="../src/setupcheck.cpp" line="245"/>
+        <source>A USB error or a busy sensor is not treated as a key mismatch. Complete the communication test first.</source>
+        <translation>A USB error or a busy sensor is not treated as a key mismatch. Complete the communication test first.</translation>
+    </message>
+    <message>
+        <location filename="../src/setupcheck.cpp" line="251"/>
         <source>The sensor needs the all-zero key written</source>
         <translation>センサーに全ゼロキーを書き込む必要があります</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="251"/>
+        <location filename="../src/setupcheck.cpp" line="252"/>
         <source>This cannot be undone.
 
 The key the sensor holds now cannot be read back - what the protocol returns is a value derived from it, not the key - so there is no backup to restore afterwards.
@@ -215,175 +240,270 @@ Windows fingerprint sign-in will stop working on this machine, permanently. If y
 このマシンの Windows 指紋サインインは永久に動作しなくなります。デュアルブートで Windows でも使っている場合は、ここで止めてください。</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="259"/>
+        <location filename="../src/setupcheck.cpp" line="260"/>
         <source>Write the all-zero PSK to the sensor</source>
         <translation>全ゼロ PSK をセンサーに書き込む</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="289"/>
+        <location filename="../src/setupcheck.cpp" line="290"/>
         <source>Image quality has not been measured yet</source>
         <translation>画像品質はまだ測定されていません</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="290"/>
+        <location filename="../src/setupcheck.cpp" line="291"/>
         <source>Press the button below, then put your finger on the sensor and hold it there for a couple of seconds.</source>
         <translation>下のボタンを押してから、指をセンサーに置いて数秒間そのままにしてください。</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="293"/>
+        <location filename="../src/setupcheck.cpp" line="294"/>
         <source>Test a capture now</source>
         <translation>今すぐキャプチャをテスト</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="297"/>
+        <location filename="../src/setupcheck.cpp" line="298"/>
         <source>Coverage %1%  ·  sharpness %2</source>
         <translation>接触 %1%  ·  鮮明度 %2</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="306"/>
+        <location filename="../src/setupcheck.cpp" line="307"/>
         <source>Below about 24, matching tends to fail even though the driver accepts the frame. Dry fingertips and a sensor that has been busy both do this; a few minutes&apos; rest and a little moisture usually fix it.</source>
         <translation>24 未満だと、ドライバーがフレームを受け入れても照合は失敗しがちです。指先の乾燥やセンサーの酷使が原因のことが多く、数分休ませて指先を少し湿らせると大抵直ります。</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="310"/>
+        <location filename="../src/setupcheck.cpp" line="311"/>
         <source>Try again</source>
         <translation>再試行</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="323"/>
+        <location filename="../src/setupcheck.cpp" line="324"/>
         <source>A finger is enrolled with fprintd</source>
         <translation>fprintd に指が登録済みです</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="329"/>
+        <location filename="../src/setupcheck.cpp" line="330"/>
         <source>No finger is enrolled with fprintd</source>
         <translation>fprintd に登録された指がありません</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="330"/>
+        <location filename="../src/setupcheck.cpp" line="331"/>
         <source>This program keeps its own enrolments separately, and system authentication does not see those. Enrolling again through fprintd is what makes the fingerprint usable for unlocking.</source>
         <translation>このプログラムは独自の登録データを別に保持しており、システム認証はそれを参照しません。fprintd で再登録することで、指紋がロック解除に使えるようになります。</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="334"/>
+        <location filename="../src/setupcheck.cpp" line="335"/>
         <source>Enrol a finger with fprintd</source>
         <translation>fprintd に指を登録</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="339"/>
+        <location filename="../src/setupcheck.cpp" line="340"/>
         <source>fprintd is not answering</source>
         <translation>fprintd が応答しません</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="340"/>
+        <location filename="../src/setupcheck.cpp" line="341"/>
         <source>The daemon could not be reached. It is usually started on demand; installing it may be all that is missing.</source>
         <translation>デーモンに接続できませんでした。通常は必要時に自動起動するため、インストールするだけで解決することが多いです。</translation>
     </message>
     <message>
+        <location filename="../src/setupcheck.cpp" line="358"/>
+        <source>GPU authentication installed · %1 references</source>
+        <translation>GPU authentication installed · %1 references</translation>
+    </message>
+    <message>
+        <location filename="../src/setupcheck.cpp" line="359"/>
+        <source>This is experimental authentication. A valid installation does not by itself prove successful sudo/KDE authentication. Recovery location: %1</source>
+        <translation>This is experimental authentication. A valid installation does not by itself prove successful sudo/KDE authentication. Recovery location: %1</translation>
+    </message>
+    <message>
+        <location filename="../src/setupcheck.cpp" line="363"/>
+        <source>GPU authentication engine needs an update</source>
+        <translation>GPU authentication engine needs an update</translation>
+    </message>
+    <message>
+        <location filename="../src/setupcheck.cpp" line="364"/>
+        <source>Deploy the latest GPU authentication engine</source>
+        <translation>Deploy the latest GPU authentication engine</translation>
+    </message>
+    <message>
+        <location filename="../src/setupcheck.cpp" line="365"/>
+        <source>The existing %1 references, fprintd enrolment and PAM settings are preserved. Only the matcher, shader and driver bridge are replaced, and the update is applied only after reference self-checks pass.</source>
+        <translation>The existing %1 references, fprintd enrolment and PAM settings are preserved. Only the matcher, shader and driver bridge are replaced, and the update is applied only after reference self-checks pass.</translation>
+    </message>
+    <message>
+        <location filename="../src/setupcheck.cpp" line="369"/>
+        <source>Connect saved fingerprints and the GPU engine to system authentication</source>
+        <translation>Connect saved fingerprints and the GPU engine to system authentication</translation>
+    </message>
+    <message>
+        <location filename="../src/setupcheck.cpp" line="370"/>
+        <source>Import saved fingerprints and connect sudo/KDE</source>
+        <translation>Import saved fingerprints and connect sudo/KDE</translation>
+    </message>
+    <message>
+        <location filename="../src/setupcheck.cpp" line="371"/>
+        <source>Select a folder containing your own saved fingerprints. Existing fprintd enrolment is preserved and the references are imported into root-only storage. sudo, administrator dialogs, TTY login and the KDE lock screen are connected with a 20-attempt/60-second limit and a password path. Rejection of other fingers remains experimental.</source>
+        <translation>Select a folder containing your own saved fingerprints. Existing fprintd enrolment is preserved and the references are imported into root-only storage. sudo, administrator dialogs, TTY login and the KDE lock screen are connected with a 20-attempt/60-second limit and a password path. Rejection of other fingers remains experimental.</translation>
+    </message>
+    <message>
+        <location filename="../src/setupcheck.cpp" line="382"/>
+        <source>KDE fingerprint and password paths are configured in parallel</source>
+        <translation>KDE fingerprint and password paths are configured in parallel</translation>
+    </message>
+    <message>
+        <location filename="../src/setupcheck.cpp" line="382"/>
+        <source>Simultaneous fingerprint and password input needs configuration</source>
+        <translation>Simultaneous fingerprint and password input needs configuration</translation>
+    </message>
+    <message>
+        <location filename="../src/setupcheck.cpp" line="383"/>
+        <source>Fingerprint scanning runs for up to 60 seconds or 20 failed contacts and reports ready, retry and final states. KDE&apos;s separate password field remains available. Confirm actual lock-screen unlocking separately.</source>
+        <translation>Fingerprint scanning runs for up to 60 seconds or 20 failed contacts and reports ready, retry and final states. KDE&apos;s separate password field remains available. Confirm actual lock-screen unlocking separately.</translation>
+    </message>
+    <message>
+        <location filename="../src/setupcheck.cpp" line="384"/>
+        <source>Enable simultaneous fingerprint and password input</source>
+        <translation>Enable simultaneous fingerprint and password input</translation>
+    </message>
+    <message>
+        <location filename="../src/setupcheck.cpp" line="399"/>
+        <source>Administrator dialogs accept fingerprint and password simultaneously</source>
+        <translation>Administrator dialogs accept fingerprint and password simultaneously</translation>
+    </message>
+    <message>
+        <location filename="../src/setupcheck.cpp" line="406"/>
+        <source>Administrator dialogs are not connected to simultaneous authentication</source>
+        <translation>Administrator dialogs are not connected to simultaneous authentication</translation>
+    </message>
+    <message>
         <location filename="../src/setupcheck.cpp" line="407"/>
-        <location filename="../src/setupcheck.cpp" line="451"/>
-        <source>pam_fprintd is not installed</source>
-        <translation>pam_fprintd がインストールされていません</translation>
+        <source>The guarded PAM module scans a fingerprint while keeping the normal password path available. It backs up every changed file, validates the KDE password service first, and fails closed on module errors. The sensor is limited to 60 seconds or 20 failed contacts.</source>
+        <translation>The guarded PAM module scans a fingerprint while keeping the normal password path available. It backs up every changed file, validates the KDE password service first, and fails closed on module errors. The sensor is limited to 60 seconds or 20 failed contacts.</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="408"/>
-        <location filename="../src/setupcheck.cpp" line="452"/>
-        <source>The PAM module that lets authentication use a fingerprint is missing. It usually ships with fprintd.</source>
-        <translation>認証で指紋を使えるようにする PAM モジュールがありません。通常 fprintd に同梱されています。</translation>
-    </message>
-    <message>
-        <location filename="../src/setupcheck.cpp" line="416"/>
-        <source>polkit still asks for a password</source>
-        <translation>polkit はまだパスワードを要求します</translation>
-    </message>
-    <message>
-        <location filename="../src/setupcheck.cpp" line="417"/>
-        <source>This adds one line to the stack polkit uses, so pkexec and the desktop&apos;s authentication dialog try the fingerprint first.
-
-Login and sudo are deliberately left alone, so a sensor that stops working can never lock you out of the machine. The line is &apos;sufficient&apos;: if the fingerprint fails for any reason, you are asked for the password exactly as before.</source>
-        <translation>polkit が使う認証スタックに1行追加します。これにより pkexec とデスクトップの認証ダイアログが最初に指紋を試すようになります。
-
-ログインと sudo はあえて変更していません。センサーが動作しなくなっても、これによりマシンから締め出されることはありません。この行は「sufficient」なので、指紋がどんな理由で失敗しても、以前とまったく同じようにパスワードが求められます。</translation>
+        <location filename="../src/setupcheck.cpp" line="409"/>
+        <source>Connect administrator dialogs to fingerprint and password</source>
+        <translation>Connect administrator dialogs to fingerprint and password</translation>
     </message>
     <message>
         <location filename="../src/setupcheck.cpp" line="425"/>
-        <source>Let polkit accept a fingerprint</source>
-        <translation>polkit が指紋を受け付けるようにする</translation>
+        <source>sudo accepts fingerprint and password simultaneously</source>
+        <translation>sudo accepts fingerprint and password simultaneously</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="464"/>
-        <source>Terminal sudo still asks for a password only</source>
-        <translation>ターミナルの sudo はまだパスワードのみを受け付けます</translation>
+        <location filename="../src/setupcheck.cpp" line="432"/>
+        <source>Terminal sudo is not connected to simultaneous authentication</source>
+        <translation>Terminal sudo is not connected to simultaneous authentication</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="465"/>
-        <source>Optional, and a step further than the polkit rule above: sudo is usually the way back in when something else on the machine is broken, so extending fingerprint auth to it is worth doing deliberately rather than by default.
-
-The safety net is the same either way. The line added is &apos;sufficient&apos;, so a failing fingerprint falls back to the password exactly as before. sudo itself never stops working - only the fingerprint shortcut can.</source>
-        <translation>任意であり、上の polkit ルールよりもう一歩踏み込んだものです。sudo はマシンの他の何かが壊れたときの復旧経路であることが多いため、これに指紋認証を拡張するのは既定ではなく、慎重に判断すべきことです。
-
-安全策は同じです。追加される行は &apos;sufficient&apos; なので、指紋が失敗すれば以前と同じようにパスワードに切り替わります。sudo 自体が止まることはありません — 止まり得るのは指紋という近道だけです。</translation>
+        <location filename="../src/setupcheck.cpp" line="433"/>
+        <source>The terminal keeps input hidden and accepts either a completed fingerprint match or an explicitly submitted password. Typing selects the password path; otherwise a fingerprint match completes immediately. The original PAM files are backed up before the guarded module is installed.</source>
+        <translation>The terminal keeps input hidden and accepts either a completed fingerprint match or an explicitly submitted password. Typing selects the password path; otherwise a fingerprint match completes immediately. The original PAM files are backed up before the guarded module is installed.</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="475"/>
-        <source>Let sudo accept a fingerprint</source>
-        <translation>sudo が指紋を受け付けるようにする</translation>
+        <location filename="../src/setupcheck.cpp" line="435"/>
+        <source>Connect sudo to fingerprint and password</source>
+        <translation>Connect sudo to fingerprint and password</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="505"/>
+        <location filename="../src/setupcheck.cpp" line="495"/>
+        <source>Terminal sudo</source>
+        <translation>Terminal sudo</translation>
+    </message>
+    <message>
+        <location filename="../src/setupcheck.cpp" line="496"/>
+        <source>Saved fingerprints · GPU authentication</source>
+        <translation>Saved fingerprints · GPU authentication</translation>
+    </message>
+    <message>
+        <location filename="../src/setupcheck.cpp" line="497"/>
+        <source>KDE lock screen</source>
+        <translation>KDE lock screen</translation>
+    </message>
+    <message>
+        <location filename="../src/setupcheck.cpp" line="487"/>
         <source>Sensor</source>
         <translation>センサー</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="506"/>
+        <location filename="../src/setupcheck.cpp" line="488"/>
         <source>Driver</source>
         <translation>ドライバー</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="507"/>
+        <location filename="../src/setupcheck.cpp" line="489"/>
         <source>Permissions</source>
         <translation>権限</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="508"/>
+        <location filename="../src/setupcheck.cpp" line="490"/>
         <source>Secure channel</source>
         <translation>セキュアチャネル</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="509"/>
+        <location filename="../src/setupcheck.cpp" line="491"/>
         <source>Sensor key</source>
         <translation>センサーキー</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="510"/>
+        <location filename="../src/setupcheck.cpp" line="492"/>
         <source>Image quality</source>
         <translation>画像品質</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="511"/>
+        <location filename="../src/setupcheck.cpp" line="493"/>
         <source>Enrolment</source>
         <translation>登録</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="512"/>
+        <location filename="../src/setupcheck.cpp" line="494"/>
         <source>Unlocking</source>
         <translation>ロック解除</translation>
     </message>
     <message>
-        <location filename="../src/setupcheck.cpp" line="513"/>
-        <source>Terminal sudo (optional)</source>
-        <translation>ターミナル sudo（任意）</translation>
-    </message>
-    <message>
-        <location filename="../src/setupcheck.cpp" line="534"/>
+        <location filename="../src/setupcheck.cpp" line="516"/>
         <source>Not checked - no sensor</source>
         <translation>未確認 — センサーなし</translation>
+    </message>
+    <message>
+        <location filename="../src/frameselector.h" line="20"/>
+        <source>Unexpected image size</source>
+        <translation>Unexpected image size</translation>
+    </message>
+    <message>
+        <location filename="../src/frameselector.h" line="52"/>
+        <source>Waiting for a finger</source>
+        <translation>Waiting for a finger</translation>
+    </message>
+    <message>
+        <location filename="../src/frameselector.h" line="53"/>
+        <source>Insufficient contact area</source>
+        <translation>Insufficient contact area</translation>
+    </message>
+    <message>
+        <location filename="../src/frameselector.h" line="54"/>
+        <source>Insufficient ridge contrast</source>
+        <translation>Insufficient ridge contrast</translation>
+    </message>
+    <message>
+        <location filename="../src/frameselector.h" line="55"/>
+        <source>Insufficient consistent ridge pattern</source>
+        <translation>Insufficient consistent ridge pattern</translation>
+    </message>
+    <message>
+        <location filename="../src/frameselector.h" line="56"/>
+        <source>Waiting for motion to settle</source>
+        <translation>Waiting for motion to settle</translation>
+    </message>
+    <message>
+        <location filename="../src/frameselector.h" line="57"/>
+        <source>Research candidate</source>
+        <translation>Research candidate</translation>
     </message>
 </context>
 <context>
     <name>fpstudio::ImageView</name>
     <message>
-        <location filename="../src/mainwindow.cpp" line="57"/>
+        <location filename="../src/mainwindow.cpp" line="58"/>
         <source>No frame yet
 
 Use Capture to pull an image from the sensor</source>
@@ -492,7 +612,7 @@ Cyan +: transformed reference contact centre · orange +: current probe contact 
 水色 +: 変換後の基準接触中心 · 橙 +: 現在の検査接触中心 · 青: 比較範囲</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="508"/>
+        <location filename="../src/livewindow.cpp" line="511"/>
         <source>[%1/%2 contacts compared · stops automatically at the target] </source>
         <translation>[%1/%2 接触を比較済み · 目標に達すると自動終了] </translation>
     </message>
@@ -500,156 +620,156 @@ Cyan +: transformed reference contact centre · orange +: current probe contact 
 <context>
     <name>fpstudio::MainWindow</name>
     <message>
-        <location filename="../src/mainwindow.cpp" line="108"/>
-        <location filename="../src/mainwindow.cpp" line="355"/>
+        <location filename="../src/mainwindow.cpp" line="109"/>
+        <location filename="../src/mainwindow.cpp" line="356"/>
         <source>Device scan</source>
         <translation>デバイス検索</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="153"/>
+        <location filename="../src/mainwindow.cpp" line="154"/>
         <source>Setup</source>
         <translation>セットアップ</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="154"/>
+        <location filename="../src/mainwindow.cpp" line="155"/>
         <source>Set up fingerprint unlock…</source>
         <translation>指紋によるロック解除を設定…</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="157"/>
+        <location filename="../src/mainwindow.cpp" line="158"/>
         <source>Language</source>
         <translation>言語</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="194"/>
+        <location filename="../src/mainwindow.cpp" line="195"/>
         <source>fpstudio — fingerprint sensor diagnostics</source>
         <translation>fpstudio — 指紋センサー診断</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="199"/>
+        <location filename="../src/mainwindow.cpp" line="200"/>
         <source>Looking for a device…</source>
         <translation>デバイスを検索中…</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="203"/>
+        <location filename="../src/mainwindow.cpp" line="204"/>
         <source>Device</source>
         <translation>デバイス</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="205"/>
+        <location filename="../src/mainwindow.cpp" line="206"/>
         <source>Rescan</source>
         <translation>再検索</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="210"/>
+        <location filename="../src/mainwindow.cpp" line="211"/>
         <source>Capture — show image</source>
         <translation>キャプチャ — 画像を表示</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="211"/>
-        <location filename="../src/mainwindow.cpp" line="364"/>
+        <location filename="../src/mainwindow.cpp" line="212"/>
+        <location filename="../src/mainwindow.cpp" line="365"/>
         <source>Enrol</source>
         <translation>登録</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="212"/>
-        <location filename="../src/mainwindow.cpp" line="369"/>
+        <location filename="../src/mainwindow.cpp" line="213"/>
+        <location filename="../src/mainwindow.cpp" line="370"/>
         <source>Verify</source>
         <translation>照合</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="213"/>
-        <location filename="../src/mainwindow.cpp" line="373"/>
+        <location filename="../src/mainwindow.cpp" line="214"/>
+        <location filename="../src/mainwindow.cpp" line="374"/>
         <source>Delete enrolment</source>
         <translation>登録を削除</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="218"/>
+        <location filename="../src/mainwindow.cpp" line="219"/>
         <source>Actions</source>
         <translation>操作</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="225"/>
+        <location filename="../src/mainwindow.cpp" line="226"/>
         <source>Progress</source>
         <translation>進行</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="257"/>
+        <location filename="../src/mainwindow.cpp" line="258"/>
         <source>—</source>
         <translation>—</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="294"/>
+        <location filename="../src/mainwindow.cpp" line="295"/>
         <source>Coverage</source>
         <translation>接触</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="296"/>
+        <location filename="../src/mainwindow.cpp" line="297"/>
         <source>Sharpness</source>
         <translation>鮮明度</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="309"/>
+        <location filename="../src/mainwindow.cpp" line="310"/>
         <source>Sample</source>
         <translation>サンプル</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="309"/>
+        <location filename="../src/mainwindow.cpp" line="310"/>
         <source>Score</source>
         <translation>スコア</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="309"/>
+        <location filename="../src/mainwindow.cpp" line="310"/>
         <source>Keypoints</source>
         <translation>特徴点</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="313"/>
+        <location filename="../src/mainwindow.cpp" line="314"/>
         <source>Match scores</source>
         <translation>照合スコア</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="323"/>
+        <location filename="../src/mainwindow.cpp" line="324"/>
         <source>Driver log</source>
         <translation>ドライバーログ</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="358"/>
+        <location filename="../src/mainwindow.cpp" line="359"/>
         <source>→ Put your finger on the sensor</source>
         <translation>→ センサーに指を置いてください</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="359"/>
+        <location filename="../src/mainwindow.cpp" line="360"/>
         <source>Image capture</source>
         <translation>画像キャプチャ</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="362"/>
+        <location filename="../src/mainwindow.cpp" line="363"/>
         <source>→ Enrol: press and lift your finger repeatedly</source>
         <translation>→ 登録: 指を置いて離すを繰り返してください</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="367"/>
+        <location filename="../src/mainwindow.cpp" line="368"/>
         <source>→ Verify: present the enrolled finger</source>
         <translation>→ 照合: 登録した指を置いてください</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="384"/>
+        <location filename="../src/mainwindow.cpp" line="385"/>
         <source>in progress…</source>
         <translation>実行中…</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="384"/>
+        <location filename="../src/mainwindow.cpp" line="385"/>
         <source> in progress…</source>
         <translation> 実行中…</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="412"/>
+        <location filename="../src/mainwindow.cpp" line="413"/>
         <source>No fingerprint device was found.</source>
         <translation>指紋デバイスが見つかりませんでした。</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="421"/>
+        <location filename="../src/mainwindow.cpp" line="422"/>
         <source>Driver: %1
 ID: %2
 Scan: %3 · %4 enrol stages
@@ -660,110 +780,110 @@ ID: %2
 生キャプチャ: %5</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="426"/>
+        <location filename="../src/mainwindow.cpp" line="427"/>
         <source>yes</source>
         <translation>対応</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="426"/>
+        <location filename="../src/mainwindow.cpp" line="427"/>
         <source>no</source>
         <translation>非対応</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="438"/>
+        <location filename="../src/mainwindow.cpp" line="439"/>
         <source>No image was returned</source>
         <translation>画像が返りませんでした</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="442"/>
+        <location filename="../src/mainwindow.cpp" line="443"/>
         <source>Captured %1 × %2</source>
         <translation>取得 %1 × %2</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="461"/>
+        <location filename="../src/mainwindow.cpp" line="462"/>
         <source>Match   %1 / %2</source>
         <translation>一致   %1 / %2</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="462"/>
+        <location filename="../src/mainwindow.cpp" line="463"/>
         <source>No match   %1 / %2</source>
         <translation>不一致   %1 / %2</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="473"/>
+        <location filename="../src/mainwindow.cpp" line="474"/>
         <source>Failed — %1</source>
         <translation>失敗 — %1</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="474"/>
-        <location filename="../src/mainwindow.cpp" line="632"/>
+        <location filename="../src/mainwindow.cpp" line="475"/>
         <location filename="../src/mainwindow.cpp" line="633"/>
+        <location filename="../src/mainwindow.cpp" line="634"/>
         <source>Failed</source>
         <translation>失敗</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="475"/>
-        <location filename="../src/mainwindow.cpp" line="634"/>
+        <location filename="../src/mainwindow.cpp" line="476"/>
+        <location filename="../src/mainwindow.cpp" line="635"/>
         <source>Error: %1</source>
         <translation>エラー: %1</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="479"/>
+        <location filename="../src/mainwindow.cpp" line="480"/>
         <source>Done — %1</source>
         <translation>完了 — %1</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="484"/>
+        <location filename="../src/mainwindow.cpp" line="485"/>
         <source>Enrolment complete</source>
         <translation>登録完了</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="486"/>
+        <location filename="../src/mainwindow.cpp" line="487"/>
         <source>Enrolment deleted</source>
         <translation>登録を削除しました</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="513"/>
+        <location filename="../src/mainwindow.cpp" line="514"/>
         <source>This scan fell below the threshold and was asked for again</source>
         <translation>このスキャンは基準を下回ったため再要求されました</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="528"/>
+        <location filename="../src/mainwindow.cpp" line="529"/>
         <source>Coverage %1%  ·  sharpness %2  —  faint. Press a little harder</source>
         <translation>接触 %1%  ·  鮮明度 %2  —  薄いです。もう少し強く押してください</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="530"/>
+        <location filename="../src/mainwindow.cpp" line="531"/>
         <source>Coverage %1%  ·  sharpness %2</source>
         <translation>接触 %1%  ·  鮮明度 %2</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="551"/>
+        <location filename="../src/mainwindow.cpp" line="552"/>
         <source>%1 × %2</source>
         <translation>%1 × %2</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="607"/>
+        <location filename="../src/mainwindow.cpp" line="608"/>
         <source>Agent request</source>
         <translation>エージェントからの要求</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="608"/>
+        <location filename="../src/mainwindow.cpp" line="609"/>
         <source>CLI request</source>
         <translation>CLI からの要求</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="608"/>
+        <location filename="../src/mainwindow.cpp" line="609"/>
         <source>request</source>
         <translation>要求</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="624"/>
+        <location filename="../src/mainwindow.cpp" line="625"/>
         <source>Idle</source>
         <translation>待機中</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="625"/>
+        <location filename="../src/mainwindow.cpp" line="626"/>
         <source>▸ %1   ·   %2s elapsed</source>
         <translation>▸ %1   ·   %2 秒経過</translation>
     </message>
@@ -804,52 +924,108 @@ ID: %2
 <context>
     <name>fpstudio::SetupWizard</name>
     <message>
-        <location filename="../src/setupwizard.cpp" line="355"/>
+        <location filename="../src/setupwizard.cpp" line="350"/>
         <source>Failed — %1</source>
         <translation>失敗 — %1</translation>
     </message>
     <message>
-        <location filename="../src/setupwizard.cpp" line="125"/>
+        <location filename="../src/setupwizard.cpp" line="120"/>
         <source>Skip</source>
         <translation>スキップ</translation>
     </message>
     <message>
-        <location filename="../src/setupwizard.cpp" line="140"/>
+        <location filename="../src/setupwizard.cpp" line="87"/>
+        <source>FPStudio · Integrated fingerprint authentication setup</source>
+        <translation>FPStudio · Integrated fingerprint authentication setup</translation>
+    </message>
+    <message>
+        <location filename="../src/setupwizard.cpp" line="121"/>
+        <source>Check status again</source>
+        <translation>Check status again</translation>
+    </message>
+    <message>
+        <location filename="../src/setupwizard.cpp" line="133"/>
+        <source>Setup steps complete · Verify real sudo/KDE authentication and password recovery separately.</source>
+        <translation>Setup steps complete · Verify real sudo/KDE authentication and password recovery separately.</translation>
+    </message>
+    <message>
+        <location filename="../src/setupwizard.cpp" line="135"/>
         <source>Finish</source>
         <translation>完了</translation>
     </message>
     <message>
-        <location filename="../src/setupwizard.cpp" line="187"/>
+        <location filename="../src/setupwizard.cpp" line="161"/>
+        <source>Stop</source>
+        <translation>Stop</translation>
+    </message>
+    <message>
+        <location filename="../src/setupwizard.cpp" line="164"/>
+        <source>Stopping the fingerprint test. You may lift your finger.</source>
+        <translation>Stopping the fingerprint test. You may lift your finger.</translation>
+    </message>
+    <message>
+        <location filename="../src/setupwizard.cpp" line="167"/>
+        <location filename="../src/setupwizard.cpp" line="548"/>
+        <source>Restore authentication settings</source>
+        <translation>Restore authentication settings</translation>
+    </message>
+    <message>
+        <location filename="../src/setupwizard.cpp" line="168"/>
+        <source>Test system fingerprint</source>
+        <translation>Test system fingerprint</translation>
+    </message>
+    <message>
+        <location filename="../src/setupwizard.cpp" line="182"/>
         <source>Open diagnostics tool</source>
         <translation>診断ツールを開く</translation>
     </message>
     <message>
-        <location filename="../src/setupwizard.cpp" line="190"/>
+        <location filename="../src/setupwizard.cpp" line="185"/>
         <source>Live capture preview, the driver log, and MCP status - for a closer look once the checklist here is done.</source>
         <translation>ライブキャプチャのプレビュー、ドライバーログ、MCP ステータスを表示します — このチェックリストが終わった後、より詳しく調べるためのものです。</translation>
     </message>
     <message>
-        <location filename="../src/setupwizard.cpp" line="300"/>
+        <location filename="../src/setupwizard.cpp" line="219"/>
+        <source>Checking the device and installation. Keep your finger off the sensor for now.</source>
+        <translation>Checking the device and installation. Keep your finger off the sensor for now.</translation>
+    </message>
+    <message>
+        <location filename="../src/setupwizard.cpp" line="295"/>
         <source>This step cannot be undone.</source>
         <translation>この手順は元に戻せません。</translation>
     </message>
     <message>
-        <location filename="../src/setupwizard.cpp" line="316"/>
+        <location filename="../src/setupwizard.cpp" line="311"/>
         <source>This will ask for your password.</source>
         <translation>パスワードの入力が求められます。</translation>
     </message>
     <message>
-        <location filename="../src/setupwizard.cpp" line="329"/>
+        <location filename="../src/setupwizard.cpp" line="313"/>
+        <source>This step is confirmed. Continue to the next required step.</source>
+        <translation>This step is confirmed. Continue to the next required step.</translation>
+    </message>
+    <message>
+        <location filename="../src/setupwizard.cpp" line="314"/>
+        <source>Next action: %1</source>
+        <translation>Next action: %1</translation>
+    </message>
+    <message>
+        <location filename="../src/setupwizard.cpp" line="314"/>
+        <source>Review the guidance. This step is not confirmed yet.</source>
+        <translation>Review the guidance. This step is not confirmed yet.</translation>
+    </message>
+    <message>
+        <location filename="../src/setupwizard.cpp" line="324"/>
         <source>WRITE</source>
         <translation>WRITE</translation>
     </message>
     <message>
-        <location filename="../src/setupwizard.cpp" line="331"/>
+        <location filename="../src/setupwizard.cpp" line="326"/>
         <source>Sensor key</source>
         <translation>センサーキー</translation>
     </message>
     <message>
-        <location filename="../src/setupwizard.cpp" line="332"/>
+        <location filename="../src/setupwizard.cpp" line="327"/>
         <source>%1
 
 Type %2 to confirm.</source>
@@ -858,24 +1034,153 @@ Type %2 to confirm.</source>
 確認するには %2 と入力してください。</translation>
     </message>
     <message>
-        <location filename="../src/setupwizard.cpp" line="356"/>
+        <location filename="../src/setupwizard.cpp" line="351"/>
         <source>The enrolment helper was not found</source>
         <translation>登録用ヘルパーが見つかりません</translation>
     </message>
     <message>
-        <location filename="../src/setupwizard.cpp" line="362"/>
+        <location filename="../src/setupwizard.cpp" line="357"/>
         <source>Enrolling — press and lift your finger repeatedly</source>
         <translation>登録中です — 指を置いて離すを繰り返してください</translation>
     </message>
     <message>
-        <location filename="../src/setupwizard.cpp" line="402"/>
+        <location filename="../src/setupwizard.cpp" line="365"/>
+        <source>Enrolment in progress · Present and lift the same finger as instructed
+</source>
+        <translation>Enrolment in progress · Present and lift the same finger as instructed
+</translation>
+    </message>
+    <message>
+        <location filename="../src/setupwizard.cpp" line="370"/>
+        <source>Could not start the enrolment tool: %1</source>
+        <translation>Could not start the enrolment tool: %1</translation>
+    </message>
+    <message>
+        <location filename="../src/setupwizard.cpp" line="397"/>
         <source>Put your finger on the sensor and hold it there</source>
         <translation>センサーに指を置いて、そのまま保持してください</translation>
     </message>
     <message>
-        <location filename="../src/setupwizard.cpp" line="473"/>
+        <location filename="../src/setupwizard.cpp" line="406"/>
+        <source>Could not start the image tool: %1</source>
+        <translation>Could not start the image tool: %1</translation>
+    </message>
+    <message>
+        <location filename="../src/setupwizard.cpp" line="468"/>
         <source>in progress…</source>
         <translation>実行中…</translation>
+    </message>
+    <message>
+        <location filename="../src/setupwizard.cpp" line="475"/>
+        <source>Wait for the operation to finish or cancel its authentication request. Setup records and recovery information are being protected.</source>
+        <translation>Wait for the operation to finish or cancel its authentication request. Setup records and recovery information are being protected.</translation>
+    </message>
+    <message>
+        <location filename="../src/setupwizard.cpp" line="479"/>
+        <source>Finish the running setup operation or cancel its authentication request before closing.</source>
+        <translation>Finish the running setup operation or cancel its authentication request before closing.</translation>
+    </message>
+    <message>
+        <location filename="../src/setupwizard.cpp" line="495"/>
+        <source>Setup operation complete. Use the system fingerprint test to verify the real path.</source>
+        <translation>Setup operation complete. Use the system fingerprint test to verify the real path.</translation>
+    </message>
+    <message>
+        <location filename="../src/setupwizard.cpp" line="495"/>
+        <source>Setup incomplete or cancelled: %1</source>
+        <translation>Setup incomplete or cancelled: %1</translation>
+    </message>
+    <message>
+        <location filename="../src/setupwizard.cpp" line="501"/>
+        <source>After administrator authorization, installation and checks run automatically. Authentication settings are restored if installation fails.</source>
+        <translation>After administrator authorization, installation and checks run automatically. Authentication settings are restored if installation fails.</translation>
+    </message>
+    <message>
+        <location filename="../src/setupwizard.cpp" line="502"/>
+        <source>The driver is built as the current user. Administrator authorization is requested only for dependencies and package installation.</source>
+        <translation>The driver is built as the current user. Administrator authorization is requested only for dependencies and package installation.</translation>
+    </message>
+    <message>
+        <location filename="../src/setupwizard.cpp" line="512"/>
+        <source>Update GPU authentication engine</source>
+        <translation>Update GPU authentication engine</translation>
+    </message>
+    <message>
+        <location filename="../src/setupwizard.cpp" line="513"/>
+        <source>Existing fingerprint references, fprintd enrolment and PAM settings will not change. Only the matcher, shader and driver bridge are replaced, followed by reference self-checks. Changed files are backed up separately. Apply the update?</source>
+        <translation>Existing fingerprint references, fprintd enrolment and PAM settings will not change. Only the matcher, shader and driver bridge are replaced, followed by reference self-checks. Changed files are backed up separately. Apply the update?</translation>
+    </message>
+    <message>
+        <location filename="../src/setupwizard.cpp" line="524"/>
+        <source>Select your saved fingerprint session</source>
+        <translation>Select your saved fingerprint session</translation>
+    </message>
+    <message>
+        <location filename="../src/setupwizard.cpp" line="528"/>
+        <source>Experimental GPU authentication</source>
+        <translation>Experimental GPU authentication</translation>
+    </message>
+    <message>
+        <location filename="../src/setupwizard.cpp" line="529"/>
+        <source>Confirm that the selected folders contain this user&apos;s fingerprints.
+%1
+
+Existing enrolment is preserved and GPU comparison is used for sudo and KDE authentication. After at most 20 failed contacts or 60 seconds, the password path remains available. Rejection of other fingers is not fully validated. Back up the settings and apply?</source>
+        <translation>Confirm that the selected folders contain this user&apos;s fingerprints.
+%1
+
+Existing enrolment is preserved and GPU comparison is used for sudo and KDE authentication. After at most 20 failed contacts or 60 seconds, the password path remains available. Rejection of other fingers is not fully validated. Back up the settings and apply?</translation>
+    </message>
+    <message>
+        <location filename="../src/setupwizard.cpp" line="548"/>
+        <source>Restore the sudo, KDE and fprintd settings from before installation? Existing fingerprint enrolment is not deleted.</source>
+        <translation>Restore the sudo, KDE and fprintd settings from before installation? Existing fingerprint enrolment is not deleted.</translation>
+    </message>
+    <message>
+        <location filename="../src/setupwizard.cpp" line="574"/>
+        <source>Fingerprint match succeeded. The result was delivered while the finger remained in place. Test the sudo/KDE dialog and password fallback separately.</source>
+        <translation>Fingerprint match succeeded. The result was delivered while the finger remained in place. Test the sudo/KDE dialog and password fallback separately.</translation>
+    </message>
+    <message>
+        <location filename="../src/setupwizard.cpp" line="575"/>
+        <source>Sensor thermal protection stopped the test. Lift your finger, let it cool briefly, then try again.</source>
+        <translation>Sensor thermal protection stopped the test. Lift your finger, let it cool briefly, then try again.</translation>
+    </message>
+    <message>
+        <location filename="../src/setupwizard.cpp" line="576"/>
+        <source>No finger was detected during this 30-second one-shot test. Clear the sensor, then place the enrolled finger in the centre for one or two seconds when prompted.</source>
+        <translation>No finger was detected during this 30-second one-shot test. Clear the sensor, then place the enrolled finger in the centre for one or two seconds when prompted.</translation>
+    </message>
+    <message>
+        <location filename="../src/setupwizard.cpp" line="577"/>
+        <source>System fingerprint test incomplete: %1</source>
+        <translation>System fingerprint test incomplete: %1</translation>
+    </message>
+    <message>
+        <location filename="../src/setupwizard.cpp" line="587"/>
+        <source>[System fingerprint test] Match confirmed while the finger remained in place.
+</source>
+        <translation>[System fingerprint test] Match confirmed while the finger remained in place.
+</translation>
+    </message>
+    <message>
+        <location filename="../src/setupwizard.cpp" line="589"/>
+        <source>[System fingerprint test] No match. This contact was not recorded or enrolled.
+</source>
+        <translation>[System fingerprint test] No match. This contact was not recorded or enrolled.
+</translation>
+    </message>
+    <message>
+        <location filename="../src/setupwizard.cpp" line="591"/>
+        <source>[System fingerprint test] Place the finger in the centre and hold it until a result appears. You do not need to lift it.
+</source>
+        <translation>[System fingerprint test] Place the finger in the centre and hold it until a result appears. You do not need to lift it.
+</translation>
+    </message>
+    <message>
+        <location filename="../src/setupwizard.cpp" line="606"/>
+        <source>[System fingerprint test] Start with the sensor clear. When prompted, place the same enrolled finger and hold it until the result appears. You do not need to lift it.</source>
+        <translation>[System fingerprint test] Start with the sensor clear. When prompted, place the same enrolled finger and hold it until the result appears. You do not need to lift it.</translation>
     </message>
 </context>
 </TS>

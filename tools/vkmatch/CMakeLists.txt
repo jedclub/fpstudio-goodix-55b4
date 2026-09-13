@@ -41,3 +41,9 @@ if(BUILD_TESTING)
 endif()
 install(TARGETS fpstudio-vkmatch RUNTIME DESTINATION bin)
 install(FILES "${VKMATCH_SPV}" DESTINATION bin)
+# A self-contained installed wizard stages these exact, already-built
+# artefacts into /opt only after its validation and rollback preflight pass.
+install(TARGETS fpstudio-vkmatch fpstudio-auth-match
+        RUNTIME DESTINATION share/fpstudio/setup/build)
+install(FILES "${VKMATCH_SPV}"
+        DESTINATION share/fpstudio/setup/build/vkmatch)

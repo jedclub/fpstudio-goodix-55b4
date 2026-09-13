@@ -19,6 +19,16 @@ int main(int argc, char **argv)
         poll(&p, 1, 5000);
         return 0;
     }
+    if (!strcmp(argv[1], "kde-feedback")) {
+        const int events[] = {FP_CONTACT, FP_PROGRESS, FP_PROGRESS, FP_RETRY, FP_TIMEOUT};
+        const int attempts[] = {0, 0, 1, 1, 1};
+        for (size_t i = 0; i < sizeof(events) / sizeof(events[0]); ++i) {
+            message.event = events[i];
+            message.attempt = attempts[i];
+            send(3, &message, sizeof(message), MSG_NOSIGNAL);
+        }
+        return 0;
+    }
     if (!strcmp(argv[1], "match") || !strcmp(argv[1], "repeat") || !strncmp(argv[1], "tty-match", 9) || !strcmp(argv[1], "kde-match")) message.event = FP_MATCH;
     else if (!strcmp(argv[1], "unavailable") || !strcmp(argv[1], "kde-unavailable")) message.event = FP_UNAVAILABLE;
     else if (!strcmp(argv[1], "timeout") || !strcmp(argv[1], "kde-timeout")) message.event = FP_TIMEOUT;

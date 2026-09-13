@@ -112,4 +112,13 @@ QString stepKey(StepId id);
 // The title shown in the wizard. Translated.
 QString stepTitle(StepId id);
 
+// Resolve a setup asset from either a source checkout or an installed
+// self-contained setup bundle. Paths are relative to the repository root.
+QString setupResource(const QString &relative);
+
+// The interactive PAM module must be fail-closed internally and followed by
+// the normal password stack. Kept public so the exact accepted policy has a
+// regression test without reading or modifying the host's PAM files.
+bool simultaneousPamConfigured(const QString &text);
+
 } // namespace fpstudio

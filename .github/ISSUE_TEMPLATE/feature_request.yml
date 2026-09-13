@@ -1,0 +1,30 @@
+name: Feature request
+description: Suggest a focused improvement for supported hardware or workflows.
+title: "[Feature]: "
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: Do not include biometric samples, credentials, secrets or private logs.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem to solve
+      description: Explain the user problem and where it occurs.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behaviour
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+  - type: input
+    id: environment
+    attributes:
+      label: Relevant environment
+      placeholder: Hardware, distribution, kernel and desktop where applicable

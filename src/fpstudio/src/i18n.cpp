@@ -27,9 +27,9 @@ QStringList searchPaths()
 {
     const QString bin = QFileInfo(QCoreApplication::applicationFilePath()).absolutePath();
     return {
+        bin,
         bin + QStringLiteral("/translations"),
         bin + QStringLiteral("/../share/fpstudio/translations"),
-        QStringLiteral(FPSTUDIO_TRANSLATIONS_DIR),
     };
 }
 

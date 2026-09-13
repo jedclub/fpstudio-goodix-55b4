@@ -12,6 +12,7 @@ class QLabel;
 class QPushButton;
 namespace fpstudio {
 class LiveWindow : public QDialog {
+    Q_OBJECT
 public:
     explicit LiveWindow(const QString &directory, QWidget *parent = nullptr,
                         const QString &program = {}, int prepareMs = 5000,

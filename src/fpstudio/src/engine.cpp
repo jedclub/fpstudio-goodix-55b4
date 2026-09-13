@@ -340,8 +340,9 @@ bool Engine::enumerate(QString *error)
         info.scanType = fp_device_get_scan_type(dev) == FP_SCAN_TYPE_PRESS
                           ? QStringLiteral("press") : QStringLiteral("swipe");
         info.enrollStages    = fp_device_get_nr_enroll_stages(dev);
-        info.supportsCapture = fp_device_supports_capture(dev);
-        info.supportsIdentify = fp_device_supports_identify(dev);
+        const FpDeviceFeature features = fp_device_get_features(dev);
+        info.supportsCapture = features & FP_DEVICE_FEATURE_CAPTURE;
+        info.supportsIdentify = features & FP_DEVICE_FEATURE_IDENTIFY;
         info.open   = fp_device_is_open(dev);
         d->infos.append(info);
         d->handles.append(dev);
@@ -402,7 +403,7 @@ bool Engine::captureImage(bool waitForFinger, int timeoutSecs, QImage *out, QStr
         if (error) *error = QStringLiteral("no device open");
         return false;
     }
-    if (!fp_device_supports_capture(d->dev)) {
+    if (!(fp_device_get_features(d->dev) & FP_DEVICE_FEATURE_CAPTURE)) {
         if (error) *error = QStringLiteral("driver does not support raw capture");
         return false;
     }

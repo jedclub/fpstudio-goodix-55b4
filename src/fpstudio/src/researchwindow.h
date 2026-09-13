@@ -15,6 +15,7 @@ namespace fpstudio {
 // Owns the capture protocol. MCP starts/observes/stops a session; it never
 // times individual touches. This window remains usable without an agent.
 class ResearchWindow : public QDialog {
+    Q_OBJECT
 public:
     explicit ResearchWindow(const QString &directory, QWidget *parent = nullptr,
                             const QString &captureProgram = {}, int prepareMs = 5000, int reviewMs = 4000,

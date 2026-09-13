@@ -39,6 +39,29 @@ jobs:
             tools/test_dual_auth_install.py \
             tools/test_auth_log_report.py
 
+      - name: Build relocatable application bundle
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          version="${TAG#v}"
+          stage="$RUNNER_TEMP/fpstudio-stage"
+          archive="fpstudio-${version}-linux-x86_64-release.tar.zst"
+          SOURCE_DATE_EPOCH="$(git log -1 --format=%ct)"
+          DESTDIR="$stage" cmake --install build --prefix /usr --strip
+          tar --zstd --sort=name --mtime="@$SOURCE_DATE_EPOCH" \
+            --owner=0 --group=0 --numeric-owner \
+            -cf "$archive" -C "$stage" .
+          sha256sum "$archive" > SHA256SUMS.binary
+
+      - name: Upload tested application bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: fpstudio-release-bundle
+          path: |
+            fpstudio-*-linux-x86_64-release.tar.zst
+            SHA256SUMS.binary
+          if-no-files-found: error
+
   publish-source-release:
     name: Publish source archive and checksum
     runs-on: ubuntu-latest
@@ -47,6 +70,11 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      - name: Download tested application bundle
+        uses: actions/download-artifact@v4
+        with:
+          name: fpstudio-release-bundle
 
       - name: Validate the tag and release note
         env:
@@ -67,6 +95,7 @@ jobs:
           base="fpstudio-goodix-55b4-${version}"
           git archive --format=tar.gz --prefix="${base}/" --output="${base}.tar.gz" "$TAG"
           sha256sum "${base}.tar.gz" > SHA256SUMS
+          cat SHA256SUMS.binary >> SHA256SUMS
           echo "archive=${base}.tar.gz" >> "$GITHUB_OUTPUT"
 
       - name: Create GitHub release
@@ -75,6 +104,6 @@ jobs:
           TAG: ${{ github.ref_name }}
           ARCHIVE: ${{ steps.archive.outputs.archive }}
         run: |
-          gh release create "$TAG" "$ARCHIVE" SHA256SUMS \
+          gh release create "$TAG" "$ARCHIVE" fpstudio-*-linux-x86_64-release.tar.zst SHA256SUMS \
             --title "FPStudio $TAG" \
             --notes-file "docs/releases/${TAG}.md"

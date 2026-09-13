@@ -207,6 +207,25 @@ def experimental_artifacts():
     if not build.is_dir():
         build = REPO / "build"
     library = REPO / "src/driver/src/libfprint-goodixtls-55x4/build/libfprint/libfprint-2.so.2.0.0"
+    if not library.is_file() or library.is_symlink():
+        # Installed release bundles deliberately do not carry a second copy
+        # of the distribution's libfprint.  Once the wizard has confirmed the
+        # patched driver is active, stage the exact regular file backing the
+        # system SONAME instead.  Resolve first, then retain the existing
+        # regular-file and ELF validation below.
+        candidates = [Path("/usr/lib/libfprint-2.so.2"),
+                      Path("/usr/lib64/libfprint-2.so.2"),
+                      Path("/usr/lib/x86_64-linux-gnu/libfprint-2.so.2")]
+        resolved = []
+        for candidate in candidates:
+            try:
+                target = candidate.resolve(strict=True)
+            except FileNotFoundError:
+                continue
+            if target not in resolved:
+                resolved.append(target)
+        library = next((path for path in resolved
+                        if path.is_file() and not path.is_symlink()), library)
     sources = [(build / "fpstudio-auth-match", PREFIX / "bin/fpstudio-auth-match", 0o755),
                (build / "fpstudio-vkmatch", PREFIX / "bin/fpstudio-vkmatch", 0o755),
                (build / "vkmatch/fpstudio-match.spv", PREFIX / "bin/fpstudio-match.spv", 0o644),
@@ -216,6 +235,8 @@ def experimental_artifacts():
         if source.is_symlink() or not source.is_file():
             raise ValueError(f"Build artifact missing or symlink: {source}")
         data = source.read_bytes()
+        if target == PREFIX / "lib/libfprint-2.so.2" and b"goodixtls55x4" not in data:
+            raise ValueError("Active libfprint does not contain the Goodix 55x4 driver")
         artifacts.append((target, data, mode))
     library_data = next(data for target, data, _ in artifacts
                         if target == PREFIX / "lib/libfprint-2.so.2")

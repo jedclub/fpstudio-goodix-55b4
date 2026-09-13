@@ -14,6 +14,10 @@
 #include <signal.h>
 #include <dlfcn.h>
 static int *prompts;
+static int info_messages;
+static int error_messages;
+static char last_error[256];
+static unsigned int kde_feedback_states;
 static volatile sig_atomic_t application_interrupts;
 static volatile sig_atomic_t application_hups;
 
@@ -45,6 +49,17 @@ static int conversation(int count, const struct pam_message **messages,
     }
     *result = calloc((size_t)count, sizeof(**result));
     for (int i = 0; i < count; ++i) {
+        if (messages[i]->msg_style == PAM_TEXT_INFO) ++info_messages;
+        if (messages[i]->msg_style == PAM_ERROR_MSG) {
+            ++error_messages;
+            snprintf(last_error, sizeof(last_error), "%s", messages[i]->msg);
+            if (strstr(messages[i]->msg, "Starting sensor")) kde_feedback_states |= 1u << 0;
+            if (strstr(messages[i]->msg, "Ready")) kde_feedback_states |= 1u << 1;
+            if (strstr(messages[i]->msg, "Finger detected")) kde_feedback_states |= 1u << 2;
+            if (strstr(messages[i]->msg, "Checking")) kde_feedback_states |= 1u << 3;
+            if (strstr(messages[i]->msg, "No match")) kde_feedback_states |= 1u << 4;
+            if (strstr(messages[i]->msg, "password")) kde_feedback_states |= 1u << 5;
+        }
         if (messages[i]->msg_style != PAM_PROMPT_ECHO_OFF) continue;
         ++*prompts;
         if (strcmp(mode, "password") == 0 || strcmp(mode, "failure") == 0) usleep(20000);
@@ -72,6 +87,7 @@ int main(int argc, char **argv)
         sigprocmask(SIG_BLOCK, &mask, NULL);
     }
     int kde = !strncmp(argv[2], "kde-", 4);
+    if (kde) setenv("LC_ALL", "C.UTF-8", 1);
     const char *service = kde ? "kde-fingerprint" : "fpstudio-test";
     int gate[2]; pthread_t thread;
     if (kde && (pipe(gate) || pthread_create(&thread, NULL, background_thread, &gate[0]))) return 1;
@@ -125,6 +141,21 @@ int main(int argc, char **argv)
     if (*prompts != expected_prompts) {
         fprintf(stderr, "unexpected prompt count mode=%s actual=%d expected=%d\n",
                 argv[2], *prompts, expected_prompts);
+        fail = 1;
+    }
+    if (kde && (info_messages != 0 || error_messages < 2)) {
+        fprintf(stderr, "KDE feedback used an invisible channel mode=%s info=%d error=%d\n",
+                argv[2], info_messages, error_messages);
+        fail = 1;
+    }
+    if (kde && strcmp(argv[2], "kde-match") && !strstr(last_error, "password")) {
+        fprintf(stderr, "KDE terminal state did not direct password input mode=%s last=%s\n",
+                argv[2], last_error);
+        fail = 1;
+    }
+    if (!strcmp(argv[2], "kde-feedback") && kde_feedback_states != 0x3fu) {
+        fprintf(stderr, "KDE feedback sequence incomplete states=0x%x last=%s\n",
+                kde_feedback_states, last_error);
         fail = 1;
     }
     if (kde) { close(gate[1]); pthread_join(thread, NULL); close(gate[0]); }

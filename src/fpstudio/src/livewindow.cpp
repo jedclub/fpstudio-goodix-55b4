@@ -384,7 +384,10 @@ void LiveWindow::start()
 {
     m_started = true;
     m_instruction->setText(QStringLiteral("아직 손을 떼고 계세요 — 센서 연결 및 배경 보정 중"));
-    m_worker.start(m_program, {"--lang", "ko", "--cli", "capture", "--timeout", "195", "--out", m_dir + "/unused.png"});
+    // The child inherits the language already selected by the application.
+    // Forcing Korean here made an otherwise localized session switch language
+    // as soon as live capture started.
+    m_worker.start(m_program, {"--cli", "capture", "--timeout", "195", "--out", m_dir + "/unused.png"});
 }
 void LiveWindow::tick()
 {
