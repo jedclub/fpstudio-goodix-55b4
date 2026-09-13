@@ -34,7 +34,10 @@ jobs:
           ctest --test-dir build --output-on-failure
           python src/pam/test_tty.py build/pam
           python src/pam/test_worker_bus.py build/pam/fpstudio-fprint-worker
-          PYTHONPATH=tools python -m unittest tools/test_dual_auth_install.py
+          PYTHONPATH=tools python -m unittest \
+            tools/test_auth_install.py \
+            tools/test_dual_auth_install.py \
+            tools/test_auth_log_report.py
 
   publish-source-release:
     name: Publish source archive and checksum

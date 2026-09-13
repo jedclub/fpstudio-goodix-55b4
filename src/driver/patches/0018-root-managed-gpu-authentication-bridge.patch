@@ -27,7 +27,7 @@ index f1a499e..cbd8a19 100644
        g_task_return_new_error (task, G_IO_ERROR, G_IO_ERROR_FAILED,
                                 "No keypoints found");
 diff --git a/libfprint/fpi-print.c b/libfprint/fpi-print.c
-index 4620cc6..2c40e07 100644
+index 4620cc6..005bac4 100644
 --- a/libfprint/fpi-print.c
 +++ b/libfprint/fpi-print.c
 @@ -26,6 +26,7 @@
@@ -38,17 +38,18 @@ index 4620cc6..2c40e07 100644
 
  /**
   * SECTION: fpi-print
-@@ -260,6 +261,15 @@ FpiMatchResult fpi_print_sigfm_match(FpPrint *template, FpPrint *print,
+@@ -260,6 +261,18 @@ FpiMatchResult fpi_print_sigfm_match(FpPrint *template, FpPrint *print,
      return FPI_MATCH_ERROR;
    }
 
 +  const int gpu_result=gpu_auth_match(template,print);
 +  if(gpu_result!=-2) {
-+    fp_dbg("fpstudio GPU authentication result=%d",gpu_result);
++    g_message("fpstudio_auth component=matcher event=gpu_result result=%d",gpu_result);
 +    if(gpu_result<0) {
-+      /* An optional accelerator must never turn a valid capture into an
-+       * outage. Fall through to SIGFM for this same probe. */
-+      fp_dbg("fpstudio GPU unavailable; falling back to SIGFM");
++      /* The optional accelerator must not turn a healthy sensor capture into
++       * an authentication outage. A transient Vulkan/helper failure falls
++       * through to the established SIGFM matcher for this same probe. */
++      g_message("fpstudio_auth component=matcher event=gpu_fallback reason=helper_unavailable");
 +    } else {
 +      return gpu_result?FPI_MATCH_SUCCESS:FPI_MATCH_FAIL;
 +    }
@@ -56,12 +57,22 @@ index 4620cc6..2c40e07 100644
    SigfmImgInfo *against = g_ptr_array_index(print->prints, 0);
    for (int i = 0; i != template->prints->len; ++i) {
      SigfmImgInfo *pinfo = g_ptr_array_index(template->prints, i);
-
+@@ -269,7 +282,8 @@ FpiMatchResult fpi_print_sigfm_match(FpPrint *template, FpPrint *print,
+                                         "error in sigfm_match_score");
+       return FPI_MATCH_ERROR;
+     }
+-    fp_dbg("sigfm score %d/%d", score, bz3_threshold);
++    g_message("fpstudio_auth component=matcher event=sigfm_score score=%d threshold=%d",
++              score, bz3_threshold);
+     if (score >= bz3_threshold)
+       return FPI_MATCH_SUCCESS;
+   }
 diff --git a/libfprint/gpu_auth_bridge.h b/libfprint/gpu_auth_bridge.h
 new file mode 100644
+index 0000000..b16b624
 --- /dev/null
 +++ b/libfprint/gpu_auth_bridge.h
-@@ -0,0 +1,85 @@
+@@ -0,0 +1,94 @@
 +/* Root-managed, opt-in GPU gallery bridge. No PAM or enrollment format change.
 + * Missing gallery retains SIGFM. A GPU transport error retains the established
 + * SIGFM matcher; a completed GPU rejection remains a rejection. Existing
@@ -94,25 +105,10 @@ new file mode 100644
 +  return NULL;
 +}
 +
-+/* One attempt creates its own helper process and therefore a new Vulkan
-+ * instance. -2 = no override; -1 = error; 0 = reject; 1 = accept. */
-+static int gpu_auth_attempt(FpPrint *enrolled,FpPrint *probe) {
-+  const char *username=fp_print_get_username(enrolled);
-+  if(g_strcmp0(fp_print_get_driver(enrolled),"goodixtls55x4")!=0)return -2;
-+  if(!username||!g_regex_match_simple("^[a-z_][a-z0-9_-]{0,31}$",username,0,0))return -2;
-+  g_autofree char *enabled=g_strdup_printf("/etc/fpstudio-auth-users/%s",username);
-+  struct stat st;
-+  if(lstat(enabled,&st))return errno==ENOENT?-2:-1;
-+  if(st.st_uid!=0||!S_ISREG(st.st_mode)||(st.st_mode&0022))return -1;
-+  g_autofree char *bank=g_strdup_printf("/var/lib/fprint/fpstudio-gpu/%s",username);
-+  if(lstat(bank,&st))return -1;
-+  if(geteuid()!=0||st.st_uid!=0||!S_ISDIR(st.st_mode)||(st.st_mode&0077))return -1;
-+  FpImage *image=fp_print_get_image(probe);
-+  if(!image||fp_image_get_width(image)!=108||fp_image_get_height(image)!=88)return -1;
-+  gsize length=0;const guchar *pixels=fp_image_get_data(image,&length);
-+  if(!pixels||length!=9504)return -1;
-+  const char *helper="/opt/fpstudio-auth/bin/fpstudio-auth-match";
-+  if(lstat(helper,&st)||st.st_uid!=0||!S_ISREG(st.st_mode)||(st.st_mode&0022))return -1;
++/* One invocation owns one fresh Vulkan instance. Destroying the child also
++ * destroys its device/queue state, so a second invocation is a real GPU
++ * reinitialisation rather than reusing a potentially poisoned context. */
++static int gpu_auth_attempt(const char *helper,const char *username,const guchar *pixels) {
 +  g_autoptr(GSubprocessLauncher) launcher=g_subprocess_launcher_new(G_SUBPROCESS_FLAGS_STDIN_PIPE|G_SUBPROCESS_FLAGS_STDOUT_PIPE|G_SUBPROCESS_FLAGS_STDERR_PIPE);
 +  const char *env[]={"PATH=/usr/bin","LANG=C.UTF-8",NULL};
 +  g_subprocess_launcher_set_environ(launcher,(gchar **)env);
@@ -131,15 +127,11 @@ new file mode 100644
 +  g_mutex_lock(&deadline.mutex);deadline.done=TRUE;g_cond_signal(&deadline.condition);g_mutex_unlock(&deadline.mutex);
 +  g_thread_join(thread);g_mutex_clear(&deadline.mutex);g_cond_clear(&deadline.condition);
 +  if(!communicated||!output||!g_subprocess_get_if_exited(child))return -1;
-+  /* The helper emits one fixed-format, numeric-only diagnostic line. Capture
-+   * it so a no-match can be diagnosed from the journal without retaining an
-+   * image, gallery filename, username or any other biometric material. */
 +  if(diagnostics) {
 +    gsize diagnostic_size=0;const char *diagnostic=g_bytes_get_data(diagnostics,&diagnostic_size);
-+    if(diagnostic_size>=24&&diagnostic_size<=512&&
-+       memcmp(diagnostic,"fpstudio GPU v8 accepted=",24)==0) {
++    if(diagnostic_size>=24&&diagnostic_size<=512&&memcmp(diagnostic,"fpstudio GPU v8 accepted=",24)==0) {
 +      g_autofree char *line=g_strndup(diagnostic,diagnostic_size);
-+      g_strchomp(line);fp_dbg("%s",line);
++      g_strchomp(line);g_message("fpstudio_auth component=matcher event=gpu_metrics %s",line+16);
 +    }
 +  }
 +  gsize size=0;const char *reply=g_bytes_get_data(output,&size);
@@ -150,13 +142,28 @@ new file mode 100644
 +  return -1;
 +}
 +
++/* -2 = no configured override; -1 = error; 0 = reject; 1 = accept. */
 +static int gpu_auth_match(FpPrint *enrolled,FpPrint *probe) {
-+  int result=gpu_auth_attempt(enrolled,probe);
++  const char *username=fp_print_get_username(enrolled);
++  if(g_strcmp0(fp_print_get_driver(enrolled),"goodixtls55x4")!=0)return -2;
++  if(!username||!g_regex_match_simple("^[a-z_][a-z0-9_-]{0,31}$",username,0,0))return -2;
++  g_autofree char *enabled=g_strdup_printf("/etc/fpstudio-auth-users/%s",username);
++  struct stat st;
++  if(lstat(enabled,&st))return errno==ENOENT?-2:-1;
++  if(st.st_uid!=0||!S_ISREG(st.st_mode)||(st.st_mode&0022))return -1;
++  g_autofree char *bank=g_strdup_printf("/var/lib/fprint/fpstudio-gpu/%s",username);
++  if(lstat(bank,&st))return -1;
++  if(geteuid()!=0||st.st_uid!=0||!S_ISDIR(st.st_mode)||(st.st_mode&0077))return -1;
++  FpImage *image=fp_print_get_image(probe);
++  if(!image||fp_image_get_width(image)!=108||fp_image_get_height(image)!=88)return -1;
++  gsize length=0;const guchar *pixels=fp_image_get_data(image,&length);
++  if(!pixels||length!=9504)return -1;
++  const char *helper="/opt/fpstudio-auth/bin/fpstudio-auth-match";
++  if(lstat(helper,&st)||st.st_uid!=0||!S_ISREG(st.st_mode)||(st.st_mode&0022))return -1;
++  int result=gpu_auth_attempt(helper,username,pixels);
 +  if(result<0) {
-+    /* The failed helper is gone. Repeat once with a fresh Vulkan device;
-+     * a definite non-match is not retried. */
-+    fp_dbg("fpstudio GPU attempt failed; reinitialising Vulkan helper");
-+    result=gpu_auth_attempt(enrolled,probe);
++    g_message("fpstudio_auth component=matcher event=gpu_reinitialise reason=helper_failure");
++    result=gpu_auth_attempt(helper,username,pixels);
 +  }
 +  return result;
 +}

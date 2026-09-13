@@ -18,9 +18,18 @@ class DualAuthInstallTest(unittest.TestCase):
                   'session include system-auth\n')
         changed = dual_stack(source, 'sudo')
         self.assertIn('auth requisite pam_faillock.so preauth\n', changed)
-        self.assertIn(f'auth sufficient {MODULE}\nauth include system-auth\n', changed)
+        self.assertIn(f'auth [success=done ignore=ignore abort=die auth_err=die default=die] {MODULE}\n'
+                      'auth include system-auth\n', changed)
         self.assertEqual(source.split('account', 1)[1], changed.split('account', 1)[1])
         self.assertEqual(dual_stack(changed, 'sudo'), changed)
+
+    def test_legacy_module_control_is_upgraded(self):
+        source = (f'auth requisite pam_faillock.so preauth\n'
+                  f'auth sufficient {MODULE}\n'
+                  'auth include system-auth\n')
+        changed = dual_stack(source, 'sudo')
+        self.assertNotIn(f'auth sufficient {MODULE}\n', changed)
+        self.assertIn('abort=die auth_err=die', changed)
 
     def test_unknown_stacks_are_rejected(self):
         for control in ('required', '[success=2 default=ignore]'):

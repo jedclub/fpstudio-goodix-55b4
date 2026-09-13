@@ -12,7 +12,16 @@
 #include <errno.h>
 #include <pthread.h>
 #include <signal.h>
+#include <dlfcn.h>
 static int *prompts;
+static volatile sig_atomic_t application_interrupts;
+static volatile sig_atomic_t application_hups;
+
+static void application_signal(int number)
+{
+    if (number == SIGHUP) ++application_hups;
+    else ++application_interrupts;
+}
 
 static void *background_thread(void *data)
 {
@@ -49,6 +58,15 @@ static int conversation(int count, const struct pam_message **messages,
 int main(int argc, char **argv)
 {
     if (argc != 4) return 1;
+    void *module = dlopen(argv[1], RTLD_NOW | RTLD_LOCAL);
+    const char *(*audit_trace)(void) = module ? dlsym(module, "fpstudio_test_audit_trace") : NULL;
+    if (!strncmp(argv[2], "tty-", 4)) {
+        struct sigaction action = {0};
+        action.sa_handler = application_signal;
+        sigemptyset(&action.sa_mask);
+        if (sigaction(SIGINT, &action, NULL) != 0) return 1;
+        if (sigaction(SIGHUP, &action, NULL) != 0) return 1;
+    }
     if (!strcmp(argv[2], "tty-blocked-cancel")) {
         sigset_t mask; sigemptyset(&mask); sigaddset(&mask, SIGINT);
         sigprocmask(SIG_BLOCK, &mask, NULL);
@@ -68,6 +86,7 @@ int main(int argc, char **argv)
      * be mistaken for a fingerprint success. A second test module checks the
      * password token actually reaches the fallback, without using PAM users. */
     int reject = !strcmp(argv[2], "failure") || !strcmp(argv[2], "cancel") ||
+                 !strcmp(argv[2], "tty-cancel") || !strcmp(argv[2], "tty-blocked-cancel") ||
                  !strcmp(argv[2], "tty-match-wrong-password") || !strcmp(argv[2], "tty-noninteractive") ||
                  !strcmp(argv[2], "tty-overflow") || (kde && strcmp(argv[2], "kde-match"));
     int deny = kde || !strcmp(argv[2], "failure") || !strcmp(argv[2], "cancel");
@@ -77,21 +96,55 @@ int main(int argc, char **argv)
     struct pam_conv conv = {conversation, argv[2]};
     int iterations = !strcmp(argv[2], "repeat") ? 8 : 1;
     int fail = 0;
+    const char *test_user = getenv("FPSTUDIO_TEST_USER");
+    if (!test_user || !*test_user) test_user = argv[2];
     for (int i = 0; i < iterations; ++i) {
         pam_handle_t *handle = NULL;
-        int status = pam_start_confdir(service, argv[2], &conv, directory, &handle);
+        int status = pam_start_confdir(service, test_user, &conv, directory, &handle);
         if (status == PAM_SUCCESS) status = pam_authenticate(handle, 0);
-        if ((status == PAM_SUCCESS) == reject) fail = 1;
+        if ((status == PAM_SUCCESS) == reject) {
+            const char *observed = NULL;
+            pam_get_item(handle, PAM_AUTHTOK, (const void **)&observed);
+            fprintf(stderr,
+                    "unexpected PAM result mode=%s status=%d reject=%d token_present=%d token_length=%zu token_matches=%d trace=%s\n",
+                    argv[2], status, reject, observed != NULL, observed ? strlen(observed) : 0,
+                    observed && !strcmp(observed, "synthetic-test-password"),
+                    audit_trace ? audit_trace() : "unavailable");
+            fail = 1;
+        }
         pam_end(handle, status);
-        if (waitpid(-1, NULL, WNOHANG) != -1 || errno != ECHILD) fail = 1;
+        errno = 0;
+        pid_t remaining = waitpid(-1, NULL, WNOHANG);
+        if (remaining != -1 || errno != ECHILD) {
+            fprintf(stderr, "child leak mode=%s waitpid=%ld errno=%d\n", argv[2], (long)remaining, errno);
+            fail = 1;
+        }
     }
     unlink(path); rmdir(directory);
-    if (*prompts != (kde ? 0 : iterations)) fail = 1;
+    int expected_prompts = kde || !strncmp(argv[2], "tty-", 4) ? 0 : iterations;
+    if (*prompts != expected_prompts) {
+        fprintf(stderr, "unexpected prompt count mode=%s actual=%d expected=%d\n",
+                argv[2], *prompts, expected_prompts);
+        fail = 1;
+    }
     if (kde) { close(gate[1]); pthread_join(thread, NULL); close(gate[0]); }
     munmap(prompts, sizeof(int));
     if (!strcmp(argv[2], "tty-blocked-cancel")) {
         sigset_t mask; sigemptyset(&mask); sigaddset(&mask, SIGINT);
         sigprocmask(SIG_UNBLOCK, &mask, NULL);
     }
+    if (!strncmp(argv[2], "tty-", 4)) {
+        struct sigaction observed;
+        if (sigaction(SIGINT, NULL, &observed) != 0 || observed.sa_handler != application_signal) {
+            fprintf(stderr, "application SIGINT handler was replaced mode=%s\n", argv[2]);
+            fail = 1;
+        }
+    }
+    if (!strcmp(argv[2], "tty-hup-password") && application_hups != 1) {
+        fprintf(stderr, "application SIGHUP handler was not preserved count=%d\n",
+                (int)application_hups);
+        fail = 1;
+    }
+    if (module) dlclose(module);
     return fail;
 }

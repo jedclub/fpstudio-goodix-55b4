@@ -18,10 +18,12 @@ from auth_install import REPO, safe_parent, verified_kde_password_profile
 
 MODULE = Path('/opt/fpstudio-auth/lib/pam_fpstudio.so')
 WORKER = Path('/opt/fpstudio-auth/bin/fpstudio-fprint-worker')
+REPORT = Path('/opt/fpstudio-auth/bin/fpstudio-auth-report')
 BACKUPS = Path('/var/backups/fpstudio-dual-auth')
 SERVICES = ('sudo', 'sudo-i', 'polkit-1', 'login', 'su', 'su-l', 'kde-fingerprint')
-TARGETS = {MODULE, WORKER, *(Path('/etc/pam.d') / s for s in SERVICES)}
-DUAL = f'auth sufficient {MODULE}\n'
+TARGETS = {MODULE, WORKER, REPORT, *(Path('/etc/pam.d') / s for s in SERVICES)}
+DUAL = f'auth [success=done ignore=ignore abort=die auth_err=die default=die] {MODULE}\n'
+LEGACY_DUAL = f'auth sufficient {MODULE}\n'
 LOCK = 'auth requisite pam_faillock.so preauth\n'
 
 
@@ -42,6 +44,10 @@ def dual_stack(text, service):
         expected = (f'-auth required {MODULE} fingerprint-only' if service == 'kde-fingerprint'
                     else DUAL.strip())
         active = [' '.join(fields) for fields in entries]
+        legacy = LEGACY_DUAL.strip()
+        if service != 'kde-fingerprint' and active.count(legacy) == 1 and expected not in active:
+            text = text.replace(LEGACY_DUAL, DUAL, 1)
+            active[active.index(legacy)] = expected
         if active.count(expected) != 1 or any('pam_fprintd.so' in x for x in active):
             raise ValueError('Conflicting simultaneous fingerprint configuration')
         if service != 'kde-fingerprint' and 'auth requisite pam_faillock.so preauth' not in active:
@@ -57,7 +63,7 @@ def dual_stack(text, service):
         if any('pam_fprintd.so' in e for e in entries):
             # Existing helper validates sufficient control and the immediate
             # system-auth password fallback before we replace the module.
-            set_fingerprint_limits(text, 10, 30)
+            set_fingerprint_limits(text, 10, 60)
             text = re.sub(r'(?m)^auth\s+sufficient\s+pam_fprintd\.so[^\n]*\n', '', text)
         remaining = auth_entries(text)
         if [e for e in remaining if 'pam_echo.so' not in e] != [['auth', 'include', 'system-auth']]:
@@ -87,11 +93,15 @@ def make_plans():
     if not build.is_dir():
         build = REPO / 'build-pam'
     for source, target in ((build / 'pam_fpstudio.so', MODULE),
-                           (build / 'fpstudio-fprint-worker', WORKER)):
+                           (build / 'fpstudio-fprint-worker', WORKER),
+                           (REPO / 'tools/auth_log_report.py', REPORT)):
         if source.is_symlink() or not source.is_file():
             raise ValueError(f'Build the production PAM target first: {source}')
         data = source.read_bytes()
-        if not data.startswith(b'\x7fELF') or b'synthetic-test-password' in data or b'fake-fprint-worker' in data:
+        if target == REPORT:
+            if not data.startswith(b'#!/usr/bin/env python3\n') or b'privacy-safe FPStudio authentication' not in data:
+                raise ValueError('Refusing invalid authentication report tool')
+        elif not data.startswith(b'\x7fELF') or b'synthetic-test-password' in data or b'fake-fprint-worker' in data:
             raise ValueError('Refusing invalid or test authentication artifact')
         if target == MODULE and str(WORKER).encode() not in data:
             raise ValueError('PAM module does not use the installed production sensor worker')
@@ -146,7 +156,7 @@ def main():
         rollback(args.rollback); return
     plans = make_plans()
     for path, (before, after, _) in plans.items():
-        if path in (MODULE, WORKER):
+        if path in (MODULE, WORKER, REPORT):
             print(f'Install {path} ({len(after)} bytes)')
         else:
             print(''.join(difflib.unified_diff((before or b'').decode().splitlines(True),

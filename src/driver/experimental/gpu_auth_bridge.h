@@ -56,7 +56,7 @@ static int gpu_auth_attempt(const char *helper,const char *username,const guchar
     gsize diagnostic_size=0;const char *diagnostic=g_bytes_get_data(diagnostics,&diagnostic_size);
     if(diagnostic_size>=24&&diagnostic_size<=512&&memcmp(diagnostic,"fpstudio GPU v8 accepted=",24)==0) {
       g_autofree char *line=g_strndup(diagnostic,diagnostic_size);
-      g_strchomp(line);fp_dbg("%s",line);
+      g_strchomp(line);g_message("fpstudio_auth component=matcher event=gpu_metrics %s",line+16);
     }
   }
   gsize size=0;const char *reply=g_bytes_get_data(output,&size);
@@ -87,7 +87,7 @@ static int gpu_auth_match(FpPrint *enrolled,FpPrint *probe) {
   if(lstat(helper,&st)||st.st_uid!=0||!S_ISREG(st.st_mode)||(st.st_mode&0022))return -1;
   int result=gpu_auth_attempt(helper,username,pixels);
   if(result<0) {
-    fp_dbg("fpstudio GPU attempt failed; reinitialising Vulkan helper");
+    g_message("fpstudio_auth component=matcher event=gpu_reinitialise reason=helper_failure");
     result=gpu_auth_attempt(helper,username,pixels);
   }
   return result;

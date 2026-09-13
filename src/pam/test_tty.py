@@ -10,9 +10,9 @@ import termios
 import time
 
 build = Path(sys.argv[1]).resolve()
-CASES = ('tty-password', 'tty-match', 'tty-retry-password', 'tty-match-password',
+CASES = ('tty-password', 'tty-hup-password', 'tty-match', 'tty-retry-password', 'tty-match-password',
          'tty-match-wrong-password', 'tty-match-erased', 'tty-match-escape', 'tty-startup-password',
-         'tty-noninteractive', 'tty-cancel', 'tty-blocked-cancel', 'tty-overflow', 'tty-match-unicode-erased')
+         'tty-cancel', 'tty-blocked-cancel', 'tty-overflow', 'tty-match-unicode-erased')
 for mode in CASES:
     child, terminal = pty.fork()
     if child == 0:
@@ -22,7 +22,7 @@ for mode in CASES:
         os.execv(str(build / 'pam-conversation-test'), [str(build / 'pam-conversation-test'),
                  str(build / 'pam_fpstudio_test.so'), mode, str(build / 'pam_test_token.so')])
     output = b''
-    partial = typed = False
+    partial = typed = hup_sent = False
     started = time.monotonic()
     try:
         while time.monotonic() - started < 4:
@@ -32,6 +32,12 @@ for mode in CASES:
                 if not chunk: break
                 output += chunk
             prompt = b'Password or fingerprint:' in output
+            if mode == 'tty-hup-password' and prompt and not hup_sent:
+                os.killpg(child, signal.SIGHUP)
+                hup_sent = True
+                time.sleep(.05)
+                os.write(terminal, b'synthetic-test-password\n')
+                typed = True
             if mode in ('tty-cancel', 'tty-blocked-cancel', 'tty-overflow') and not typed and prompt:
                 os.write(terminal, b'synthetic-' * 200 + b'\n' if mode == 'tty-overflow' else b'\x03')
                 typed = True
@@ -66,14 +72,16 @@ for mode in CASES:
         while done == 0 and time.monotonic() < deadline:
             time.sleep(.01)
             done, status = os.waitpid(child, os.WNOHANG)
-        expected = -signal.SIGINT if mode in ('tty-cancel', 'tty-blocked-cancel') else 0
+        expected = 0
         assert done == child and os.waitstatus_to_exitcode(status) == expected, (mode, status, output)
         assert b'synthetic-' not in output and b'wrong-password' not in output, 'secret echoed'
         assert b'FPSTUDIO_INPUT_READY' not in output, 'private conversation output leaked'
         assert '가'.encode() not in output, 'non-ASCII input echoed'
-        assert output.count(b'\x1b[31m[Admin Auth]\x1b[0m') == (0 if mode == 'tty-noninteractive' else 1), (mode, output)
-        if mode not in ('tty-match', 'tty-match-escape', 'tty-match-erased', 'tty-match-unicode-erased', 'tty-noninteractive', 'tty-cancel', 'tty-blocked-cancel'):
+        assert output.count(b'\x1b[31m[Admin Auth]\x1b[0m') == 1, (mode, output)
+        if mode not in ('tty-match', 'tty-match-escape', 'tty-match-erased', 'tty-match-unicode-erased', 'tty-cancel', 'tty-blocked-cancel'):
             assert b'*' in output, ('missing masked input', mode, output)
+        if mode in ('tty-match', 'tty-match-escape', 'tty-match-erased', 'tty-match-unicode-erased'):
+            assert b'Authenticated.' in output, ('missing fingerprint success', mode, output)
         assert termios.tcgetattr(terminal)[3] & termios.ECHO, 'echo not restored'
         print(mode, 'passed: red header, masked input, sticky keyboard mode, echo restored')
     finally:

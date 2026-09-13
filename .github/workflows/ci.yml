@@ -35,6 +35,15 @@ jobs:
             exit 1
           fi
 
+      - name: Reject sudo shell and nested-PTY wrappers
+        run: |
+          if git grep -nE \
+               'function[[:space:]]+sudo|alias[[:space:]]+sudo=|pty\.spawn\([^)]*sudo' \
+               -- '*.fish' '*.sh' '*.py'; then
+            echo "::error::Authentication must integrate through PAM, not a sudo shell or PTY wrapper"
+            exit 1
+          fi
+
       - name: Allow only documented public ridge illustrations
         run: |
           allowed="README.md ridges-correct-geometry.png ridges-wrong-geometry.png normalisation-minmax.png normalisation-percentile.png"
@@ -99,7 +108,10 @@ jobs:
         run: |
           python src/pam/test_tty.py build/pam
           python src/pam/test_worker_bus.py build/pam/fpstudio-fprint-worker
-          PYTHONPATH=tools python -m unittest tools/test_dual_auth_install.py
+          PYTHONPATH=tools python -m unittest \
+            tools/test_auth_install.py \
+            tools/test_dual_auth_install.py \
+            tools/test_auth_log_report.py
 
       - name: Smoke-test CLI localisation and diagnostics
         run: |

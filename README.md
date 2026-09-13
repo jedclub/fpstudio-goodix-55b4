@@ -94,7 +94,23 @@ pressed. Any key (including erase or arrow keys) makes Enter mandatory for that
 request. Typed input is masked with `*`; submitted passwords use the existing
 PAM validator. KDE fingerprint authentication still completes automatically.
 CLI uses a red Admin header where terminal colour is supported and a `(1/20)`
-retry counter. Sensor activity is bounded to 20 retry events or 30 seconds.
+retry counter. Sensor activity is bounded to 20 retry events or 60 seconds.
+FPStudio integrates at PAM and never replaces `sudo` with a shell function,
+alias or nested pseudo-terminal. Legacy `sudo` output wrappers must be removed:
+they can detach the controlling terminal and break both masked password input
+and fingerprint completion.
+
+Every installed authentication request also writes a privacy-safe, structured
+timeline to the system journal. It records module routing, sensor readiness,
+contact transitions, capture quality, GPU result/reinitialisation/fallback,
+retry count, password handoff and final outcome. It never records passwords,
+usernames, fingerprint images, templates or gallery paths. Summarise recent
+sessions and likely failure points with:
+
+```bash
+/opt/fpstudio-auth/bin/fpstudio-auth-report --since "2 hours ago"
+/opt/fpstudio-auth/bin/fpstudio-auth-report --since today --json
+```
 
 The main GUI catalogues and PAM notices cover eleven languages. PAM follows
 `LC_ALL`, `LC_MESSAGES`, then `LANG`, independently of the GUI language selector.
@@ -143,7 +159,7 @@ matching release note from `docs/releases/`.
 - [Recognition and research workflow](docs/07-recognition.md)
 - [Vulkan matching design](docs/11-vulkan-matching.md)
 - [Contact-anchored v8 matcher](docs/20-contact-anchored-rotation-v8.md)
-- [v0.2.5 release notes](docs/releases/v0.2.5.md)
+- [v0.2.8 release notes](docs/releases/v0.2.8.md)
 
 ## Licence and third-party code
 

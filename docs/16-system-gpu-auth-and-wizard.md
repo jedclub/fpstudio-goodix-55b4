@@ -46,7 +46,7 @@ fprintd systemd drop-in에만 지정한다. 기존 서비스 보안을 해제하
 지문·비밀번호 동시 입력은 `tools/dual_auth_install.py --apply`로 적용한다.
 sudo·sudo-i·polkit·TTY login·su·su-l의 기존 비밀번호 검증을 유지하고,
 KDE 잠금 화면은 별도 비밀번호 서비스와 병렬 지문 서비스를 유지한다.
-센서는 전체 30초·최대 20회로 제한하며 준비·재시도·종료 메시지를 전달한다.
+센서는 전체 60초·최대 20회로 제한하며 준비·재시도·종료 메시지를 전달한다.
 기존 `--repair-pam`은 표준 pam_fprintd의 직렬 경로 보정용이며 동시 입력이 아니다.
 설치 범위·백업·복구·시험 방법은 [동시 입력 안내](21-simultaneous-auth.md)를 참고한다.
 

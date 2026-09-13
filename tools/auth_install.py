@@ -27,7 +27,7 @@ NOTICE = Path("/etc/security/fpstudio-admin-auth.txt")
 STATE = Path("/etc/fpstudio-auth.json")
 ENABLED = Path("/etc/fpstudio-auth-users")
 MAX_TRIES = 10
-FINGERPRINT_TIMEOUT_SECONDS = 30
+FINGERPRINT_TIMEOUT_SECONDS = 60
 PAM_REPAIR_BACKUPS = Path("/var/backups/fpstudio-pam-repair")
 MATCHER_PROFILE = "auth-v8-contact-anchored-ridge-roi-uniform-scale-5pct"
 
@@ -104,7 +104,7 @@ def repair_pam(apply):
         print("Read-only PAM repair preview. No system settings changed.")
         return
     if not plans:
-        print("Admin PAM paths already use the safe 10-attempt, 30-second fingerprint window.")
+        print("Admin PAM paths already use the safe 10-attempt, 60-second fingerprint window.")
         return
     for path, (before, _, _) in plans.items():
         safe_parent(path)
@@ -219,7 +219,9 @@ def experimental_artifacts():
         artifacts.append((target, data, mode))
     library_data = next(data for target, data, _ in artifacts
                         if target == PREFIX / "lib/libfprint-2.so.2")
-    if b"fpstudio GPU authentication result" not in library_data:
+    # This fixed event name is both the build marker and the runtime journal
+    # contract.  Do not key installation safety to human-readable log text.
+    if b"fpstudio_auth component=matcher event=gpu_result" not in library_data:
         raise ValueError("Driver was not built with the GPU bridge")
     return artifacts
 
