@@ -65,7 +65,6 @@ compile_commands.json
 # Per-user coding-agent state.  Project instructions such as AGENTS.md remain
 # trackable; these are only local sessions, account connections, and caches.
 /.codex/
-/.claude/
 /.cursor/
 /.aider/
 /.continue/
