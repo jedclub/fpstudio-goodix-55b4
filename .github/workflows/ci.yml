@@ -69,6 +69,12 @@ jobs:
             git meson pkgconf gobject-introspection gtk-doc doctest glib2-devel \
             libgusb openssl pixman nss libgudev opencv sudo
 
+      - name: Validate unified driver patch syntax
+        run: |
+          for patch_file in src/driver/patches/*.patch; do
+            git apply --numstat "$patch_file" >/dev/null
+          done
+
       - name: Build the package as an unprivileged user
         run: |
           useradd -m builder
