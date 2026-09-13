@@ -18,7 +18,7 @@ jobs:
       - name: Install build and software-Vulkan dependencies
         run: |
           pacman -Syu --noconfirm --needed \
-            cmake ninja git qt6-base qt6-tools pkgconf glib2 libfprint \
+            cmake ninja qt6-base qt6-tools pkgconf glib2 libfprint \
             vulkan-headers vulkan-icd-loader vulkan-swrast glslang \
             pam systemd python-dbus python-gobject dbus
 
@@ -46,9 +46,8 @@ jobs:
           version="${TAG#v}"
           stage="$RUNNER_TEMP/fpstudio-stage"
           archive="fpstudio-${version}-linux-x86_64-release.tar.zst"
-          SOURCE_DATE_EPOCH="$(git log -1 --format=%ct)"
           DESTDIR="$stage" cmake --install build --prefix /usr --strip
-          tar --zstd --sort=name --mtime="@$SOURCE_DATE_EPOCH" \
+          tar --zstd --sort=name --mtime="UTC 1970-01-01" \
             --owner=0 --group=0 --numeric-owner \
             -cf "$archive" -C "$stage" .
           sha256sum "$archive" > SHA256SUMS.binary
