@@ -1,5 +1,6 @@
 #include "researchwindow.h"
 #include "livewindow.h"
+#include "../src/timing.h"
 #include "frameselector.h"
 #include <QLabel>
 #include <QApplication>
@@ -13,6 +14,15 @@
 #include <QCryptographicHash>
 #include "../../driver/experimental/preview_state.h"
 
+namespace {
+// The window has more than one button once a session can be enrolled from, so
+// tests name what they mean instead of taking whichever child came first.
+QPushButton *stopButton(const fpstudio::LiveWindow &w)
+{ return w.findChild<QPushButton *>(QStringLiteral("stop")); }
+QPushButton *installButton(const fpstudio::LiveWindow &w)
+{ return w.findChild<QPushButton *>(QStringLiteral("install")); }
+}
+
 class ResearchTest : public QObject {
     Q_OBJECT
     QJsonObject status(const QString &dir) {
@@ -21,6 +31,10 @@ class ResearchTest : public QObject {
         return QJsonDocument::fromJson(file.readAll()).object();
     }
 private slots:
+    // The harness stands in for the application's main(), which tightens this
+    // for the same reason: a 30ms preview timer that fires every 60ms reads
+    // every other frame at best.
+    void initTestCase() { fpstudio::tightenTimerSlack(); }
     void targetStopsWithoutExtraUserAction() {
         QTemporaryDir dir,refs;
         qputenv("FPSTUDIO_TEST_CONTACTS","33");
@@ -107,7 +121,7 @@ private slots:
         QTest::qWait(100);qunsetenv("FPSTUDIO_TEST_CONTACTS");
         auto read=[&]{QFile f(dir.path()+"/live-status.json");if(!f.open(QIODevice::ReadOnly))return QJsonObject();return QJsonDocument::fromJson(f.readAll()).object();};
         QTRY_VERIFY_WITH_TIMEOUT(read().value("pending_contacts").toInt()>=2,3000);
-        QTest::mouseClick(w.findChildren<QPushButton *>().first(),Qt::LeftButton);
+        QTest::mouseClick(stopButton(w),Qt::LeftButton);
         QTRY_COMPARE_WITH_TIMEOUT(read().value("state").toString(),"ended",2000);
         QCOMPARE(read().value("pending_contacts").toInt(),0);
         QVERIFY(!read().value("gpu_busy").toBool());
@@ -183,8 +197,12 @@ private slots:
             QVERIFY(!(f.permissions()&(QFileDevice::ReadGroup|QFileDevice::ReadOther)));
         }
         QVERIFY(QFile::exists(dir.path()+"/candidate-touch-33.png"));
-        QCOMPARE(w.findChildren<QPushButton *>().size(),1);
-        QCOMPARE(w.findChildren<QPushButton *>().first()->text(),QStringLiteral("닫기"));
+        QCOMPARE(stopButton(w)->text(),QStringLiteral("닫기"));
+        // A finished session with captures on the map can be enrolled from
+        // here; that is the whole point of the session, and it used to need a
+        // separate tool and a hand-copied directory.
+        QVERIFY(installButton(w));
+        QTRY_VERIFY_WITH_TIMEOUT(!installButton(w)->isHidden(),2000);
     }
     void unavailableMatcherIsExplicit() {
         QTemporaryDir dir,refs;
@@ -193,7 +211,7 @@ private slots:
         QTRY_COMPARE_WITH_TIMEOUT(read().value("candidates").toInt(),1,3000);
         QCOMPARE(read().value("compared_contacts").toInt(),0);
         QCOMPARE(read().value("contacts").toArray()[0].toObject().value("skip_reason").toString(),"matcher-unavailable");
-        QTest::mouseClick(w.findChildren<QPushButton *>().first(),Qt::LeftButton);
+        QTest::mouseClick(stopButton(w),Qt::LeftButton);
         QTRY_COMPARE_WITH_TIMEOUT(read().value("state").toString(),"ended",2000);
     }
     void fullRotationSearch() {
@@ -231,14 +249,14 @@ private slots:
         QVERIFY(pattern.save(refs.path()+"/reference-index-01.png"));
         fpstudio::LiveWindow w(dir.path(),nullptr,FAKE_CAPTURE,1,refs.path(),false);
         w.show();
-        QCOMPARE(w.findChildren<QPushButton *>().size(),1);
+        QVERIFY(stopButton(w));QVERIFY(installButton(w)&&installButton(w)->isHidden());
         QTRY_VERIFY_WITH_TIMEOUT(QFile::exists(dir.path()+"/gpu-match-0001.json"),10000);
         QFile result(dir.path()+"/gpu-match-0001.json");QVERIFY(result.open(QIODevice::ReadOnly));
         const auto object=QJsonDocument::fromJson(result.readAll()).object();
         QVERIFY(object.value("ok").toBool());QVERIFY(object.value("research_only").toBool());
         QVERIFY(object.value("authentication_decision").isNull());
         QCOMPARE(object.value("algorithm_version").toInt(),8);
-        QCOMPARE(object.value("auth_profile").toString(),QStringLiteral("auth-v8-contact-anchored-ridge-roi-uniform-scale-5pct"));
+        QCOMPARE(object.value("auth_profile").toString(),QStringLiteral("auth-v8-contact-anchored-ridge-roi-uniform-scale-5pct-ncc86"));
         QCOMPARE(object.value("instructed_role").toString(),"unspecified");
         QVERIFY(object.value("best").toObject().value("interior").isObject());
         QVERIFY(object.value("best").toObject().value("interior").toObject().value("supported_mask").toInt()>0);
@@ -254,8 +272,8 @@ private slots:
         QVERIFY(object.value("best").toObject().value("ncc").toDouble()>.99);
         const QString screenshot=qEnvironmentVariable("FPSTUDIO_LIVE_SCREENSHOT");
         if(!screenshot.isEmpty())QVERIFY(w.grab().save(screenshot));
-        QTest::mouseClick(w.findChildren<QPushButton *>().first(),Qt::LeftButton);
-        QTRY_COMPARE_WITH_TIMEOUT(w.findChildren<QPushButton *>().first()->text(),QStringLiteral("닫기"),2000);
+        QTest::mouseClick(stopButton(w),Qt::LeftButton);
+        QTRY_COMPARE_WITH_TIMEOUT(stopButton(w)->text(),QStringLiteral("닫기"),2000);
     }
     void selectorRejectsBadFrames() {
         QImage flat(108,88,QImage::Format_Grayscale8); flat.fill(128);
@@ -265,6 +283,31 @@ private slots:
         QVERIFY(fpstudio::assessPreview(ridges, ridges, 500, 78, 30).eligible);
         QVERIFY(!fpstudio::assessPreview(ridges, ridges, 0, 78, 30).eligible);
         QVERIFY(!fpstudio::assessPreview(ridges, ridges, 500, 30, 30).eligible);
+        // Sharpness must fall when a frame is blurred, and the ranking must
+        // follow it. The measure this replaced did the opposite: structure
+        // tensor coherence *rose* under blur, because smoothing removes the
+        // isotropic noise diluting the dominant orientation, so the selector
+        // kept the softest frame of every contact and the map gate threw away
+        // the whorl core for having curved ridges. Nothing else in the suite
+        // would notice that happening again.
+        QImage blurred = ridges;
+        for (int y = 1; y + 1 < blurred.height(); ++y)
+            for (int x = 1; x + 1 < blurred.width(); ++x)
+                blurred.scanLine(y)[x] = uchar((ridges.constScanLine(y)[x - 1] +
+                    2 * ridges.constScanLine(y)[x] + ridges.constScanLine(y)[x + 1]) / 4);
+        const double sharp = fpstudio::ridgeSharpness(ridges);
+        const double soft = fpstudio::ridgeSharpness(blurred);
+        QVERIFY2(sharp > soft, qPrintable(QStringLiteral("sharp %1 must beat blurred %2")
+                                          .arg(sharp).arg(soft)));
+        QVERIFY(fpstudio::assessPreview(ridges, ridges, 500, 78, 30).score >
+                fpstudio::assessPreview(blurred, blurred, 500, 78, 30).score);
+
+        // A heavily pressed frame is still eligible - refusing it outright
+        // left a session with three contacts and no captures at all. It is
+        // ranked below a lighter one instead, which is what score now says.
+        QVERIFY(fpstudio::assessPreview(ridges, ridges, 500, 85, 30).eligible);
+        QCOMPARE(fpstudio::assessPreview(ridges, ridges, 500, 85, 30).score,
+                 fpstudio::assessPreview(ridges, ridges, 500, 64, 30).score);
         QVERIFY(!fpstudio::assessPreview(ridges, ridges, 500, 78, 5).eligible);
         QVERIFY(!fpstudio::assessPreview(ridges, flat, 500, 78, 30).eligible);
     }
@@ -272,7 +315,7 @@ private slots:
         QTemporaryDir dir;
         fpstudio::LiveWindow w(dir.path(), nullptr, FAKE_CAPTURE, 1);
         w.show();
-        QCOMPARE(w.findChildren<QPushButton *>().size(), 1);
+        QVERIFY(stopButton(w));QVERIFY(installButton(w)&&installButton(w)->isHidden());
         auto liveStatus = [&] {
             QFile f(dir.path() + "/live-status.json");
             if (!f.open(QIODevice::ReadOnly)) return QJsonObject();
@@ -284,8 +327,8 @@ private slots:
         QVERIFY(QFile::exists(dir.path()+"/candidate-touch-01.png"));
         QTRY_COMPARE_WITH_TIMEOUT(liveStatus().value("fps").toDouble(), 0.0, 4000);
         QVERIFY(liveStatus().value("instruction").toString().contains(QStringLiteral("멈췄습니다")));
-        QTest::mouseClick(w.findChildren<QPushButton *>().first(), Qt::LeftButton);
-        QTRY_COMPARE_WITH_TIMEOUT(w.findChildren<QPushButton *>().first()->text(), QStringLiteral("닫기"), 2000);
+        QTest::mouseClick(stopButton(w), Qt::LeftButton);
+        QTRY_COMPARE_WITH_TIMEOUT(stopButton(w)->text(), QStringLiteral("닫기"), 2000);
     }
     void fullPlan() {
         QTemporaryDir dir;

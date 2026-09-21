@@ -21,6 +21,7 @@
 #include <QJsonObject>
 #include <QStringList>
 #include <QProcess>
+#include <QTimer>
 
 namespace fpstudio {
 
@@ -29,10 +30,19 @@ class PrivRunner : public QObject {
 public:
     explicit PrivRunner(QObject *parent = nullptr);
 
+    // Long enough to authenticate at an unexpected polkit dialog, short enough
+    // that a wedged helper does not look like a frozen program.
+    static constexpr int kDefaultTimeoutMs = 120000;
+
     // args are the --cli sub-command and its options, e.g. {"capture","--out",…}.
     // Set direct when the caller already has device access and pkexec would
     // only add a pointless prompt (device enumeration needs no write access).
-    void run(const QStringList &args, bool direct = false);
+    // A run that never returns leaves the window disabled with no way back,
+    // so every call carries a deadline. The default is generous enough for a
+    // cold pkexec prompt the person has to read and answer; callers that drive
+    // the sensor pass their own, since a capture waits on a finger.
+    void run(const QStringList &args, bool direct = false,
+             int timeoutMs = kDefaultTimeoutMs);
 
     // Whether the sensor node is already writable by this user, in which case
     // the pkexec hop is skipped. See the udev rule beside this source.
@@ -45,8 +55,12 @@ signals:
     void failed(const QString &error);
 
 private:
+    void stopWithTimeout();
+
     QProcess m_proc;
     QString  m_selfPath;
+    QTimer   m_deadline;
+    bool     m_timedOut = false;
 };
 
 } // namespace fpstudio

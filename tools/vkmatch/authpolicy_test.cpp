@@ -6,9 +6,19 @@
 int main(int argc,char **argv) {
     QCoreApplication app(argc,argv);
     QJsonObject good{{"ok",true},{"best",QJsonObject{{"ambiguous",false},{"at_search_boundary",false},
-        {"interior",QJsonObject{{"consistent",true},{"ncc",.8},{"gradient",.8},{"overlap",.6},
+        {"interior",QJsonObject{{"consistent",true},{"ncc",.9},{"gradient",.8},{"overlap",.6},
             {"supported_tiles",10},{"probe_tiles",10}}}}}};
     if(!authPatternAccepted(good)||authPatternAccepted({}))return 1;
+    // The floor is the whole security margin of this policy; a change to it
+    // must fail here rather than silently widen what authenticates.
+    {
+        auto b=good["best"].toObject();auto e=b["interior"].toObject();
+        e["ncc"]=kAuthMinNcc;b["interior"]=e;auto edge=good;edge["best"]=b;
+        if(!authPatternAccepted(edge))return 1;
+        e["ncc"]=kAuthMinNcc-1e-6;b["interior"]=e;edge["best"]=b;
+        if(authPatternAccepted(edge))return 1;
+        if(kAuthMinNcc<.80)return 1;
+    }
     for(const auto *key:{"ncc","gradient","overlap"}) {
         auto b=good["best"].toObject();auto e=b["interior"].toObject();e[key]=.1;b["interior"]=e;
         auto bad=good;bad["best"]=b;if(authPatternAccepted(bad))return 1;

@@ -4,6 +4,24 @@
 
 // Experimental deployment policy, deliberately distinct from the research
 // overlay. These bounds have NOT been calibrated as a biometric FAR claim.
+
+// Correlation floor for accepting a placement.
+//
+// This was .70, which is well inside the range other fingers reach. Measured
+// on a 44-reference gallery with 25 probes of the enrolled finger and 10 of
+// other fingers of the same hand, the two groups do not overlap: the enrolled
+// finger never scored below .874 and the other fingers never above .842. A
+// floor anywhere in .855-.870 took every enrolled probe and no other finger;
+// .70 took 6 of the 10 other fingers as well. .86 is the middle of that band.
+//
+// Raising the gradient floor alongside it would only cost recognition: on the
+// same data the enrolled finger's gradient runs as low as .794 while other
+// fingers reach .841, so that axis does not separate and is left at .65.
+//
+// Ten other fingers of one person is not a false-accept rate and the band is
+// only .032 wide, so this is a bound that held on the data measured, not a
+// validated FAR. Re-measure it when the gallery is rebuilt.
+inline constexpr double kAuthMinNcc = .86;
 inline bool authCandidateAccepted(const QJsonObject &b) {
     const auto e=b.value("interior").toObject();
     auto atLeast=[](const QJsonObject &o,const char *key,double minimum) {
@@ -12,7 +30,7 @@ inline bool authCandidateAccepted(const QJsonObject &b) {
     };
     return b.value("ambiguous").isBool()&&!b.value("ambiguous").toBool()&&
         b.value("at_search_boundary").isBool()&&!b.value("at_search_boundary").toBool()&&
-        e.value("consistent").toBool()&&atLeast(e,"ncc",.70)&&atLeast(e,"gradient",.65)&&
+        e.value("consistent").toBool()&&atLeast(e,"ncc",kAuthMinNcc)&&atLeast(e,"gradient",.65)&&
         atLeast(e,"overlap",.50)&&e.value("supported_tiles").toInt()>=8&&
         e.value("supported_tiles").toInt()<=16&&e.value("probe_tiles").toInt()>=8&&
         e.value("probe_tiles").toInt()<=16;

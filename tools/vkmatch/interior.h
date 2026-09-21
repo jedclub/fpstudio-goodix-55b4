@@ -1,6 +1,7 @@
 #pragma once
 #include "vkmatch.h"
 #include "ridge_roi.h"
+#include "profile.h"
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -24,6 +25,7 @@ struct InteriorEvidence {
 // Repeating non-biometric patterns can still pass; this is not identity proof.
 inline InteriorEvidence assessInterior(const Image &a,const RidgeRegion &regionA,
                                       const Image &b,const RidgeRegion &regionB,const Job &job) {
+    FPSTUDIO_PROFILE_SCOPE("interior/assessInterior");
     InteriorEvidence out;
     if(a.width!=b.width||a.height!=b.height||a.width<24||a.height<24||
        a.pixels.size()!=size_t(a.width)*a.height||b.pixels.size()!=a.pixels.size()||
@@ -86,6 +88,7 @@ inline InteriorEvidence assessInterior(const Image &a,const RidgeRegion &regionA
     return out;
 }
 inline InteriorEvidence assessInterior(const Image &a,const Image &b,const Job &job) {
+    FPSTUDIO_PROFILE_SCOPE("interior/assessInterior(pair)");
     const auto regionA=extractRidgeRegion(a),regionB=extractRidgeRegion(b);
     return assessInterior(a,regionA,b,regionB,job);
 }

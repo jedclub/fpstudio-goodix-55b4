@@ -181,6 +181,8 @@ described in [SECURITY.md](SECURITY.md).
 - [Recognition and research workflow](docs/07-recognition.md)
 - [Vulkan matching design](docs/11-vulkan-matching.md)
 - [Contact-anchored v8 matcher](docs/20-contact-anchored-rotation-v8.md)
+- [fprintd runaway loop: cause and fix](docs/23-fprintd-runaway.md)
+- [Matcher CPU optimisation](docs/24-optimisation.md)
 - [v0.2.9 release notes](docs/releases/v0.2.9.md)
 
 ## Licence and third-party code

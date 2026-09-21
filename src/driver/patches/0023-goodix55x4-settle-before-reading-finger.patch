@@ -1,0 +1,93 @@
+Read the finger once it has arrived, not the moment it is detected.
+
+Host-side finger detection polls the sensor against its background and takes
+the first frame over the threshold as the capture. On this device an empty
+sensor polls at 4-17 and a contact at 130-206, so that first frame is a
+fingertip touching at one edge rather than a finger resting on the sensor.
+
+Measured over 32 live authentications before this change: the single accepted
+contact covered all sixteen tiles of the sensor and correlated at 0.864 with
+the enrolled references, while the rejections covered as few as two tiles and
+correlated between 0.14 and 0.67. Those were not the wrong finger - they were
+the right one, caught on its way down.
+
+Three polls 100ms apart must clear the threshold before a contact is accepted,
+and the frame kept is the last of them. The four authentications measured
+afterwards covered 13-16 tiles and correlated 0.940-0.982.
+
+--- a/libfprint/drivers/goodixtls/goodix55x4.c
++++ b/libfprint/drivers/goodixtls/goodix55x4.c
+@@ -83,12 +83,23 @@
+ #define GOODIX55X4_FINGER_DETECT_MAX_ATTEMPTS 100
+ #define GOODIX55X4_FINGER_DETECT_POLL_DELAY_MS 100
+ // Average per-pixel absolute difference (12-bit pixels, 0-4095) needed
+ // to call a frame a real touch. Validated against real 55b4 hardware:
+ // background noise sits around 4-5, a real touch around 750+.
+ #define GOODIX55X4_FINGER_DETECT_DIFF_THRESHOLD 100
++/* How many consecutive polls above that threshold make a contact.
++ *
++ * Crossing the threshold is the finger arriving, not the finger being there.
++ * Measured on this device: an empty sensor polls at 4-17 and a contact at
++ * 130-206, and the frame taken on the first crossing is a fingertip touching
++ * at one edge. Over 32 live authentications every rejection had partial sensor
++ * coverage - as little as two tiles of sixteen - while the one acceptance
++ * covered all sixteen and correlated at 0.864. Three polls at 100ms apart give
++ * the finger about a third of a second to flatten, and the frame that is kept
++ * is the last of them. */
++#define GOODIX55X4_FINGER_SETTLE_POLLS 3
+ 
+ /* How close a freshly read frame has to be to the background already held
+  * before it is accepted as a new background.
+  *
+  * The scan state machine starts with a calibration read, and it runs once per
+  * scan - so once per verify attempt and once per enrol stage, not once per
+@@ -118,12 +129,13 @@
+ 
+   guint8 *otp;
+   guint16 otp_len;
+ 
+   GSList *frames;
+   guint poll_attempts;
++  guint settle_polls;
+   gboolean have_background;
+ 
+   Goodix55X4Pix empty_img[GOODIX55X4_FRAME_SIZE];
+ };
+ 
+ G_DECLARE_FINAL_TYPE(FpiDeviceGoodixTls55X4, fpi_device_goodixtls55x4, FPI,
+@@ -1028,12 +1040,13 @@
+       g_getenv("GOODIX55X4_PREVIEW_PATH") == NULL && g_getenv("GOODIX55X4_HOST_DETECT") != NULL;
+ 
+   if (!host_detect && preview_frame(dev, ssm, candidate, diff))
+     return;
+ 
+   if (diff < GOODIX55X4_FINGER_DETECT_DIFF_THRESHOLD) {
++    self->settle_polls = 0;
+     if (host_detect) {
+       /* Re-read directly. retry_finger_poll goes via SWITCH_TO_FDT_MODE, which
+        * in this mode jumps straight back here anyway, and the attempt counter
+        * is not applied: the caller's own deadline decides how long someone is
+        * given to put a finger down. */
+       fpi_device_add_timeout(dev, GOODIX55X4_FINGER_DETECT_POLL_DELAY_MS,
+@@ -1054,12 +1067,21 @@
+ 
+     fpi_device_add_timeout(dev, GOODIX55X4_FINGER_DETECT_POLL_DELAY_MS,
+                            retry_finger_poll, ssm, NULL);
+     return;
+   }
+ 
++  /* Above the threshold, but keep looking until the contact has settled. The
++   * re-read goes straight back to GET_IMG rather than through the FDT states,
++   * which on this device do not report anything anyway. */
++  if (++self->settle_polls < GOODIX55X4_FINGER_SETTLE_POLLS) {
++    fpi_device_add_timeout(dev, GOODIX55X4_FINGER_DETECT_POLL_DELAY_MS,
++                           preview_next_frame, ssm, NULL);
++    return;
++  }
++  self->settle_polls = 0;
+   self->poll_attempts = 0;
+   /* Only a confirmed host-side touch may advance libfprint to CAPTURE. */
+   fpi_image_device_report_finger_status(FP_IMAGE_DEVICE(dev), TRUE);
+   save_frame(self, data);
+   if (g_slist_length(self->frames) <= GOODIX55X4_CAP_FRAMES) {
+     fpi_ssm_jump_to_state(ssm, SCAN_STAGE_SWITCH_TO_FDT_MODE);

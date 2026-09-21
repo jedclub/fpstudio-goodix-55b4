@@ -1,5 +1,7 @@
 #include "setupwizard.h"
 
+#include "theme.h"
+
 #include "mainwindow.h"
 
 #include <QFileInfo>
@@ -48,13 +50,16 @@ QString mark(StepState s)
 
 QString colour(StepState s)
 {
+    // Read per call rather than cached: the desktop can switch between light
+    // and dark while the dialog is open, and render() re-runs on every rescan.
+    const bool dark = theme::isDark();
     switch (s) {
-    case StepState::Ok:      return QStringLiteral("#3a8f3a");
-    case StepState::Missing: return QStringLiteral("#c9a227");
-    case StepState::Manual:  return QStringLiteral("#8a6d1f");
-    case StepState::Failed:  return QStringLiteral("#b03030");
-    case StepState::Skipped: return QStringLiteral("#888888");
-    case StepState::Unknown: return QStringLiteral("#888888");
+    case StepState::Ok:      return theme::statusOk(dark);
+    case StepState::Missing: return theme::statusMissing(dark);
+    case StepState::Manual:  return theme::statusManual(dark);
+    case StepState::Failed:  return theme::statusFailed(dark);
+    case StepState::Skipped: return theme::statusMuted(dark);
+    case StepState::Unknown: return theme::statusMuted(dark);
     }
     return QString();
 }
@@ -85,10 +90,16 @@ void SetupWizard::openDiagnostics()
 SetupWizard::SetupWizard(QWidget *parent) : QDialog(parent)
 {
     setWindowTitle(tr("FPStudio · Integrated fingerprint authentication setup"));
-    resize(1050, 740);
+    const bool dark = theme::isDark(this);
+    // Never larger than the screen it opens on. See theme::fitToScreen.
+    resize(theme::fitToScreen(this, 1050, 740));
 
     m_list = new QListWidget;
-    m_list->setFixedWidth(270);
+    // Was a fixed 270. On a narrow display that is a quarter of the window
+    // spent on a column of ticks, so it may now give way to the panel that
+    // carries the actual instructions.
+    m_list->setMinimumWidth(200);
+    m_list->setMaximumWidth(270);
     connect(m_list, &QListWidget::currentRowChanged, this, &SetupWizard::selectRow);
 
     m_title = new QLabel;
@@ -101,12 +112,24 @@ SetupWizard::SetupWizard(QWidget *parent) : QDialog(parent)
     // The exact commands, always visible rather than behind a disclosure.
     // Someone who would rather run them by hand should not have to hunt, and
     // someone who would not should still see what they are agreeing to.
-    m_cmds = new QLabel;
-    m_cmds->setWordWrap(true);
-    m_cmds->setTextInteractionFlags(Qt::TextSelectableByMouse);
-    m_cmds->setStyleSheet(QStringLiteral(
-        "font-family:monospace; font-size:11px; color:#555;"
-        "background:#f4f4f4; border:1px solid #ddd; padding:6px;"));
+    // A read-only text area rather than a label, because the content is a step's
+    // command list and its length is not bounded by anything this dialog
+    // controls. A word-wrapped QLabel has no maximum height and asks the layout
+    // for however many lines it needs, which is one of the two ways the button
+    // row used to get pushed off the bottom of the window.
+    m_cmds = new QTextBrowser;
+    m_cmds->setReadOnly(true);
+    m_cmds->setMaximumHeight(96);
+    m_cmds->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+    m_cmds->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+    m_cmds->setLineWrapMode(QTextEdit::NoWrap);   // commands read better unwrapped
+    {
+        const theme::Pair c = theme::code(dark);
+        m_cmds->setStyleSheet(QStringLiteral(
+            "QTextBrowser { font-family:monospace; font-size:11px; color:%1;"
+            "               background:%2; border:1px solid %3; padding:6px; }")
+            .arg(c.foreground, c.background, theme::codeBorder(dark)));
+    }
 
     m_busy = new QProgressBar;
     m_busy->setRange(0, 0);
@@ -116,16 +139,43 @@ SetupWizard::SetupWizard(QWidget *parent) : QDialog(parent)
 
     m_fix    = new QPushButton;
     m_fix->setMinimumHeight(40);
-    m_fix->setStyleSheet(QStringLiteral("QPushButton {background:#1769c2;color:white;border:0;border-radius:6px;padding:8px 16px;font-weight:bold;} QPushButton:disabled {background:#a0a8b0;color:#e8e8e8;}"));
+    {
+        const theme::Pair a = theme::accent(dark), d = theme::accentDisabled(dark);
+        m_fix->setStyleSheet(QStringLiteral(
+            "QPushButton {background:%1;color:%2;border:0;border-radius:6px;"
+            "             padding:8px 16px;font-weight:bold;}"
+            "QPushButton:disabled {background:%3;color:%4;}")
+            .arg(a.background, a.foreground, d.background, d.foreground));
+    }
     m_skip   = new QPushButton(tr("Skip"));
     m_rescan = new QPushButton(tr("Check status again"));
     connect(m_fix,    &QPushButton::clicked, this, &SetupWizard::runCurrentFix);
     connect(m_skip,   &QPushButton::clicked, this, &SetupWizard::skipCurrent);
     connect(m_rescan, &QPushButton::clicked, this, &SetupWizard::rescan);
 
-    m_verdict = new QLabel;
-    m_verdict->setWordWrap(true);
-    m_verdict->setStyleSheet(QStringLiteral("background:#123e68;color:white;padding:10px;border-radius:5px;font-size:13px;"));
+    // This is the other, and worse, way the bottom of the window used to
+    // disappear. It carries the running verdict, and runSystemVerify() feeds it
+    // up to 1000 characters of fprintd transcript - which, with the line breaks
+    // that transcript contains, is tens of lines. As a word-wrapped QLabel with
+    // no height limit it grew to fit all of them, pushed the button row and the
+    // footer past the bottom edge, and drove the layout's minimum height past
+    // the screen, so the window could not be resized small enough to bring them
+    // back. Capped and scrollable, it can say as much as it likes without ever
+    // costing the controls their place.
+    m_verdict = new QTextBrowser;
+    m_verdict->setReadOnly(true);
+    m_verdict->setMinimumHeight(64);
+    m_verdict->setMaximumHeight(132);
+    m_verdict->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+    m_verdict->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    m_verdict->setFrameShape(QFrame::NoFrame);
+    {
+        const theme::Pair b = theme::banner(dark);
+        m_verdict->setStyleSheet(QStringLiteral(
+            "QTextBrowser { background:%1;color:%2;padding:10px;"
+            "               border-radius:5px;font-size:13px; }")
+            .arg(b.background, b.foreground));
+    }
 
     // A quiet checklist of green marks does not say "you are done" on its
     // own - this does, and Finish is the one button in the dialog whose whole
@@ -148,12 +198,17 @@ SetupWizard::SetupWizard(QWidget *parent) : QDialog(parent)
     // palette, which on a dark desktop theme is light text on a light box.
     // A solid dark green with white text stays readable either way, matching
     // how the blue instruction banner above the image view already does it.
-    m_completion->setStyleSheet(QStringLiteral(
-        "QWidget#completion { background:#2e7d32; border-radius:4px; }"
-        "QWidget#completion QLabel { color:white; font-weight:bold; padding:8px; background:transparent; }"
-        "QWidget#completion QPushButton { color:white; background:#1b5e20; border:1px solid white;"
-        "                                 border-radius:4px; padding:4px 14px; font-weight:bold; }"
-        "QWidget#completion QPushButton:hover { background:#245c27; }"));
+    {
+        const theme::Pair ok = theme::success(dark), okBtn = theme::successButton(dark);
+        m_completion->setStyleSheet(QStringLiteral(
+            "QWidget#completion { background:%1; border-radius:4px; }"
+            "QWidget#completion QLabel { color:%2; font-weight:bold; padding:8px; background:transparent; }"
+            "QWidget#completion QPushButton { color:%3; background:%4; border:1px solid %3;"
+            "                                 border-radius:4px; padding:4px 14px; font-weight:bold; }"
+            "QWidget#completion QPushButton:hover { background:%5; }")
+            .arg(ok.background, ok.foreground, okBtn.foreground, okBtn.background,
+                 QColor(okBtn.background).lighter(125).name()));
+    }
     m_completion->setObjectName(QStringLiteral("completion"));
     m_completion->hide();
 
@@ -161,7 +216,7 @@ SetupWizard::SetupWizard(QWidget *parent) : QDialog(parent)
     m_stopOperation=new QPushButton(tr("Stop"));
     m_stopOperation->hide();
     connect(m_stopOperation,&QPushButton::clicked,this,[this]{
-        if(m_operation){m_verdict->setText(tr("Stopping the fingerprint test. You may lift your finger."));m_operation->terminate();}
+        if(m_operation){m_verdict->setPlainText(tr("Stopping the fingerprint test. You may lift your finger."));m_operation->terminate();}
     });
     btns->addWidget(m_stopOperation);
     m_recover=new QPushButton(tr("Restore authentication settings"));
@@ -216,7 +271,7 @@ void SetupWizard::rescan()
     if(m_operation||m_scanning)return;
     m_scanning=true;
     m_busy->show();
-    m_verdict->setText(tr("Checking the device and installation. Keep your finger off the sensor for now."));
+    m_verdict->setPlainText(tr("Checking the device and installation. Keep your finger off the sensor for now."));
     m_fix->setEnabled(false);m_rescan->setEnabled(false);m_list->setEnabled(false);
     m_skip->setEnabled(false);m_verify->setEnabled(false);m_recover->setEnabled(false);
     auto *watcher=new QFutureWatcher<QVector<StepResult>>(this);
@@ -237,7 +292,7 @@ void SetupWizard::rescan()
     // it is what actually announces "done", not which row happens to be lit.
     selectNextStep();
     const QString message=property("scanResultMessage").toString();
-    if(!message.isEmpty()){m_verdict->setText(message);setProperty("scanResultMessage",QString());}
+    if(!message.isEmpty()){m_verdict->setPlainText(message);setProperty("scanResultMessage",QString());}
     });
     watcher->setFuture(QtConcurrent::run([]{return probeAll();}));
 }
@@ -290,14 +345,14 @@ void SetupWizard::showStep(int index)
         body += QStringLiteral("<p>%1</p>").arg(d);
     }
     if (r.irreversible) {
-        body += QStringLiteral(
-                    "<p style='color:#b03030'><b>%1</b></p>")
-                    .arg(tr("This step cannot be undone.").toHtmlEscaped());
+        body += QStringLiteral("<p style='color:%1'><b>%2</b></p>")
+                    .arg(theme::danger(theme::isDark()),
+                         tr("This step cannot be undone.").toHtmlEscaped());
     }
     m_detail->setHtml(body);
 
     m_cmds->setVisible(!r.commands.isEmpty());
-    m_cmds->setText(r.commands.join(QLatin1Char('\n')));
+    m_cmds->setPlainText(r.commands.join(QLatin1Char('\n')));
 
     const bool interactive = r.id == StepId::Enrolment || r.id == StepId::Capture || r.id == StepId::TlsSession;
     const bool fixable = !r.action.isEmpty() &&
@@ -308,9 +363,9 @@ void SetupWizard::showStep(int index)
     m_skip->setVisible(r.id==StepId::UdevRule&&(r.state == StepState::Missing || r.state == StepState::Manual));
 
     if (r.needsRoot && fixable)
-        m_verdict->setText(tr("This will ask for your password."));
+        m_verdict->setPlainText(tr("This will ask for your password."));
     else
-        m_verdict->setText(r.state==StepState::Ok?tr("This step is confirmed. Continue to the next required step."):
+        m_verdict->setPlainText(r.state==StepState::Ok?tr("This step is confirmed. Continue to the next required step."):
             !r.action.isEmpty()?tr("Next action: %1").arg(r.action):tr("Review the guidance. This step is not confirmed yet."));
 }
 
@@ -347,14 +402,14 @@ void SetupWizard::runEnrolment()
     if(m_operation)return;
     const QString script = enrolmentScript();
     if (script.isEmpty()) {
-        m_verdict->setText(tr("Failed — %1")
+        m_verdict->setPlainText(tr("Failed — %1")
                                .arg(tr("The enrolment helper was not found")));
         return;
     }
 
     m_busy->show();
     m_fix->setEnabled(false);
-    m_verdict->setText(tr("Enrolling — press and lift your finger repeatedly"));
+    m_verdict->setPlainText(tr("Enrolling — press and lift your finger repeatedly"));
 
     auto *p = new QProcess(this);
     m_operation=p;m_list->setEnabled(false);m_rescan->setEnabled(false);m_skip->setEnabled(false);
@@ -362,7 +417,7 @@ void SetupWizard::runEnrolment()
     p->setProcessChannelMode(QProcess::MergedChannels);
     connect(p,&QProcess::readyReadStandardOutput,this,[this,p]{
         const auto out=QString::fromUtf8(p->readAllStandardOutput());
-        m_verdict->setText(tr("Enrolment in progress · Present and lift the same finger as instructed\n")+out.right(500));
+        m_verdict->setPlainText(tr("Enrolment in progress · Present and lift the same finger as instructed\n")+out.right(500));
     });
     connect(p,&QProcess::errorOccurred,this,[this,p](QProcess::ProcessError error){
         if(error!=QProcess::FailedToStart||m_operation!=p)return;
@@ -381,6 +436,10 @@ void SetupWizard::runEnrolment()
         p->deleteLater();
     });
     p->start(script, {QStringLiteral("right-index-finger")});
+    // A 20-stage enrolment is a few minutes of somebody pressing and lifting a
+    // finger; five is past any real one and far short of the 102 minutes the
+    // unguarded path was observed to hang for.
+    guardOperation(p, 300000);
 }
 
 // Mirrors runEnrolment(): a real capture attempt is a person doing something
@@ -394,7 +453,7 @@ void SetupWizard::runCaptureTest()
     m_fix->setEnabled(false);
     // The same sentence the CLI's own capture command shows, so the
     // instruction reads the same wherever it appears.
-    m_verdict->setText(tr("Put your finger on the sensor and hold it there"));
+    m_verdict->setPlainText(tr("Put your finger on the sensor and hold it there"));
 
     auto *p = new QProcess(this);
     m_operation=p;m_list->setEnabled(false);m_rescan->setEnabled(false);m_skip->setEnabled(false);
@@ -424,6 +483,8 @@ void SetupWizard::runCaptureTest()
     p->start(QFileInfo(QCoreApplication::applicationFilePath()).canonicalFilePath(),
              {QStringLiteral("--cli"), QStringLiteral("capture"),
               QStringLiteral("--timeout"), QStringLiteral("8")});
+    // The CLI stops itself after 8 seconds; this only matters when it cannot.
+    guardOperation(p, 60000);
 }
 
 
@@ -465,19 +526,38 @@ void SetupWizard::runCurrentFix()
 
     m_busy->show();
     m_fix->setEnabled(false);
-    m_verdict->setText(tr("in progress…"));
+    m_verdict->setPlainText(tr("in progress…"));
     QApplication::processEvents();
 
     runManagedAction({QStringLiteral("/usr/bin/sh"),QStringLiteral("-c"),QStringLiteral("set -e\n")+r.commands.join('\n')});
 }
 
 void SetupWizard::reject() {
-    if(m_operation){m_verdict->setText(tr("Wait for the operation to finish or cancel its authentication request. Setup records and recovery information are being protected."));return;}
+    if(m_operation){m_verdict->setPlainText(tr("Wait for the operation to finish or cancel its authentication request. Setup records and recovery information are being protected."));return;}
     QDialog::reject();
 }
 void SetupWizard::done(int result) {
-    if(m_operation){m_verdict->setText(tr("Finish the running setup operation or cancel its authentication request before closing."));return;}
+    if(m_operation){m_verdict->setPlainText(tr("Finish the running setup operation or cancel its authentication request before closing."));return;}
     QDialog::done(result);
+}
+
+// terminate() first so fprintd-enroll can release its D-Bus claim on the way
+// out; a helper killed outright leaves the device claimed by a process that no
+// longer exists, which is a worse state than the timeout it was cured of.
+void SetupWizard::guardOperation(QProcess *process,int timeoutMs)
+{
+    if(timeoutMs<=0)return;
+    QTimer::singleShot(timeoutMs,process,[this,process]{
+        if(process->state()==QProcess::NotRunning)return;
+        process->setProperty("fpstudioTimedOut",true);
+        if(m_operation==process)
+            m_verdict->setPlainText(tr("This step did not finish in time and was stopped. "
+                                  "The sensor and your enrolment are unchanged - try it again."));
+        process->terminate();
+        QTimer::singleShot(3000,process,[process]{
+            if(process->state()!=QProcess::NotRunning)process->kill();
+        });
+    });
 }
 
 void SetupWizard::runManagedAction(const QStringList &arguments,bool privileged) {
@@ -498,10 +578,14 @@ void SetupWizard::runManagedAction(const QStringList &arguments,bool privileged)
     };
     connect(p,qOverload<int,QProcess::ExitStatus>(&QProcess::finished),this,[finish](int code,QProcess::ExitStatus status){finish(status==QProcess::NormalExit&&code==0);});
     connect(p,&QProcess::errorOccurred,this,[finish](QProcess::ProcessError error){if(error==QProcess::FailedToStart)finish(false);});
-    m_verdict->setText(privileged?tr("After administrator authorization, installation and checks run automatically. Authentication settings are restored if installation fails."):
+    m_verdict->setPlainText(privileged?tr("After administrator authorization, installation and checks run automatically. Authentication settings are restored if installation fails."):
         tr("The driver is built as the current user. Administrator authorization is requested only for dependencies and package installation."));
     if(privileged)p->start(QStringLiteral("/usr/bin/pkexec"),QStringList{QStringLiteral("--disable-internal-agent")}+arguments);
     else p->start(arguments.first(),arguments.mid(1));
+    // Compiling the driver is genuinely slow - tens of minutes on a laptop -
+    // so this is only an outer bound on a build that has stopped making
+    // progress, not a limit on a build that is still working.
+    guardOperation(p, 1800000);
 }
 
 void SetupWizard::runGpuInstall() {
@@ -571,7 +655,7 @@ void SetupWizard::runSystemVerify() {
         const bool thermal=output.contains(QStringLiteral("overheating"),Qt::CaseInsensitive)||
                            output.contains(QStringLiteral("prevent overheating"),Qt::CaseInsensitive);
         const bool timedOut=p->property("fpstudioTimedOut").toBool();
-        m_verdict->setText(matched?tr("Fingerprint match succeeded. The result was delivered while the finger remained in place. Test the sudo/KDE dialog and password fallback separately."):
+        m_verdict->setPlainText(matched?tr("Fingerprint match succeeded. The result was delivered while the finger remained in place. Test the sudo/KDE dialog and password fallback separately."):
             thermal?tr("Sensor thermal protection stopped the test. Lift your finger, let it cool briefly, then try again."):
             timedOut?tr("No finger was detected during this 30-second one-shot test. Clear the sensor, then place the enrolled finger in the centre for one or two seconds when prompted."):
             tr("System fingerprint test incomplete: %1").arg(output.right(1000)));p->deleteLater();
@@ -584,11 +668,11 @@ void SetupWizard::runSystemVerify() {
         if(output.contains(QStringLiteral("verify-match"))) {
             // Show the actual match as soon as fprintd emits it, rather than
             // making the person wait for the sensor's cleanup/release phase.
-            m_verdict->setText(tr("[System fingerprint test] Match confirmed while the finger remained in place.\n")+output.right(700));
+            m_verdict->setPlainText(tr("[System fingerprint test] Match confirmed while the finger remained in place.\n")+output.right(700));
         } else if(output.contains(QStringLiteral("verify-no-match"))) {
-            m_verdict->setText(tr("[System fingerprint test] No match. This contact was not recorded or enrolled.\n")+output.right(700));
+            m_verdict->setPlainText(tr("[System fingerprint test] No match. This contact was not recorded or enrolled.\n")+output.right(700));
         } else {
-            m_verdict->setText(tr("[System fingerprint test] Place the finger in the centre and hold it until a result appears. You do not need to lift it.\n")+output.right(700));
+            m_verdict->setPlainText(tr("[System fingerprint test] Place the finger in the centre and hold it until a result appears. You do not need to lift it.\n")+output.right(700));
         }
     });
     // A no-touch verification used to run for 95 seconds. On this sensor that
@@ -603,7 +687,7 @@ void SetupWizard::runSystemVerify() {
             QTimer::singleShot(2000,p,[p]{if(p->state()!=QProcess::NotRunning)p->kill();});
         }
     });
-    m_verdict->setText(tr("[System fingerprint test] Start with the sensor clear. When prompted, place the same enrolled finger and hold it until the result appears. You do not need to lift it."));
+    m_verdict->setPlainText(tr("[System fingerprint test] Start with the sensor clear. When prompted, place the same enrolled finger and hold it until the result appears. You do not need to lift it."));
     p->start(QStringLiteral("/usr/bin/fprintd-verify"),{qEnvironmentVariable("USER")});
 }
 

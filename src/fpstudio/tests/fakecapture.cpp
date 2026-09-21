@@ -8,10 +8,13 @@
 #include <QTimer>
 #include <cstdio>
 #include <QThread>
+#include "../src/timing.h"
 #include <iostream>
 
 int main(int argc, char **argv)
 {
+    fpstudio::tightenTimerSlack();   // the driver this stands in for needs it too
+
     QCoreApplication app(argc, argv);
     const auto args = app.arguments();
     if(args.contains("--serve")) {

@@ -352,7 +352,7 @@ StepResult gpuAuth()
         if(data.value("installed").toBool()&&data.value("username").toString()==qEnvironmentVariable("USER")&&
            QFileInfo::exists(QStringLiteral("/opt/fpstudio-auth/bin/fpstudio-auth-match"))) {
             const bool current=data.value("matcher_profile").toString()==
-                    QStringLiteral("auth-v8-contact-anchored-ridge-roi-uniform-scale-5pct")&&
+                    QStringLiteral("auth-v8-contact-anchored-ridge-roi-uniform-scale-5pct-ncc86")&&
                     data.value("artifact_sha256").isObject();
             if(current) {
                 r.state=StepState::Ok;r.summary=QCoreApplication::translate("fpstudio", "GPU authentication installed · %1 references").arg(data.value("references").toInt());

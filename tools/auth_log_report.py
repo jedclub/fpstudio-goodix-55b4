@@ -220,11 +220,42 @@ def summarise(sessions: list[dict], unscoped: list[dict]) -> dict:
             "unscoped_driver_events": len(unscoped)}
 
 
+# A driver stuck in a retry loop writes faster than this reads. The incident in
+# docs/23 produced ~125,000 lines a second, so an unbounded `journalctl | read
+# it all into a list` is not a slow path here - it is the reporter running the
+# machine out of memory at the exact moment somebody is trying to find out what
+# went wrong. Both limits are far above a real day's authentication traffic: a
+# busy day is a few thousand records.
+MAX_RECORDS = 500_000
+JOURNAL_TIMEOUT_SECONDS = 120
+
+
+def _decode(lines, limit: int = MAX_RECORDS) -> list[dict]:
+    """Parse at most `limit` JSON records, skipping any that do not parse.
+
+    journalctl can emit a truncated final line if it is interrupted, and a
+    single bad record must not throw away an otherwise usable report.
+    """
+    records = []
+    for line in lines:
+        if not line.strip():
+            continue
+        if len(records) >= limit:
+            print(f"Note: stopped after {limit} journal records; "
+                  f"narrow --since for a complete report.", file=sys.stderr)
+            break
+        try:
+            records.append(json.loads(line))
+        except json.JSONDecodeError:
+            continue
+    return records
+
+
 def read_records(path: Path | None, since: str) -> list[dict]:
     if path:
         stream = sys.stdin if str(path) == "-" else path.open(encoding="utf-8")
         try:
-            return [json.loads(line) for line in stream if line.strip()]
+            return _decode(stream)
         finally:
             if stream is not sys.stdin:
                 stream.close()
@@ -232,14 +263,26 @@ def read_records(path: Path | None, since: str) -> list[dict]:
     # driver evidence before serialising. Multiple identifier matches are ORed
     # by journalctl and avoid scanning unrelated desktop/application messages.
     identifiers = ("fpstudio-auth", "fpstudio-fprint-worker", "fprintd")
-    command = ["journalctl", "--since", since, "--output=json", "--no-pager"]
+    command = ["journalctl", "--since", since, "--output=json", "--no-pager",
+               # Bounded at the source as well as here: journalctl stops
+               # reading rather than this process stopping parsing, which is
+               # what keeps the flood out of memory in the first place.
+               "--lines", str(MAX_RECORDS)]
     for identifier in identifiers:
         command.extend(("--identifier", identifier))
-    result = subprocess.run(command,
-                            check=False, text=True, capture_output=True)
+    try:
+        result = subprocess.run(command, check=False, text=True,
+                                capture_output=True,
+                                timeout=JOURNAL_TIMEOUT_SECONDS)
+    except FileNotFoundError as error:
+        raise RuntimeError("journalctl is not installed") from error
+    except subprocess.TimeoutExpired as error:
+        raise RuntimeError(
+            f"journalctl did not finish within {JOURNAL_TIMEOUT_SECONDS}s; "
+            f"narrow the range with --since") from error
     if result.returncode:
         raise RuntimeError(result.stderr.strip() or "journalctl failed")
-    return [json.loads(line) for line in result.stdout.splitlines() if line.strip()]
+    return _decode(result.stdout.splitlines())
 
 
 def print_human(report: dict) -> None:

@@ -12,7 +12,35 @@
 
 namespace vkmatch {
 namespace {
-constexpr uint32_t Chunk=2048;
+// How many matching jobs go to the GPU per submission.
+//
+// Every chunk is a full round trip: pack the jobs, record a command buffer,
+// vkQueueSubmit, then block on vkWaitForFences until that chunk is done. The
+// CPU and the GPU never overlap, so each round trip costs its own latency on
+// top of the work.
+//
+// This was 2048, which is not a hardware limit - maxComputeWorkGroupCount[0] is
+// 4,294,967,295 on this device. An authentication against 44 references issues
+// 515,032 hypotheses, so 2048 meant 252 submissions and 252 stalls.
+//
+// Measured on RADV/Renoir against the optimised shader, eight interleaved
+// rounds per size after a warm-up, reporting the best of each. The warm-up
+// matters more than the repetitions here: this GPU's power management sits at
+// 400 MHz until it is given sustained work, and without it the same binary
+// measured 1797 ms and 3622 ms on two runs minutes apart.
+//
+//     chunk    submissions   wall_ms   non-GPU
+//       512            987      2151      1049
+//      2048            247      2056       933
+//      8192             62      1991       790
+//     16384             31      1966       748
+//     65536              8      1807       754
+//
+// The GPU's own work is unchanged - only how often it is stopped to be given
+// more. 65536 costs 4.2 MB of mapped buffers (48 B per job plus 16 B per
+// score), allocated once whatever the batch size, which is why this stops here
+// rather than going wider for the last few milliseconds.
+constexpr uint32_t Chunk=65536;
 void check(VkResult result,const char* operation) {
     if(result!=VK_SUCCESS) throw std::runtime_error(std::string(operation)+" failed (Vulkan "+std::to_string(result)+")");
 }

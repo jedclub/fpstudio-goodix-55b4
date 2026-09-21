@@ -515,95 +515,95 @@ Capture 로 센서 이미지를 가져옵니다</translation>
 <context>
     <name>fpstudio::LiveWindow</name>
     <message>
-        <location filename="../src/livewindow.cpp" line="110"/>
+        <location filename="../src/livewindow.cpp" line="145"/>
         <source>Vulkan GPU is initializing — it calculates separately from the live stream</source>
         <translation>Vulkan GPU를 초기화하는 중 — 실시간 영상과 별도로 계산합니다</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="119"/>
+        <location filename="../src/livewindow.cpp" line="154"/>
         <source>%1 · %2 references ready · waiting for a stable candidate</source>
         <translation>%1 · 기준 %2장 준비 · 안정된 후보 영상 대기</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="146"/>
+        <location filename="../src/livewindow.cpp" line="181"/>
         <source>GPU comparison error: </source>
         <translation>GPU 비교 오류: </translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="151"/>
+        <location filename="../src/livewindow.cpp" line="186"/>
         <source>GPU %1 hypotheses · %2 ms · image correlation %3 · ridge-direction agreement %4
 Best: %5 / %6 — research comparison only; not an authentication decision</source>
         <translation>GPU %1개 조건 · %2 ms · 영상 상관 %3 · 융선 방향 일치 %4
 최상위: %5 / %6 — 연구용 비교이며 인증 판정이 아닙니다</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="155"/>
+        <location filename="../src/livewindow.cpp" line="190"/>
         <source>
 Alignment is ambiguous: a different position has a similar score</source>
         <translation>
 정렬 모호함: 다른 위치에도 비슷한 점수가 있습니다</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="156"/>
+        <location filename="../src/livewindow.cpp" line="191"/>
         <source>
 At the search boundary: move the finger slightly toward the centre</source>
         <translation>
 탐색 범위 경계: 손가락을 중앙 쪽으로 조금 옮겨 보세요</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="159"/>
+        <location filename="../src/livewindow.cpp" line="194"/>
         <source>
 Interior ridge support %1/%2 regions · %3</source>
         <translation>
 내부 융선 지지 %1/%2 영역 · %3</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="161"/>
+        <location filename="../src/livewindow.cpp" line="196"/>
         <source>ridges are consistent (identity unverified)</source>
         <translation>융선 일관성 있음 (신원 미검증)</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="161"/>
+        <location filename="../src/livewindow.cpp" line="196"/>
         <source>insufficient match evidence</source>
         <translation>일치 근거 부족</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="164"/>
+        <location filename="../src/livewindow.cpp" line="199"/>
         <source> · 0/1 contact-region overlap %1%</source>
         <translation> · 0/1 접촉영역 교집합 %1%</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="166"/>
+        <location filename="../src/livewindow.cpp" line="201"/>
         <source> · 360° additional search applied</source>
         <translation> · 360° 추가 탐색 적용</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="168"/>
+        <location filename="../src/livewindow.cpp" line="203"/>
         <source> · full reference-bank search</source>
         <translation> · 전체 기준군 탐색</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="168"/>
+        <location filename="../src/livewindow.cpp" line="203"/>
         <source> · representative-reference fast comparison</source>
         <translation> · 대표 기준 빠른 비교</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="184"/>
+        <location filename="../src/livewindow.cpp" line="219"/>
         <source>GPU comparison cannot run: </source>
         <translation>GPU 비교를 실행할 수 없습니다: </translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="245"/>
+        <location filename="../src/livewindow.cpp" line="280"/>
         <source>Vulkan GPU is comparing reference images, angles, and positions in parallel…</source>
         <translation>Vulkan GPU가 기준 영상·각도·위치를 병렬 비교 중입니다…</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="250"/>
+        <location filename="../src/livewindow.cpp" line="285"/>
         <source>GPU comparison timed out — live collection continues</source>
         <translation>GPU 비교 시간이 초과되었습니다 — 실시간 수집은 계속됩니다</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="322"/>
+        <location filename="../src/livewindow.cpp" line="357"/>
         <source>Contact %1 · image from comparison %2 (not live)
 Gray: background (0) · yellow: contact (1), but weak features · green/red: comparison evidence
 Cyan +: transformed reference contact centre · orange +: current probe contact centre · blue: comparison range</source>
@@ -612,7 +612,7 @@ Cyan +: transformed reference contact centre · orange +: current probe contact 
 하늘색 +: 변환된 기준 접촉중심 · 주황 +: 현재 검사 접촉중심 · 파랑: 비교 범위</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="511"/>
+        <location filename="../src/livewindow.cpp" line="546"/>
         <source>[%1/%2 contacts compared · stops automatically at the target] </source>
         <translation>[%1/%2접촉 비교 완료 · 목표에 도달하면 자동 종료] </translation>
     </message>
@@ -621,7 +621,7 @@ Cyan +: transformed reference contact centre · orange +: current probe contact 
     <name>fpstudio::MainWindow</name>
     <message>
         <location filename="../src/mainwindow.cpp" line="109"/>
-        <location filename="../src/mainwindow.cpp" line="356"/>
+        <location filename="../src/mainwindow.cpp" line="363"/>
         <source>Device scan</source>
         <translation>장치 검색</translation>
     </message>
@@ -667,19 +667,19 @@ Cyan +: transformed reference contact centre · orange +: current probe contact 
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="212"/>
-        <location filename="../src/mainwindow.cpp" line="365"/>
+        <location filename="../src/mainwindow.cpp" line="373"/>
         <source>Enrol</source>
         <translation>등록</translation>
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="213"/>
-        <location filename="../src/mainwindow.cpp" line="370"/>
+        <location filename="../src/mainwindow.cpp" line="379"/>
         <source>Verify</source>
         <translation>검증</translation>
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="214"/>
-        <location filename="../src/mainwindow.cpp" line="374"/>
+        <location filename="../src/mainwindow.cpp" line="383"/>
         <source>Delete enrolment</source>
         <translation>등록 삭제</translation>
     </message>
@@ -734,42 +734,42 @@ Cyan +: transformed reference contact centre · orange +: current probe contact 
         <translation>드라이버 로그</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="359"/>
+        <location filename="../src/mainwindow.cpp" line="366"/>
         <source>→ Put your finger on the sensor</source>
         <translation>→ 센서에 손가락을 올려주세요</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="360"/>
+        <location filename="../src/mainwindow.cpp" line="367"/>
         <source>Image capture</source>
         <translation>이미지 캡처</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="363"/>
+        <location filename="../src/mainwindow.cpp" line="370"/>
         <source>→ Enrol: press and lift your finger repeatedly</source>
         <translation>→ 등록: 손가락을 올렸다 떼기를 반복해 주세요</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="368"/>
+        <location filename="../src/mainwindow.cpp" line="377"/>
         <source>→ Verify: present the enrolled finger</source>
         <translation>→ 검증: 등록한 손가락을 올려주세요</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="385"/>
+        <location filename="../src/mainwindow.cpp" line="394"/>
         <source>in progress…</source>
         <translation>진행 중…</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="385"/>
+        <location filename="../src/mainwindow.cpp" line="394"/>
         <source> in progress…</source>
         <translation> 진행 중…</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="413"/>
+        <location filename="../src/mainwindow.cpp" line="422"/>
         <source>No fingerprint device was found.</source>
         <translation>지문 장치를 찾지 못했습니다.</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="422"/>
+        <location filename="../src/mainwindow.cpp" line="431"/>
         <source>Driver: %1
 ID: %2
 Scan: %3 · %4 enrol stages
@@ -780,110 +780,110 @@ ID: %2
 원본 캡처: %5</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="427"/>
+        <location filename="../src/mainwindow.cpp" line="436"/>
         <source>yes</source>
         <translation>지원</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="427"/>
+        <location filename="../src/mainwindow.cpp" line="436"/>
         <source>no</source>
         <translation>미지원</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="439"/>
+        <location filename="../src/mainwindow.cpp" line="448"/>
         <source>No image was returned</source>
         <translation>이미지를 받지 못했습니다</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="443"/>
+        <location filename="../src/mainwindow.cpp" line="452"/>
         <source>Captured %1 × %2</source>
         <translation>캡처 %1 × %2</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="462"/>
+        <location filename="../src/mainwindow.cpp" line="471"/>
         <source>Match   %1 / %2</source>
         <translation>일치   %1 / %2</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="463"/>
+        <location filename="../src/mainwindow.cpp" line="472"/>
         <source>No match   %1 / %2</source>
         <translation>불일치   %1 / %2</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="474"/>
+        <location filename="../src/mainwindow.cpp" line="483"/>
         <source>Failed — %1</source>
         <translation>실패 — %1</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="475"/>
-        <location filename="../src/mainwindow.cpp" line="633"/>
-        <location filename="../src/mainwindow.cpp" line="634"/>
+        <location filename="../src/mainwindow.cpp" line="484"/>
+        <location filename="../src/mainwindow.cpp" line="642"/>
+        <location filename="../src/mainwindow.cpp" line="643"/>
         <source>Failed</source>
         <translation>실패</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="476"/>
-        <location filename="../src/mainwindow.cpp" line="635"/>
+        <location filename="../src/mainwindow.cpp" line="485"/>
+        <location filename="../src/mainwindow.cpp" line="644"/>
         <source>Error: %1</source>
         <translation>오류: %1</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="480"/>
+        <location filename="../src/mainwindow.cpp" line="489"/>
         <source>Done — %1</source>
         <translation>완료 — %1</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="485"/>
+        <location filename="../src/mainwindow.cpp" line="494"/>
         <source>Enrolment complete</source>
         <translation>등록 완료</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="487"/>
+        <location filename="../src/mainwindow.cpp" line="496"/>
         <source>Enrolment deleted</source>
         <translation>등록 삭제됨</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="514"/>
+        <location filename="../src/mainwindow.cpp" line="523"/>
         <source>This scan fell below the threshold and was asked for again</source>
         <translation>이 스캔은 기준 미달로 다시 요청되었습니다</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="529"/>
+        <location filename="../src/mainwindow.cpp" line="538"/>
         <source>Coverage %1%  ·  sharpness %2  —  faint. Press a little harder</source>
         <translation>접촉 %1%  ·  선명도 %2  —  흐립니다. 조금 더 눌러 주세요</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="531"/>
+        <location filename="../src/mainwindow.cpp" line="540"/>
         <source>Coverage %1%  ·  sharpness %2</source>
         <translation>접촉 %1%  ·  선명도 %2</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="552"/>
+        <location filename="../src/mainwindow.cpp" line="561"/>
         <source>%1 × %2</source>
         <translation>%1 × %2</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="608"/>
+        <location filename="../src/mainwindow.cpp" line="617"/>
         <source>Agent request</source>
         <translation>AI 에이전트 요청</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="609"/>
+        <location filename="../src/mainwindow.cpp" line="618"/>
         <source>CLI request</source>
         <translation>CLI 요청</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="609"/>
+        <location filename="../src/mainwindow.cpp" line="618"/>
         <source>request</source>
         <translation>요청</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="625"/>
+        <location filename="../src/mainwindow.cpp" line="634"/>
         <source>Idle</source>
         <translation>대기 중</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="626"/>
+        <location filename="../src/mainwindow.cpp" line="635"/>
         <source>▸ %1   ·   %2s elapsed</source>
         <translation>▸ %1   ·   %2초 경과</translation>
     </message>
@@ -891,32 +891,37 @@ ID: %2
 <context>
     <name>fpstudio::PrivRunner</name>
     <message>
-        <location filename="../src/privrunner.cpp" line="22"/>
+        <location filename="../src/privrunner.cpp" line="32"/>
         <source>Could not run pkexec</source>
         <translation>pkexec 를 실행할 수 없습니다</translation>
     </message>
     <message>
-        <location filename="../src/privrunner.cpp" line="31"/>
+        <location filename="../src/privrunner.cpp" line="47"/>
+        <source>The operation did not finish in time and was stopped</source>
+        <translation>작업이 제한 시간 안에 끝나지 않아 중단했습니다</translation>
+    </message>
+    <message>
+        <location filename="../src/privrunner.cpp" line="52"/>
         <source>The operation terminated abnormally</source>
         <translation>작업이 비정상 종료했습니다</translation>
     </message>
     <message>
-        <location filename="../src/privrunner.cpp" line="38"/>
+        <location filename="../src/privrunner.cpp" line="59"/>
         <source>Authentication was cancelled or refused</source>
         <translation>인증이 취소되었거나 거부되었습니다</translation>
     </message>
     <message>
-        <location filename="../src/privrunner.cpp" line="63"/>
+        <location filename="../src/privrunner.cpp" line="84"/>
         <source>Could not parse the result (exit code %1)</source>
         <translation>결과를 파싱하지 못했습니다 (종료 코드 %1)</translation>
     </message>
     <message>
-        <location filename="../src/privrunner.cpp" line="108"/>
+        <location filename="../src/privrunner.cpp" line="147"/>
         <source>An operation is already running</source>
         <translation>이미 작업이 실행 중입니다</translation>
     </message>
     <message>
-        <location filename="../src/privrunner.cpp" line="112"/>
+        <location filename="../src/privrunner.cpp" line="151"/>
         <source>Could not resolve this program&apos;s own path</source>
         <translation>실행 파일 경로를 확인할 수 없습니다</translation>
     </message>
@@ -924,108 +929,108 @@ ID: %2
 <context>
     <name>fpstudio::SetupWizard</name>
     <message>
-        <location filename="../src/setupwizard.cpp" line="350"/>
+        <location filename="../src/setupwizard.cpp" line="405"/>
         <source>Failed — %1</source>
         <translation>실패 — %1</translation>
     </message>
     <message>
-        <location filename="../src/setupwizard.cpp" line="120"/>
+        <location filename="../src/setupwizard.cpp" line="150"/>
         <source>Skip</source>
         <translation>건너뛰기</translation>
     </message>
     <message>
-        <location filename="../src/setupwizard.cpp" line="87"/>
+        <location filename="../src/setupwizard.cpp" line="92"/>
         <source>FPStudio · Integrated fingerprint authentication setup</source>
         <translation>FPStudio · 지문 인증 통합 설정</translation>
     </message>
     <message>
-        <location filename="../src/setupwizard.cpp" line="121"/>
+        <location filename="../src/setupwizard.cpp" line="151"/>
         <source>Check status again</source>
         <translation>상태 다시 확인</translation>
     </message>
     <message>
-        <location filename="../src/setupwizard.cpp" line="133"/>
+        <location filename="../src/setupwizard.cpp" line="183"/>
         <source>Setup steps complete · Verify real sudo/KDE authentication and password recovery separately.</source>
         <translation>설정 단계 완료 · 실제 sudo/KDE 인증과 비밀번호 복구 시험은 별도 확인이 필요합니다.</translation>
     </message>
     <message>
-        <location filename="../src/setupwizard.cpp" line="135"/>
+        <location filename="../src/setupwizard.cpp" line="185"/>
         <source>Finish</source>
         <translation>마침</translation>
     </message>
     <message>
-        <location filename="../src/setupwizard.cpp" line="161"/>
+        <location filename="../src/setupwizard.cpp" line="216"/>
         <source>Stop</source>
         <translation>중단</translation>
     </message>
     <message>
-        <location filename="../src/setupwizard.cpp" line="164"/>
+        <location filename="../src/setupwizard.cpp" line="219"/>
         <source>Stopping the fingerprint test. You may lift your finger.</source>
         <translation>지문 시험을 중단합니다. 손을 떼셔도 됩니다.</translation>
     </message>
     <message>
-        <location filename="../src/setupwizard.cpp" line="167"/>
-        <location filename="../src/setupwizard.cpp" line="548"/>
+        <location filename="../src/setupwizard.cpp" line="222"/>
+        <location filename="../src/setupwizard.cpp" line="632"/>
         <source>Restore authentication settings</source>
         <translation>인증 설정 복구</translation>
     </message>
     <message>
-        <location filename="../src/setupwizard.cpp" line="168"/>
+        <location filename="../src/setupwizard.cpp" line="223"/>
         <source>Test system fingerprint</source>
         <translation>시스템 지문 시험</translation>
     </message>
     <message>
-        <location filename="../src/setupwizard.cpp" line="182"/>
+        <location filename="../src/setupwizard.cpp" line="237"/>
         <source>Open diagnostics tool</source>
         <translation>진단 도구 열기</translation>
     </message>
     <message>
-        <location filename="../src/setupwizard.cpp" line="185"/>
+        <location filename="../src/setupwizard.cpp" line="240"/>
         <source>Live capture preview, the driver log, and MCP status - for a closer look once the checklist here is done.</source>
         <translation>실시간 캡처 미리보기, 드라이버 로그, MCP 상태를 볼 수 있습니다 — 이 체크리스트를 마친 뒤 더 자세히 볼 때 씁니다.</translation>
     </message>
     <message>
-        <location filename="../src/setupwizard.cpp" line="219"/>
+        <location filename="../src/setupwizard.cpp" line="274"/>
         <source>Checking the device and installation. Keep your finger off the sensor for now.</source>
         <translation>장치와 설치 상태 확인 중입니다. 손가락은 아직 대지 마세요.</translation>
     </message>
     <message>
-        <location filename="../src/setupwizard.cpp" line="295"/>
+        <location filename="../src/setupwizard.cpp" line="350"/>
         <source>This step cannot be undone.</source>
         <translation>이 단계는 되돌릴 수 없습니다.</translation>
     </message>
     <message>
-        <location filename="../src/setupwizard.cpp" line="311"/>
+        <location filename="../src/setupwizard.cpp" line="366"/>
         <source>This will ask for your password.</source>
         <translation>비밀번호를 물어봅니다.</translation>
     </message>
     <message>
-        <location filename="../src/setupwizard.cpp" line="313"/>
+        <location filename="../src/setupwizard.cpp" line="368"/>
         <source>This step is confirmed. Continue to the next required step.</source>
         <translation>이 단계는 확인됐습니다. 다음 필요한 단계로 진행하세요.</translation>
     </message>
     <message>
-        <location filename="../src/setupwizard.cpp" line="314"/>
+        <location filename="../src/setupwizard.cpp" line="369"/>
         <source>Next action: %1</source>
         <translation>다음 행동: %1</translation>
     </message>
     <message>
-        <location filename="../src/setupwizard.cpp" line="314"/>
+        <location filename="../src/setupwizard.cpp" line="369"/>
         <source>Review the guidance. This step is not confirmed yet.</source>
         <translation>안내를 확인하세요. 아직 완료로 판정하지 않은 단계입니다.</translation>
     </message>
     <message>
-        <location filename="../src/setupwizard.cpp" line="324"/>
+        <location filename="../src/setupwizard.cpp" line="379"/>
         <source>WRITE</source>
         <translation>WRITE</translation>
     </message>
     <message>
-        <location filename="../src/setupwizard.cpp" line="326"/>
+        <location filename="../src/setupwizard.cpp" line="381"/>
         <source>Sensor key</source>
         <translation>센서 키</translation>
     </message>
     <message>
-        <location filename="../src/setupwizard.cpp" line="327"/>
+        <location filename="../src/setupwizard.cpp" line="382"/>
         <source>%1
 
 Type %2 to confirm.</source>
@@ -1034,94 +1039,99 @@ Type %2 to confirm.</source>
 확인하려면 %2 를 입력하세요.</translation>
     </message>
     <message>
-        <location filename="../src/setupwizard.cpp" line="351"/>
+        <location filename="../src/setupwizard.cpp" line="406"/>
         <source>The enrolment helper was not found</source>
         <translation>등록 도우미를 찾지 못했습니다</translation>
     </message>
     <message>
-        <location filename="../src/setupwizard.cpp" line="357"/>
+        <location filename="../src/setupwizard.cpp" line="412"/>
         <source>Enrolling — press and lift your finger repeatedly</source>
         <translation>등록 중입니다 — 손가락을 올렸다 떼기를 반복해 주세요</translation>
     </message>
     <message>
-        <location filename="../src/setupwizard.cpp" line="365"/>
+        <location filename="../src/setupwizard.cpp" line="420"/>
         <source>Enrolment in progress · Present and lift the same finger as instructed
 </source>
         <translation>등록 진행 · 안내에 따라 같은 손가락을 대고 떼세요
 </translation>
     </message>
     <message>
-        <location filename="../src/setupwizard.cpp" line="370"/>
+        <location filename="../src/setupwizard.cpp" line="425"/>
         <source>Could not start the enrolment tool: %1</source>
         <translation>등록 도구를 시작하지 못했습니다: %1</translation>
     </message>
     <message>
-        <location filename="../src/setupwizard.cpp" line="397"/>
+        <location filename="../src/setupwizard.cpp" line="456"/>
         <source>Put your finger on the sensor and hold it there</source>
         <translation>센서에 손가락을 올리고 그대로 유지해 주세요</translation>
     </message>
     <message>
-        <location filename="../src/setupwizard.cpp" line="406"/>
+        <location filename="../src/setupwizard.cpp" line="465"/>
         <source>Could not start the image tool: %1</source>
         <translation>영상 도구를 시작하지 못했습니다: %1</translation>
     </message>
     <message>
-        <location filename="../src/setupwizard.cpp" line="468"/>
+        <location filename="../src/setupwizard.cpp" line="529"/>
         <source>in progress…</source>
         <translation>진행 중…</translation>
     </message>
     <message>
-        <location filename="../src/setupwizard.cpp" line="475"/>
+        <location filename="../src/setupwizard.cpp" line="536"/>
         <source>Wait for the operation to finish or cancel its authentication request. Setup records and recovery information are being protected.</source>
         <translation>작업이 끝나거나 인증 요청이 취소될 때까지 기다려 주세요. 설정 기록과 복구 정보를 보호하고 있습니다.</translation>
     </message>
     <message>
-        <location filename="../src/setupwizard.cpp" line="479"/>
+        <location filename="../src/setupwizard.cpp" line="540"/>
         <source>Finish the running setup operation or cancel its authentication request before closing.</source>
         <translation>실행 중인 설정 작업을 완료하거나 인증 요청을 취소한 뒤 닫아 주세요.</translation>
     </message>
     <message>
-        <location filename="../src/setupwizard.cpp" line="495"/>
+        <location filename="../src/setupwizard.cpp" line="554"/>
+        <source>This step did not finish in time and was stopped. The sensor and your enrolment are unchanged - try it again.</source>
+        <translation>이 단계가 제한 시간 안에 끝나지 않아 중단했습니다. 센서와 등록된 지문은 그대로이니 다시 시도하세요.</translation>
+    </message>
+    <message>
+        <location filename="../src/setupwizard.cpp" line="575"/>
         <source>Setup operation complete. Use the system fingerprint test to verify the real path.</source>
         <translation>설정 작업 완료. 시스템 지문 시험으로 실제 경로를 확인하세요.</translation>
     </message>
     <message>
-        <location filename="../src/setupwizard.cpp" line="495"/>
+        <location filename="../src/setupwizard.cpp" line="575"/>
         <source>Setup incomplete or cancelled: %1</source>
         <translation>설정 미완료 또는 취소: %1</translation>
     </message>
     <message>
-        <location filename="../src/setupwizard.cpp" line="501"/>
+        <location filename="../src/setupwizard.cpp" line="581"/>
         <source>After administrator authorization, installation and checks run automatically. Authentication settings are restored if installation fails.</source>
         <translation>관리자 인증 후 설치와 검사를 자동 실행합니다. 인증 연결 설치가 실패하면 원래 설정을 복구합니다.</translation>
     </message>
     <message>
-        <location filename="../src/setupwizard.cpp" line="502"/>
+        <location filename="../src/setupwizard.cpp" line="582"/>
         <source>The driver is built as the current user. Administrator authorization is requested only for dependencies and package installation.</source>
         <translation>드라이버는 일반 사용자 권한으로 빌드합니다. 의존성과 패키지 설치 때만 관리자 인증을 요청합니다.</translation>
     </message>
     <message>
-        <location filename="../src/setupwizard.cpp" line="512"/>
+        <location filename="../src/setupwizard.cpp" line="596"/>
         <source>Update GPU authentication engine</source>
         <translation>GPU 인증 엔진 업데이트</translation>
     </message>
     <message>
-        <location filename="../src/setupwizard.cpp" line="513"/>
+        <location filename="../src/setupwizard.cpp" line="597"/>
         <source>Existing fingerprint references, fprintd enrolment and PAM settings will not change. Only the matcher, shader and driver bridge are replaced, followed by reference self-checks. Changed files are backed up separately. Apply the update?</source>
         <translation>기존 지문 기준·fprintd 등록·PAM 설정은 바꾸지 않습니다. 최신 매처·셰이더·드라이버 브리지만 교체한 뒤 기준 영상 자기 검사를 실행합니다. 변경 전 파일은 별도로 백업합니다. 업데이트할까요?</translation>
     </message>
     <message>
-        <location filename="../src/setupwizard.cpp" line="524"/>
+        <location filename="../src/setupwizard.cpp" line="608"/>
         <source>Select your saved fingerprint session</source>
         <translation>본인의 저장 지문 세션 선택</translation>
     </message>
     <message>
-        <location filename="../src/setupwizard.cpp" line="528"/>
+        <location filename="../src/setupwizard.cpp" line="612"/>
         <source>Experimental GPU authentication</source>
         <translation>실험적 GPU 인증</translation>
     </message>
     <message>
-        <location filename="../src/setupwizard.cpp" line="529"/>
+        <location filename="../src/setupwizard.cpp" line="613"/>
         <source>Confirm that the selected folders contain this user&apos;s fingerprints.
 %1
 
@@ -1132,53 +1142,53 @@ Existing enrolment is preserved and GPU comparison is used for sudo and KDE auth
 기존 등록은 보존하고 sudo·KDE 인증에 GPU 비교를 사용합니다. 최대 실패 접촉 20회 또는 60초 후에도 비밀번호 경로는 유지됩니다. 다른 손가락 거절 성능은 완전히 검증되지 않았습니다. 설정을 백업하고 적용할까요?</translation>
     </message>
     <message>
-        <location filename="../src/setupwizard.cpp" line="548"/>
+        <location filename="../src/setupwizard.cpp" line="632"/>
         <source>Restore the sudo, KDE and fprintd settings from before installation? Existing fingerprint enrolment is not deleted.</source>
         <translation>설치 전 sudo·KDE·fprintd 설정을 복구할까요? 기존 지문 등록은 삭제하지 않습니다.</translation>
     </message>
     <message>
-        <location filename="../src/setupwizard.cpp" line="574"/>
+        <location filename="../src/setupwizard.cpp" line="658"/>
         <source>Fingerprint match succeeded. The result was delivered while the finger remained in place. Test the sudo/KDE dialog and password fallback separately.</source>
         <translation>지문 비교 성공. 손가락을 계속 대고 있는 동안 결과가 전달됐습니다. sudo/KDE 대화창과 비밀번호 폴백은 별도로 시험하세요.</translation>
     </message>
     <message>
-        <location filename="../src/setupwizard.cpp" line="575"/>
+        <location filename="../src/setupwizard.cpp" line="659"/>
         <source>Sensor thermal protection stopped the test. Lift your finger, let it cool briefly, then try again.</source>
         <translation>센서 과열 보호가 시험을 중단했습니다. 잠시 손을 떼고 식힌 뒤 다시 시도하세요.</translation>
     </message>
     <message>
-        <location filename="../src/setupwizard.cpp" line="576"/>
+        <location filename="../src/setupwizard.cpp" line="660"/>
         <source>No finger was detected during this 30-second one-shot test. Clear the sensor, then place the enrolled finger in the centre for one or two seconds when prompted.</source>
         <translation>30초 단발 시험 동안 손가락이 감지되지 않았습니다. 센서를 비운 뒤 안내가 뜨면 등록한 손가락을 중앙에 1~2초 올려 보세요.</translation>
     </message>
     <message>
-        <location filename="../src/setupwizard.cpp" line="577"/>
+        <location filename="../src/setupwizard.cpp" line="661"/>
         <source>System fingerprint test incomplete: %1</source>
         <translation>시스템 지문 시험 미완료: %1</translation>
     </message>
     <message>
-        <location filename="../src/setupwizard.cpp" line="587"/>
+        <location filename="../src/setupwizard.cpp" line="671"/>
         <source>[System fingerprint test] Match confirmed while the finger remained in place.
 </source>
         <translation>[시스템 지문 시험] 손가락을 유지한 상태에서 일치를 확인했습니다.
 </translation>
     </message>
     <message>
-        <location filename="../src/setupwizard.cpp" line="589"/>
+        <location filename="../src/setupwizard.cpp" line="673"/>
         <source>[System fingerprint test] No match. This contact was not recorded or enrolled.
 </source>
         <translation>[시스템 지문 시험] 일치하지 않습니다. 이 접촉은 기록하거나 등록하지 않았습니다.
 </translation>
     </message>
     <message>
-        <location filename="../src/setupwizard.cpp" line="591"/>
+        <location filename="../src/setupwizard.cpp" line="675"/>
         <source>[System fingerprint test] Place the finger in the centre and hold it until a result appears. You do not need to lift it.
 </source>
         <translation>[시스템 지문 시험] 손가락을 센서 중앙에 올리고 결과가 표시될 때까지 유지하세요. 떼는 동작은 필요 없습니다.
 </translation>
     </message>
     <message>
-        <location filename="../src/setupwizard.cpp" line="606"/>
+        <location filename="../src/setupwizard.cpp" line="690"/>
         <source>[System fingerprint test] Start with the sensor clear. When prompted, place the same enrolled finger and hold it until the result appears. You do not need to lift it.</source>
         <translation>[시스템 지문 시험] 처음에는 센서를 비워 두세요. 지문 요청이 뜨면 등록한 같은 손가락을 올리고 결과가 표시될 때까지 유지하세요. 떼는 동작은 필요 없습니다.</translation>
     </message>

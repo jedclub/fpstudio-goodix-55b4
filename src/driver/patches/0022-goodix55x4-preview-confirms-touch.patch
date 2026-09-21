@@ -1,0 +1,80 @@
+From: fpstudio
+Subject: [PATCH] goodix55x4: let a preview session still confirm a touch
+
+The private live preview wrote each frame and then scheduled its own re-read,
+returning TRUE so the finger-detect handler stopped there. Nothing downstream
+ran: not the poll-again path, and not the branch that reports a confirmed touch
+and advances libfprint to capture.
+
+That was invisible while preview was only used to collect research captures,
+because a capture session never needs a touch to be confirmed - it reads frames
+and picks the good ones itself. It matters for enrolment. With the preview path
+active the window shows the finger and builds its coverage map exactly as
+before, while libfprint advances no enrol stage at all, so the session looks
+like it is working and produces no enrolment. Enrolling and mapping could not
+be the same act.
+
+The frame is now recorded and handed back: the existing logic below decides
+whether to poll again or to confirm the touch. Two consequences, both
+deliberate:
+
+  - Preview frames arrive at the finger-detect poll interval rather than the
+    1ms loop, so the window sees roughly 10 frames a second where it saw 15.
+  - The ten-second empty-sensor failure is not counted while a preview is on
+    screen. During a verify an empty sensor means the prompt went unanswered;
+    during a preview the person is looking at the window and deciding where to
+    press next, and the session already has its own deadline.
+
+--- a/libfprint/drivers/goodixtls/goodix55x4.c
++++ b/libfprint/drivers/goodixtls/goodix55x4.c
+@@ -924,10 +924,6 @@
+   fpi_ssm_jump_to_state(ssm, SCAN_STAGE_SWITCH_TO_FDT_MODE);
+ }
+ 
+-static void preview_next_frame(FpDevice *dev, gpointer user_data) {
+-  fpi_ssm_jump_to_state(user_data, SCAN_STAGE_GET_IMG);
+-}
+-
+ static gboolean preview_raw_file(const char *path, const Goodix55X4Pix *pixels,
+                                  gint64 stamp, GError **error) {
+   g_autofree char *header=g_strdup_printf("P5\n# %" G_GINT64_FORMAT "\n108 88\n4095\n",stamp);
+@@ -1004,8 +1000,22 @@
+     fpi_image_device_session_error(FP_IMAGE_DEVICE(dev), error);
+     return TRUE;
+   }
+-  fpi_device_add_timeout(dev, 1, preview_next_frame, ssm, NULL);
+-  return TRUE;
++  /* Recorded, not consumed.
++   *
++   * This used to schedule its own re-read and return TRUE, which kept the
++   * state machine in a preview loop that never reached the touch-confirmed
++   * branch below. That was fine while preview was only ever used for a
++   * research capture, and it is exactly wrong for enrolment: the window could
++   * show the finger and build its coverage map, but libfprint never advanced a
++   * single enrol stage, so a session that looked like it was working produced
++   * no enrolment at all.
++   *
++   * Returning FALSE hands the frame back to the caller, which already knows
++   * how to poll again when there is nothing there and how to confirm a touch
++   * when there is. Preview frames now arrive at the poll interval rather than
++   * the 1ms loop, so the window sees about 10 frames a second instead of 15.
++   */
++  return FALSE;
+ }
+ 
+ static void scan_on_read_img(FpDevice *dev, guint8 *data, guint16 len,
+@@ -1028,7 +1038,13 @@
+     return;
+ 
+   if (diff < GOODIX55X4_FINGER_DETECT_DIFF_THRESHOLD) {
+-    if (++self->poll_attempts >= GOODIX55X4_FINGER_DETECT_MAX_ATTEMPTS) {
++    /* Ten seconds of an empty sensor means something is wrong during a verify,
++     * where the prompt has already been shown and the finger should be there.
++     * During a preview the person is looking at a window, deciding where to
++     * press next, and pausing is what they are supposed to be doing - the
++     * session's own deadline above is what ends it. */
++    const gboolean previewing = g_getenv("GOODIX55X4_PREVIEW_PATH") != NULL;
++    if (!previewing && ++self->poll_attempts >= GOODIX55X4_FINGER_DETECT_MAX_ATTEMPTS) {
+       /* Ten seconds of seeing nothing. Either nobody touched the sensor, or
+        * the background we are subtracting already contains whatever is on it -
+        * which is what happens if the very first calibration caught a finger.

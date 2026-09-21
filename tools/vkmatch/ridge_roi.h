@@ -1,11 +1,11 @@
 #pragma once
 
 #include "vkmatch.h"
+#include "profile.h"
 
 #include <algorithm>
 #include <array>
 #include <cstdint>
-#include <queue>
 #include <vector>
 
 namespace vkmatch {
@@ -38,6 +38,7 @@ struct RidgeRegion {
 // local support and then retain the largest connected contact component rather
 // than treating every dark ridge pixel as background.
 inline RidgeRegion extractRidgeRegion(const Image &image) {
+    FPSTUDIO_PROFILE_SCOPE("ridge/extractRidgeRegion");
     RidgeRegion out;
     if (image.width < 5 || image.height < 5 ||
         image.pixels.size() != size_t(image.width) * image.height)
@@ -53,13 +54,53 @@ inline RidgeRegion extractRidgeRegion(const Image &image) {
 
     // A 5x5 support count bridges dark valleys inside an otherwise contacted
     // patch, while an isolated hot/background pixel cannot become foreground.
-    for (int y = 0; y < h; ++y) {
-        for (int x = 0; x < w; ++x) {
-            int neighbours = 0;
-            for (int yy = std::max(0, y - 2); yy <= std::min(h - 1, y + 2); ++yy)
-                for (int xx = std::max(0, x - 2); xx <= std::min(w - 1, x + 2); ++xx)
-                    neighbours += live[size_t(yy) * w + xx];
-            supported[size_t(y) * w + x] = neighbours >= 7;
+    //
+    // Counted separably rather than by re-reading the 25-pixel window for every
+    // output pixel: a horizontal 5-wide running count per row, then a vertical
+    // running count over five of those rows. 25 reads per pixel become two.
+    //
+    // Only the five rows inside the window are kept - about 2 KB, so the whole
+    // working set stays in L1 - and, exactly as in the minutiae window, the row
+    // arriving and the row leaving share a ring slot, so the departing row is
+    // subtracted before the arriving one is written over it.
+    //
+    // These are counts of 0/1 bytes, so unlike the floating-point window in
+    // minutiae.h this reassociation is not merely equivalent to the direct form
+    // but bit-identical to it: integer addition is exact and associative.
+    {
+        constexpr int radius = 2, window = 2 * radius + 1;
+        std::vector<int> ring(size_t(window) * w, 0), column(size_t(w), 0);
+        auto fillRow = [&](int r) {
+            const uint8_t *row = live.data() + size_t(r) * w;
+            int *out = ring.data() + size_t(r % window) * w;
+            int running = 0;
+            for (int x = 0; x <= std::min(w - 1, radius); ++x)
+                running += row[x];
+            for (int x = 0; x < w; ++x) {
+                out[x] = running;
+                const int add = x + radius + 1, drop = x - radius;
+                if (add < w) running += row[add];
+                if (drop >= 0) running -= row[drop];
+            }
+        };
+        for (int y = 0; y <= std::min(h - 1, radius); ++y) {
+            fillRow(y);
+            const int *slot = ring.data() + size_t(y % window) * w;
+            for (int x = 0; x < w; ++x) column[x] += slot[x];
+        }
+        for (int y = 0; y < h; ++y) {
+            uint8_t *out = supported.data() + size_t(y) * w;
+            for (int x = 0; x < w; ++x) out[x] = column[x] >= 7;
+            const int drop = y - radius, add = y + radius + 1;
+            if (drop >= 0) {
+                const int *slot = ring.data() + size_t(drop % window) * w;
+                for (int x = 0; x < w; ++x) column[x] -= slot[x];
+            }
+            if (add < h) {
+                fillRow(add);                   // reuses the slot just vacated
+                const int *slot = ring.data() + size_t(add % window) * w;
+                for (int x = 0; x < w; ++x) column[x] += slot[x];
+            }
         }
     }
 
@@ -68,17 +109,24 @@ inline RidgeRegion extractRidgeRegion(const Image &image) {
     // matching island.  Eight-neighbour connectivity preserves diagonal ridges.
     std::vector<int> label(count, -1);
     std::vector<uint32_t> sizes;
+    // One buffer for every component instead of a fresh std::queue per
+    // component. std::queue is deque-backed, so each component used to mean a
+    // round of chunk allocations for a frontier that never exceeds the frame;
+    // this reserves the worst case once and rewinds. Still first-in-first-out,
+    // so the traversal order - and therefore the labelling - is unchanged.
+    std::vector<int> pending;
+    pending.reserve(count);
     int component = 0;
     for (int start = 0; start < int(count); ++start) {
         if (!supported[start] || label[start] != -1)
             continue;
-        std::queue<int> pending;
-        pending.push(start);
+        pending.clear();
+        size_t head = 0;
+        pending.push_back(start);
         label[start] = component;
         uint32_t size = 0;
-        while (!pending.empty()) {
-            const int p = pending.front();
-            pending.pop();
+        while (head < pending.size()) {
+            const int p = pending[head++];
             ++size;
             const int x = p % w, y = p / w;
             for (int yy = std::max(0, y - 1); yy <= std::min(h - 1, y + 1); ++yy)
@@ -86,7 +134,7 @@ inline RidgeRegion extractRidgeRegion(const Image &image) {
                     const int q = yy * w + xx;
                     if (supported[q] && label[q] == -1) {
                         label[q] = component;
-                        pending.push(q);
+                        pending.push_back(q);
                     }
                 }
         }

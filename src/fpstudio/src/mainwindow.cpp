@@ -343,12 +343,19 @@ void MainWindow::wireActions()
 {
     const QString user = qEnvironmentVariable("USER", QStringLiteral("user"));
 
+    // The deadline passed here is a backstop behind the CLI's own timeout
+    // (45s for a capture or verify, 180s for an enrolment - see headless.cpp),
+    // not a second copy of it. It only matters when the CLI fails to time
+    // itself out, which is exactly the case where the window would otherwise
+    // stay disabled forever, so every value is the CLI's own limit plus room
+    // for a pkexec prompt somebody has to read and answer.
     auto start = [this](const QString &tag, const QStringList &args,
-                        const QString &label, bool direct = false) {
+                        const QString &label, bool direct = false,
+                        int timeoutMs = PrivRunner::kDefaultTimeoutMs) {
         m_pending = tag;
         addStage(label);
         setBusy(true, label);
-        m_runner->run(args, direct);
+        m_runner->run(args, direct, timeoutMs);
     };
 
     connect(m_btnRefresh, &QPushButton::clicked, this, [this, start] {
@@ -361,8 +368,10 @@ void MainWindow::wireActions()
     });
     connect(m_btnEnroll, &QPushButton::clicked, this, [this, start, user] {
         appendLog(tr("→ Enrol: press and lift your finger repeatedly"));
+        // 180s of enrolment plus the prompt in front of it.
         start(QStringLiteral("enroll"),
-              {QStringLiteral("enroll"), QStringLiteral("--user"), user}, tr("Enrol"));
+              {QStringLiteral("enroll"), QStringLiteral("--user"), user}, tr("Enrol"),
+              false, 300000);
     });
     connect(m_btnVerify, &QPushButton::clicked, this, [this, start, user] {
         appendLog(tr("→ Verify: present the enrolled finger"));

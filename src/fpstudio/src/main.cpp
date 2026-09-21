@@ -14,6 +14,7 @@
 #include <cstdio>
 
 #include "engine.h"
+#include "timing.h"
 #include "i18n.h"
 #include "headless.h"
 #include "mainwindow.h"
@@ -73,6 +74,8 @@ void printUsage()
 
 int main(int argc, char **argv)
 {
+    fpstudio::tightenTimerSlack();
+
     // Must precede any libfprint use: it installs the log writer the whole
     // tool depends on for stage and score reporting.
     fpstudio::Engine::enableVerboseLogging();

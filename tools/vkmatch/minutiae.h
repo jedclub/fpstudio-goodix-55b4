@@ -1,6 +1,7 @@
 #pragma once
 
 #include "vkmatch.h"
+#include "profile.h"
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
@@ -57,26 +58,84 @@ inline int minutiaeCrossingNumber(const std::vector<uint8_t> &bits,int x,int y,i
     return transitions/2;
 }
 
+/* Zhang-Suen's per-pixel test, precomputed for all 256 neighbourhoods.
+ *
+ * The test reads the eight neighbours, counts them, counts the 0->1
+ * transitions around the ring, and checks two phase-specific triples. All of
+ * that depends only on which of the eight are set - 256 possibilities - so it
+ * is a property of an 8-bit number and can be answered by looking it up.
+ *
+ * Written out per pixel it was eight index calculations, an eight-element
+ * array built on the stack, and a wrap-around loop to count transitions, for
+ * every foreground pixel on every one of up to 96 passes. Packed, the same
+ * decision is one byte and one load.
+ *
+ * Bit order is the ring order, so that transitions are adjacent bits and the
+ * wrap is between bit 7 and bit 0:
+ *
+ *   bit 0 = N   bit 1 = NE  bit 2 = E   bit 3 = SE
+ *   bit 4 = S   bit 5 = SW  bit 6 = W   bit 7 = NW
+ *
+ * The tables hold the same booleans the inline code computed, so the thinned
+ * output is identical, not merely equivalent.
+ */
+struct MinutiaeThinTable { uint8_t removable[2][256]; };
+
+inline const MinutiaeThinTable &minutiaeThinTable() {
+    static const MinutiaeThinTable table = [] {
+        MinutiaeThinTable t{};
+        for(int code=0;code<256;++code) {
+            int b[8];
+            for(int i=0;i<8;++i)b[i]=(code>>i)&1;
+            int n=0,transitions=0;
+            for(int i=0;i<8;++i)n+=b[i];
+            for(int i=0;i<8;++i)transitions+=b[i]==0&&b[(i+1)&7]==1;
+            const int p2=b[0],p4=b[2],p6=b[4],p8=b[6];
+            const bool base=n>=2&&n<=6&&transitions==1;
+            t.removable[0][code]=base&&!((p2&&p4&&p6)||(p4&&p6&&p8));
+            t.removable[1][code]=base&&!((p2&&p4&&p8)||(p2&&p6&&p8));
+        }
+        return t;
+    }();
+    return table;
+}
+
 // Zhang-Suen thinning, operating on a bounded 108x88 binary ridge image.
 inline void thinRidges(std::vector<uint8_t> &bits,int w,int h) {
+    FPSTUDIO_PROFILE_SCOPE("minutiae/thinRidges");
+    const MinutiaeThinTable &table=minutiaeThinTable();
     std::vector<int> remove;
+    // Every pixel could in principle be removed in one pass, and this runs up
+    // to 192 times; reserving once keeps the vector from regrowing on each.
+    remove.reserve(size_t(w)*h);
     for(int iteration=0;iteration<96;++iteration) {
         bool changed=false;
         for(int phase=0;phase<2;++phase) {
             remove.clear();
-            for(int y=1;y<h-1;++y)for(int x=1;x<w-1;++x) {
-                if(!bits[minutiaeIndex(x,y,w)])continue;
-                const int p2=bits[minutiaeIndex(x,y-1,w)],p3=bits[minutiaeIndex(x+1,y-1,w)];
-                const int p4=bits[minutiaeIndex(x+1,y,w)],p5=bits[minutiaeIndex(x+1,y+1,w)];
-                const int p6=bits[minutiaeIndex(x,y+1,w)],p7=bits[minutiaeIndex(x-1,y+1,w)];
-                const int p8=bits[minutiaeIndex(x-1,y,w)],p9=bits[minutiaeIndex(x-1,y-1,w)];
-                const int n=p2+p3+p4+p5+p6+p7+p8+p9;
-                const int ring[]={p2,p3,p4,p5,p6,p7,p8,p9};int transitions=0;
-                for(int i=0;i<8;++i)transitions+=ring[i]==0&&ring[(i+1)%8]==1;
-                if(n<2||n>6||transitions!=1)continue;
-                if((phase==0&&((p2&&p4&&p6)||(p4&&p6&&p8)))||
-                   (phase==1&&((p2&&p4&&p8)||(p2&&p6&&p8))))continue;
-                remove.push_back(minutiaeIndex(x,y,w));
+            const uint8_t *const decide=table.removable[phase];
+            for(int y=1;y<h-1;++y) {
+                // Three row pointers instead of eight index calculations. The
+                // neighbourhood is three consecutive rows, so this is also the
+                // access pattern the prefetcher expects.
+                const uint8_t *up=bits.data()+size_t(y-1)*w;
+                const uint8_t *mid=bits.data()+size_t(y)*w;
+                const uint8_t *down=bits.data()+size_t(y+1)*w;
+                for(int x=1;x<w-1;++x) {
+                    if(!mid[x])continue;
+                    // bits[] is strictly 0 or 1 - it is written from a boolean
+                    // and only ever cleared - so each neighbour contributes
+                    // exactly one bit and no masking is needed.
+                    const unsigned code=
+                        unsigned(up[x])          |
+                        unsigned(up[x+1])   <<1  |
+                        unsigned(mid[x+1])  <<2  |
+                        unsigned(down[x+1]) <<3  |
+                        unsigned(down[x])   <<4  |
+                        unsigned(down[x-1]) <<5  |
+                        unsigned(mid[x-1])  <<6  |
+                        unsigned(up[x-1])   <<7;
+                    if(decide[code])remove.push_back(int(size_t(y)*w+x));
+                }
             }
             for(int i:remove)bits[i]=0;
             changed|=!remove.empty();
@@ -85,22 +144,54 @@ inline void thinRidges(std::vector<uint8_t> &bits,int w,int h) {
     }
 }
 
+// The accumulator here is a structure tensor, written without the polar
+// detour it used to take.
+//
+// It used to convert every neighbour's gradient to an angle and back:
+//   theta = atan2(gy, gx) + pi/2
+//   re   += e * cos(2*theta)
+//   imag += e * sin(2*theta)          with e = gx^2 + gy^2
+//
+// That is three transcendental calls per neighbour pixel, up to 81 of them per
+// candidate. None of them are needed. Doubling the angle is exactly what the
+// standard identities undo:
+//
+//   cos(2*theta) = cos(2*phi + pi) = -cos(2*phi) = -(gx^2 - gy^2) / e
+//   sin(2*theta) = sin(2*phi + pi) = -sin(2*phi) = -(2*gx*gy)     / e
+//
+// and both are being multiplied by e, so e cancels and what is left is
+// polynomial:
+//
+//   e * cos(2*theta) = gy^2 - gx^2
+//   e * sin(2*theta) = -2*gx*gy
+//
+// This is an algebraic identity, not an approximation: the same quantity by a
+// shorter route, differing only in floating-point rounding. Two atan2 calls
+// remain per candidate - one for the reported direction, one inside hypot -
+// rather than three per neighbour.
 inline double minutiaeCoherence(const Image &im,int x,int y,float *direction) {
+    FPSTUDIO_PROFILE_SCOPE("minutiae/coherence");
     const int w=int(im.width),h=int(im.height);double re=0,imag=0,energy=0;
-    for(int yy=std::max(1,y-4);yy<=std::min(h-2,y+4);++yy)
-        for(int xx=std::max(1,x-4);xx<=std::min(w-2,x+4);++xx) {
-            const double gx=im.pixels[yy*w+xx+1]-im.pixels[yy*w+xx-1];
-            const double gy=im.pixels[(yy+1)*w+xx]-im.pixels[(yy-1)*w+xx];
-            const double e=gx*gx+gy*gy;if(e<1e-8)continue;
-            const double theta=std::atan2(gy,gx)+minutiaePi*.5;
-            re+=e*std::cos(2*theta);imag+=e*std::sin(2*theta);energy+=e;
+    const int ylo=std::max(1,y-4),yhi=std::min(h-2,y+4);
+    const int xlo=std::max(1,x-4),xhi=std::min(w-2,x+4);
+    for(int yy=ylo;yy<=yhi;++yy) {
+        const float *row=im.pixels.data()+size_t(yy)*w;
+        const float *above=row-w,*below=row+w;
+        for(int xx=xlo;xx<=xhi;++xx) {
+            const double gx=double(row[xx+1])-row[xx-1];
+            const double gy=double(below[xx])-above[xx];
+            const double gxx=gx*gx,gyy=gy*gy;
+            const double e=gxx+gyy;if(e<1e-8)continue;
+            re+=gyy-gxx;imag-=2*gx*gy;energy+=e;
         }
+    }
     if(energy<=1e-8){*direction=0;return 0;}
     *direction=float(.5*std::atan2(imag,re));
     return std::clamp(std::hypot(re,imag)/energy,0.,1.);
 }
 
 inline Minutiae extractMinutiae(const Image &im) {
+    FPSTUDIO_PROFILE_SCOPE("minutiae/extractMinutiae");
     Minutiae result;
     const int w=int(im.width),h=int(im.height);
     if(w<32||h<32||im.pixels.size()!=size_t(w)*h)return result;
@@ -108,15 +199,85 @@ inline Minutiae extractMinutiae(const Image &im) {
     std::vector<double> localSd(size_t(w)*h);
     // Local thresholding makes this invariant to a modest contact brightness
     // change. Pixels darker than their 11x11 neighbourhood are ridge seeds.
-    for(int y=0;y<h;++y)for(int x=0;x<w;++x) {
-        double sum=0,sq=0;int count=0;
-        for(int yy=std::max(0,y-5);yy<=std::min(h-1,y+5);++yy)
-            for(int xx=std::max(0,x-5);xx<=std::min(w-1,x+5);++xx) {
-                const double v=im.pixels[yy*w+xx];sum+=v;sq+=v*v;++count;
-            }
-        const double mean=sum/count,sd=std::sqrt(std::max(0.,sq/count-mean*mean));
-        localSd[minutiaeIndex(x,y,w)]=sd;
-        ridges[minutiaeIndex(x,y,w)]=(sd>=.022&&im.pixels[y*w+x]<mean-.006)?1:0;
+    //
+    // The window is a rectangle, so its sum separates into a horizontal pass
+    // and a vertical one, and each pass slides rather than re-adding. The
+    // direct form read 121 pixels per output pixel - 1,149,984 multiply-adds
+    // for one 108x88 frame, which profiling showed was most of the cost of
+    // extracting minutiae at all. This reads two.
+    //
+    // It computes the same sum over the same clamped rectangle, so the result
+    // is identical bar floating-point ordering; both accumulators stay double
+    // precisely because sd is a difference of two nearly equal quantities and
+    // is then compared against a fixed 0.022.
+    //
+    // The vertical pass carries one row of running totals (w doubles, under a
+    // kilobyte, L1-resident) and streams the row tables sequentially, rather
+    // than walking each column with a stride of w - same arithmetic, but an
+    // access pattern the prefetcher can follow.
+    constexpr int radius=5,window=2*radius+1;
+    // Only the 11 rows currently inside the vertical window are ever needed, so
+    // only 11 are kept. Holding the whole frame's row sums instead cost 152 KB
+    // of scratch for a 32 KB L1, and it showed: the first version of this was
+    // 3.9x faster than the direct loop but took L1 misses from 12.5M to 44.0M
+    // in doing it. A ring of 11 rows is 19 KB, and with the two column
+    // accumulators the whole working set is about 21 KB - inside L1, and
+    // streamed in order rather than walked down columns with a stride of w.
+    //
+    // The slot arithmetic has one trap worth stating: the row entering the
+    // window and the row leaving it are exactly `window` apart, so they share a
+    // ring slot. The departing row must therefore be subtracted from the column
+    // totals *before* the arriving row is written over it.
+    std::vector<double> ring(size_t(window)*w*2);
+    double *ringSum=ring.data(),*ringSq=ring.data()+size_t(window)*w;
+    auto fillRow=[&](int r) {
+        const float *row=im.pixels.data()+size_t(r)*w;
+        const size_t slot=size_t(r%window)*w;
+        double *outSum=ringSum+slot,*outSq=ringSq+slot;
+        double sum=0,sq=0;
+        // Prime the window with [0, radius]; each step adds one column on the
+        // right and drops one on the left, clamped at both edges.
+        for(int x=0;x<=std::min(w-1,radius);++x) { sum+=row[x];sq+=double(row[x])*row[x]; }
+        for(int x=0;x<w;++x) {
+            outSum[x]=sum;outSq[x]=sq;
+            const int add=x+radius+1,drop=x-radius;
+            if(add<w) { sum+=row[add];sq+=double(row[add])*row[add]; }
+            if(drop>=0) { sum-=row[drop];sq-=double(row[drop])*row[drop]; }
+        }
+    };
+    std::vector<double> colSum(size_t(w),0.),colSq(size_t(w),0.);
+    for(int y=0;y<=std::min(h-1,radius);++y) {
+        fillRow(y);
+        const size_t slot=size_t(y%window)*w;
+        for(int x=0;x<w;++x) { colSum[x]+=ringSum[slot+x];colSq[x]+=ringSq[slot+x]; }
+    }
+    for(int y=0;y<h;++y) {
+        // The window is clipped at the frame edge, so the divisor is the size
+        // of the rectangle actually summed, exactly as the direct form's
+        // ++count made it.
+        const int ylo=std::max(0,y-radius),yhi=std::min(h-1,y+radius);
+        const double rows=double(yhi-ylo+1);
+        const float *row=im.pixels.data()+size_t(y)*w;
+        double *sdRow=localSd.data()+size_t(y)*w;
+        uint8_t *ridgeRow=ridges.data()+size_t(y)*w;
+        for(int x=0;x<w;++x) {
+            const int xlo=std::max(0,x-radius),xhi=std::min(w-1,x+radius);
+            const double n=rows*(xhi-xlo+1);
+            const double mean=colSum[x]/n;
+            const double sd=std::sqrt(std::max(0.,colSq[x]/n-mean*mean));
+            sdRow[x]=sd;
+            ridgeRow[x]=(sd>=.022&&row[x]<mean-.006)?1:0;
+        }
+        const int drop=y-radius,add=y+radius+1;
+        if(drop>=0) {
+            const size_t slot=size_t(drop%window)*w;
+            for(int x=0;x<w;++x) { colSum[x]-=ringSum[slot+x];colSq[x]-=ringSq[slot+x]; }
+        }
+        if(add<h) {
+            fillRow(add);                       // reuses the slot just vacated
+            const size_t slot=size_t(add%window)*w;
+            for(int x=0;x<w;++x) { colSum[x]+=ringSum[slot+x];colSq[x]+=ringSq[slot+x]; }
+        }
     }
     thinRidges(ridges,w,h);
     constexpr int margin=12;std::vector<Minutia> candidates;

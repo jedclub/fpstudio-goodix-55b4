@@ -33,6 +33,14 @@ pkg_check_modules(FPRINT REQUIRED IMPORTED_TARGET libfprint-2)
 pkg_check_modules(GLIB   REQUIRED IMPORTED_TARGET glib-2.0 gobject-2.0)
 
 qt_standard_project_setup()
+# Named timing scopes in the matcher's CPU paths. Off by default and compiled
+# out entirely when off - see tools/vkmatch/profile.h for why that matters.
+option(FPSTUDIO_PROFILE "Build the matcher with timing scopes enabled" OFF)
+if(FPSTUDIO_PROFILE)
+  add_compile_definitions(FPSTUDIO_PROFILE=1)
+  message(STATUS "Matcher timing scopes: enabled (do not ship this build)")
+endif()
+
 include(CTest)
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/../../tools/vkmatch" "${CMAKE_BINARY_DIR}/vkmatch")
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/../pam" "${CMAKE_BINARY_DIR}/pam")
@@ -83,7 +91,11 @@ target_link_libraries(fpstudio PRIVATE
   Qt6::Core Qt6::Gui Qt6::Widgets Qt6::Concurrent
   PkgConfig::FPRINT
   PkgConfig::GLIB
+  vkmatch
 )
+add_dependencies(fpstudio mapplace-shader)
+install(FILES "${CMAKE_BINARY_DIR}/vkmatch/fpstudio-mapplace.spv"
+        DESTINATION ${CMAKE_INSTALL_DATADIR}/fpstudio)
 
 install(TARGETS fpstudio RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 install(FILES ${FPSTUDIO_QM_FILES} DESTINATION ${CMAKE_INSTALL_DATADIR}/fpstudio/translations)
@@ -99,6 +111,10 @@ install(PROGRAMS
   ../../tools/admin_notice.py
   ../../tools/auth_log_report.py
   DESTINATION ${FPSTUDIO_SETUP_DIR}/tools)
+# auth_install.py resolves this relative to the setup tree, so the drop-in has
+# to sit at the same path under it that it occupies in the checkout.
+install(FILES systemd/61-fpstudio-guard.conf
+        DESTINATION ${FPSTUDIO_SETUP_DIR}/src/fpstudio/systemd)
 install(PROGRAMS fprintd-beacon.sh DESTINATION ${FPSTUDIO_SETUP_DIR}/src/fpstudio)
 install(FILES 99-fpstudio-goodix.rules DESTINATION ${FPSTUDIO_SETUP_DIR}/src/fpstudio)
 install(FILES pam/admin-auth-notice.txt
@@ -113,6 +129,8 @@ install(FILES
   ../../docs/00-setup.md
   ../../docs/21-simultaneous-auth.md
   ../../docs/releases/v0.2.9.md
+  ../../docs/23-fprintd-runaway.md
+  ../../docs/24-optimisation.md
   DESTINATION ${CMAKE_INSTALL_DATADIR}/doc/fpstudio)
 
 include(CTest)
@@ -127,8 +145,19 @@ if(BUILD_TESTING)
   qt_add_executable(fpstudio-research-test tests/research_test.cpp src/researchwindow.cpp src/livewindow.cpp src/beacon.cpp)
   target_include_directories(fpstudio-research-test PRIVATE src)
   target_compile_definitions(fpstudio-research-test PRIVATE FAKE_CAPTURE="$<TARGET_FILE:fpstudio-fake-capture>" FPSTUDIO_APP="$<TARGET_FILE:fpstudio>")
-  target_link_libraries(fpstudio-research-test PRIVATE Qt6::Core Qt6::Gui Qt6::Widgets Qt6::Test)
+  target_link_libraries(fpstudio-research-test PRIVATE Qt6::Core Qt6::Gui Qt6::Widgets Qt6::Test vkmatch)
+  add_dependencies(fpstudio-research-test mapplace-shader)
   add_dependencies(fpstudio-research-test fpstudio-fake-capture fpstudio)
   add_test(NAME research-workflow COMMAND fpstudio-research-test)
   set_tests_properties(research-workflow PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+
+  # Guards the window geometry itself: that neither window's minimum size can
+  # leave the screen, and that no caption can grow it off the bottom. See the
+  # comment at the head of layout_test.cpp for what this is protecting against.
+  qt_add_executable(fpstudio-layout-test tests/layout_test.cpp src/livewindow.cpp src/beacon.cpp)
+  target_include_directories(fpstudio-layout-test PRIVATE src)
+  target_link_libraries(fpstudio-layout-test PRIVATE Qt6::Core Qt6::Gui Qt6::Widgets Qt6::Test vkmatch)
+  add_dependencies(fpstudio-layout-test mapplace-shader)
+  add_test(NAME window-layout COMMAND fpstudio-layout-test)
+  set_tests_properties(window-layout PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 endif()

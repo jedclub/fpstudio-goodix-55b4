@@ -324,7 +324,7 @@ QJsonObject evaluate(vkmatch::Matcher &gpu,const QStringList &paths,const std::v
     }
     const double rotationGpu=wideRotation?(rotationCoarse.gpuMs>=0&&rotationFine.gpuMs>=0&&rotationPolish.gpuMs>=0?rotationCoarse.gpuMs+rotationFine.gpuMs+rotationPolish.gpuMs:-1):0;
     return {{"ok",true},{"algorithm_version",authSearch?8:(refineScale?4:3)},
-        {"auth_profile",authSearch?QStringLiteral("auth-v8-contact-anchored-ridge-roi-uniform-scale-5pct"):QString()},
+        {"auth_profile",authSearch?QStringLiteral("auth-v8-contact-anchored-ridge-roi-uniform-scale-5pct-ncc86"):QString()},
         {"research_only",true},{"authentication_decision",QJsonValue::Null},
         {"auth_search",authSearch},{"auth_scale_min",authSearch?QJsonValue(authScaleMin):QJsonValue::Null},
         {"auth_scale_max",authSearch?QJsonValue(authScaleMax):QJsonValue::Null},

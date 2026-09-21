@@ -36,6 +36,15 @@ const char *fpstudio_test_audit_trace(void) { return fpstudio_test_audit_buffer;
 #define FP_WORKER "/opt/fpstudio-auth/bin/fpstudio-fprint-worker"
 #endif
 
+/* Monotonic, so a clock adjustment cannot extend or collapse the sensor's
+ * window mid-authentication. */
+static long long milliseconds(void)
+{
+    struct timespec now;
+    clock_gettime(CLOCK_MONOTONIC, &now);
+    return (long long)now.tv_sec * 1000 + now.tv_nsec / 1000000;
+}
+
 /* One opaque identifier joins PAM and worker records without recording a
  * username, password, fingerprint image or template.  PID plus monotonic time
  * is unique enough for local journal correlation and has no authentication
@@ -387,15 +396,52 @@ PAM_EXTERN int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc, cons
     bool sensor_open = true;
     const char *loop_exit = "condition";
     int loop_errno = 0;
+    /* The worker stops itself after FP_TIMEOUT_MS and closes this socket on the
+     * way out, which is what normally ends the sensor half of this loop. That
+     * is a promise made by a separate process, though, and this loop used to
+     * wait on it with poll(..., -1) - no bound of its own. A worker that never
+     * reached its own deadline, because a D-Bus call did not return or because
+     * the daemon it is talking to is in the runaway state this repository now
+     * watches for, therefore hung the authentication with it: for `sudo`, a
+     * prompt that never comes back.
+     *
+     * The grace period is what separates "the worker is finishing up" from
+     * "the worker is not coming back". Its cleanup makes two bounded 400 ms
+     * D-Bus calls, so a few seconds is generous.
+     *
+     * Only the sensor is bounded. The password reader is deliberately left to
+     * wait forever, because the person typing it is entitled to take as long
+     * as they like - putting a deadline on the whole loop would have turned a
+     * hung sensor into a cancelled password prompt. */
+    const long long sensor_deadline = milliseconds() + FP_TIMEOUT_MS + 8000;
     while (!password_done && !matched) {
         struct pollfd fds[] = {{fingerprint_only ? -1 : password[0], POLLIN, 0},
                                {sensor_open ? sensor[0] : -1, POLLIN, 0}};
-        if (poll(fds, 2, -1) < 0) {
+        int wait_ms = -1;
+        if (sensor_open) {
+            const long long left = sensor_deadline - milliseconds();
+            wait_ms = left > 0 ? (int)(left > 1000 ? 1000 : left) : 0;
+        }
+        const int ready = poll(fds, 2, wait_ms);
+        if (ready < 0) {
             if (errno == EINTR) continue;
             loop_exit = "poll_error";
             loop_errno = errno;
             break;
         }
+        if (sensor_open && milliseconds() >= sensor_deadline) {
+            /* Overdue. Take the sensor half down and carry on with the
+             * password, rather than waiting on a worker that has already
+             * missed its own limit. */
+            sensor_open = false;
+            audit_event(pamh, session, "sensor_ended", "reason=worker_overdue");
+            stop_worker(scanner, sensor[0]); scanner = -1;
+            if (cli) notify_input(password[0], FP_TIMEOUT, 0);
+            else sensor_feedback(conv, false, fingerprint_only, messages->ended);
+            if (fingerprint_only) { loop_exit = "worker_overdue"; break; }
+            continue;
+        }
+        if (!ready) continue;
         /* An explicitly submitted password takes priority over a simultaneous
          * scan. The isolated CLI child also reports the first keypress so it
          * can resolve a racing match without leaking typeahead to the shell. */

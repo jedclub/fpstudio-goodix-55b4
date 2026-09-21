@@ -42,7 +42,7 @@ int main(int argc,char **argv) {
         if(!worker.waitForFinished(20000)||worker.exitStatus()!=QProcess::NormalExit||worker.exitCode()!=0)return 2;
         const auto row=QJsonDocument::fromJson(worker.readAllStandardOutput()).object();
         const auto scale=row.value("best").toObject().value("scale").toDouble();
-        if(row.value("algorithm_version").toInt()!=8||row.value("auth_profile").toString()!=QStringLiteral("auth-v8-contact-anchored-ridge-roi-uniform-scale-5pct")||
+        if(row.value("algorithm_version").toInt()!=8||row.value("auth_profile").toString()!=QStringLiteral("auth-v8-contact-anchored-ridge-roi-uniform-scale-5pct-ncc86")||
            !row.value("auth_search").toBool()||
            std::abs(row.value("auth_scale_min").toDouble()-.95)>1e-5||
            std::abs(row.value("auth_scale_max").toDouble()-1.05)>1e-5||

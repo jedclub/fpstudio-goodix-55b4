@@ -18,6 +18,11 @@
 #include <signal.h>
 #include <unistd.h>
 
+// A gallery is only valid for the acceptance policy it was enrolled under.
+// Scoring an old gallery with a changed correlation floor is exactly the
+// combination that must not authenticate, so both sides are checked.
+static const QString kAuthProfile=QStringLiteral("auth-v8-contact-anchored-ridge-roi-uniform-scale-5pct-ncc86");
+
 static bool trusted(const QString &path,bool directory=false) {
     QString cursor=path;
     bool leaf=true;
@@ -51,6 +56,7 @@ int main(int argc,char **argv) {
     if(parse.error!=QJsonParseError::NoError||config.value("schema_version").toInt()!=1||
        config.value("username").toString()!=user||config.value("uid").toInt(-1)!=int(pw->pw_uid)||
        config.value("policy").toString()!="experimental-gpu-v1"||
+       config.value("matcher_profile").toString()!=kAuthProfile||
        !config.value("experimental_auth_enabled").toBool())return 2;
     QStringList args{"--shader",root+"/bin/fpstudio-match.spv","--auth-search"};
     const auto references=config.value("references").toArray();
@@ -94,13 +100,34 @@ int main(int argc,char **argv) {
         if(prctl(PR_SET_PDEATHSIG,SIGKILL)||getppid()!=parent)_exit(127);
     });
     worker.start(root+"/bin/fpstudio-vkmatch",args);
-    if(!worker.waitForFinished(4000)){worker.kill();worker.waitForFinished(1000);return 2;}
+    /* How long the GPU search gets before this gives up on it.
+     *
+     * This is the inner limit of a chain: the driver's bridge kills *this*
+     * process after 6 seconds (gpu_auth_bridge.h), so whatever is set here
+     * has to leave room for reading the gallery and writing the probe either
+     * side of the search.
+     *
+     * It was 4000, and that was under the real cost. This laptop's GPU sits
+     * at 400 MHz until sustained work arrives, and the first search after an
+     * idle period pays for that: measured against a 44-reference gallery on a
+     * cold clock, the search took 4700 ms, so the first authentication
+     * attempt was killed here every time. The journal shows it plainly - the
+     * gaps between `gpu_reinitialise` and `gpu_result` are exactly four
+     * seconds. The retry then runs on a woken GPU at 3300-3700 ms and lands
+     * either side of the limit, which is why authentication worked
+     * intermittently rather than not at all.
+     *
+     * The search itself is now around 2600 ms cold, so 5000 is roughly twice
+     * what it needs while still leaving the bridge's 6 second ceiling a
+     * second of headroom for this process's own work. Raising it further
+     * means raising that ceiling too, which lives in the driver. */
+    if(!worker.waitForFinished(5000)){worker.kill();worker.waitForFinished(1000);return 2;}
     const auto output=worker.readAllStandardOutput();
     if(worker.exitStatus()!=QProcess::NormalExit||worker.exitCode()!=0||output.size()>2*1024*1024)return 2;
     const auto result=QJsonDocument::fromJson(output,&parse).object();
     if(parse.error!=QJsonParseError::NoError||!result.value("ok").toBool()||
        result.value("algorithm_version").toInt()!=8||
-       result.value("auth_profile").toString()!=QStringLiteral("auth-v8-contact-anchored-ridge-roi-uniform-scale-5pct")||
+       result.value("auth_profile").toString()!=kAuthProfile||
        !result.value("auth_search").toBool())return 2;
     const auto best=result.value("best").toObject(),e=best.value("interior").toObject();
     const auto roi=best.value("ridge_roi").toObject();

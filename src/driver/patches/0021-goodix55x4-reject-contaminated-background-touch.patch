@@ -1,0 +1,152 @@
+--- a/libfprint/drivers/goodixtls/goodix55x4.c
++++ b/libfprint/drivers/goodixtls/goodix55x4.c
+@@ -87,6 +87,49 @@
+ // background noise sits around 4-5, a real touch around 750+.
+ #define GOODIX55X4_FINGER_DETECT_DIFF_THRESHOLD 100
+ 
++/* Above the detection threshold, but too weak to be a finger on a clean
++ * sensor - so it is a finger on a dirty one.
++ *
++ * The background this driver subtracts is read once per activation, and
++ * GOODIX55X4_BACKGROUND_ACCEPT_DIFF above stops an obviously occupied sensor
++ * from replacing a good one. What neither covers is the case where the very
++ * first read of an activation already had a finger on it: that frame becomes
++ * the background, and from then on a real touch differs from it only by the
++ * small amount the finger moved.
++ *
++ * That lands between 100 and 320, which is the trap. It is over the detection
++ * threshold, so the scan reports a touch and captures; and the only escape
++ * from a poisoned background - the poll-exhausted path below, which fires
++ * after ten seconds of seeing nothing - never runs, because something is
++ * always being seen. The session then spends every attempt matching frames
++ * with the fingerprint subtracted out of them.
++ *
++ * Three independent measurements agree on where the gap is:
++ *
++ *   - the threshold comment above, written from bench readings: a real touch
++ *     is around 750
++ *   - patch 0013's own record: every frame taken against a background diff
++ *     below 320 scored 0 against all fifteen enrolled stages, and every match
++ *     came from a diff above 700
++ *   - sixteen real authentications from this machine's journal: the four that
++ *     succeeded read 605, 648, 694, 764 and 790; the twelve that failed read
++ *     106 to 202, and none of them reached ncc 0.48 against a 0.70 threshold
++ *
++ * So a reading in this band is treated as what it is - evidence that the
++ * background is wrong - and the background is discarded so the next scan
++ * calibrates from scratch, exactly as the poll-exhausted path does.
++ *
++ * This only decides which frames are offered to the matcher. It changes no
++ * acceptance criterion and cannot let anything through that would not have
++ * been let through before; a capture rejected here is one that measured
++ * ncc 0.24-0.47 when it was allowed past. */
++#define GOODIX55X4_FINGER_DETECT_CONTAMINATED_MAX 320
++
++/* How long calibration will wait for the finger to come off before giving up.
++ * Only used after a background has been rejected - an ordinary activation
++ * still calibrates on its first read and costs nothing. */
++#define GOODIX55X4_CALIBRATE_MAX_ATTEMPTS 30   /* 3 s at the poll delay below */
++
+ /* How close a freshly read frame has to be to the background already held
+  * before it is accepted as a new background.
+  *
+@@ -123,6 +166,12 @@
+   guint poll_attempts;
+   gboolean have_background;
+ 
++  /* The frame that was rejected for containing a finger, kept so the next
++   * calibration can tell whether the finger has actually left yet. */
++  gboolean have_dirty;
++  guint calibrate_attempts;
++  Goodix55X4Pix dirty_img[GOODIX55X4_FRAME_SIZE];
++
+   Goodix55X4Pix empty_img[GOODIX55X4_FRAME_SIZE];
+ };
+ 
+@@ -1045,6 +1094,27 @@
+     return;
+   }
+ 
++  if (diff < GOODIX55X4_FINGER_DETECT_CONTAMINATED_MAX) {
++    /* Strong enough to be a touch, too weak to be one against a clean
++     * background. Throw the background away and ask for the finger again
++     * rather than capturing a frame that has a fingerprint subtracted out
++     * of it - which is a ten-second authentication attempt that cannot
++     * succeed, repeated for as long as the person keeps trying. */
++    g_message("Discarding background: touch too weak to be against a clear "
++              "sensor (diff %.1f)", diff);
++    /* Keep the frame that is on the sensor right now. Calibration compares
++     * against it rather than accepting whatever it reads next, because what it
++     * would read next is this same finger - discarding a poisoned background
++     * and then immediately adopting an identical one changes nothing. */
++    memcpy(self->dirty_img, candidate, sizeof(self->dirty_img));
++    self->have_dirty = TRUE;
++    self->calibrate_attempts = 0;
++    self->have_background = FALSE;
++    self->poll_attempts = 0;
++    fpi_ssm_mark_failed(ssm, fpi_device_retry_new(FP_DEVICE_RETRY_REMOVE_FINGER));
++    return;
++  }
++
+   self->poll_attempts = 0;
+   /* Only a confirmed host-side touch may advance libfprint to CAPTURE. */
+   fpi_image_device_report_finger_status(FP_IMAGE_DEVICE(dev), TRUE);
+@@ -1173,6 +1243,10 @@
+   SCAN_EMPTY_NUM,
+ };
+ 
++static void retry_calibrate(FpDevice *dev, gpointer user_data) {
++  fpi_ssm_jump_to_state(user_data, SCAN_EMPTY_GET_IMG);
++}
++
+ static void on_scan_empty_img(FpDevice *dev, guint8 *data, guint16 length,
+                               gpointer ssm, GError *error) {
+   if (error) {
+@@ -1185,10 +1259,43 @@
+   decode_frame(candidate, data);
+ 
+   if (!self->have_background) {
+-    /* Nothing to compare against yet. This is the read that follows
+-     * activation, when the prompt has only just appeared and the sensor is
+-     * almost certainly clear; if it is not, the poll-exhausted path below
+-     * discards this background and tries again rather than staying wrong. */
++    /* Normally this is the read that follows activation, when the prompt has
++     * only just appeared and the sensor is almost certainly clear, and taking
++     * it as the background is right.
++     *
++     * It is wrong in exactly one case, and that case is the whole reason this
++     * driver was failing to authenticate: if a finger was already down when
++     * the read happened, the finger becomes the background, and every capture
++     * for the rest of the activation has a fingerprint subtracted out of it.
++     * The scan path above now spots the result and throws the background away
++     * - but throwing it away accomplishes nothing if the very next read is
++     * taken off the same finger, which it will be, because the person has not
++     * been given any reason to lift yet.
++     *
++     * So when a background has just been rejected, this waits. The frame that
++     * was rejected is kept, and a new one is only accepted once it differs
++     * from that frame by more than a touch's worth - which is what a finger
++     * leaving the sensor looks like. Two reads of the same scene differ by
++     * about 5; a finger arriving or leaving moves it by 700 or more. */
++    if (self->have_dirty) {
++      const double moved = frame_diff_score(candidate, self->dirty_img);
++      if (moved < GOODIX55X4_FINGER_DETECT_CONTAMINATED_MAX) {
++        if (++self->calibrate_attempts >= GOODIX55X4_CALIBRATE_MAX_ATTEMPTS) {
++          self->calibrate_attempts = 0;
++          g_message("Calibration gave up waiting for a clear sensor "
++                    "(last diff %.1f)", moved);
++          fpi_ssm_mark_failed(
++            ssm, fpi_device_retry_new(FP_DEVICE_RETRY_REMOVE_FINGER));
++          return;
++        }
++        fpi_device_add_timeout(dev, GOODIX55X4_FINGER_DETECT_POLL_DELAY_MS,
++                               retry_calibrate, ssm, NULL);
++        return;
++      }
++      g_message("Sensor cleared, recalibrating (diff %.1f)", moved);
++      self->have_dirty = FALSE;
++    }
++    self->calibrate_attempts = 0;
+     memcpy(self->empty_img, candidate, sizeof(self->empty_img));
+     self->have_background = TRUE;
+   } else {

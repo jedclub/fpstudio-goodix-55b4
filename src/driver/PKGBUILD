@@ -112,6 +112,66 @@ prepare() {
     patch -Np1 -i "${startdir}/patches/0016-goodix55x4-private-live-preview.patch"
     patch -Np1 -i "${startdir}/patches/0017-preview-multiframe-background-and-presence.patch"
     patch -Np1 -i "${startdir}/patches/0018-root-managed-gpu-authentication-bridge.patch"
+    # The read loop resubmitted a failed bulk-in transfer immediately, forever.
+    # That is fine while the error is transient and fatal when it is not: after
+    # the sensor re-enumerated at a new address, every resubmit failed at once
+    # with NO_DEVICE and the callback re-entered itself, so fprintd held 95.9%
+    # of a core for 1h42m and wrote ~125k warnings a second until it was
+    # restarted by hand. journald suppressed ~3.7M messages per 30s and rotated
+    # two days of authentication records out of the ring buffer. Classifies the
+    # terminal errors, delays and bounds the rest, and logs once per burst.
+    patch -Np1 -i "${startdir}/patches/0020-goodix55x4-bounded-receive-retry.patch"
+    # 0022 is NOT applied. It makes preview_frame hand the frame back instead of
+    # consuming it, so that an enrolment can advance a stage while the window
+    # builds its coverage map - the two cannot currently be the same act. The
+    # change is correct in intent and wrong in practice: with it the process
+    # dies on "corrupted size vs. prev_size" about ninety seconds in, while the
+    # same run against the unpatched library survives the same duration
+    # untouched. Two attempts at the cause were wrong. The first blamed the
+    # re-read going through SWITCH_TO_FDT_MODE, whose handler jumps to GET_IMG
+    # itself when a preview is active; routing the retry straight to GET_IMG
+    # instead did not help. Whatever is being freed twice is elsewhere, and
+    # this is the driver that authentication runs on.
+    #patch -Np1 -i "${startdir}/patches/0022-goodix55x4-preview-confirms-touch.patch"
+    # A background read while a finger was already on the sensor becomes the
+    # background for the whole activation, and a real touch then differs from
+    # it by only 100-320 instead of ~750. That is over the touch threshold, so
+    # the scan captures anyway - with the fingerprint subtracted out - and the
+    # one escape from a poisoned background only fires after ten seconds of
+    # seeing nothing, which never happens while a finger is being seen. Of
+    # sixteen real authentications on this machine, the four that succeeded
+    # read 605-790 and the twelve that failed read 106-202. Treats that band
+    # as the evidence it is and recalibrates instead of capturing.
+    # NOT APPLIED. The diagnosis behind this patch is sound and is recorded in
+    # docs/23: a background read taken while a finger is already down poisons
+    # every capture of the activation, and a real touch against it then reads
+    # 100-320 instead of ~750. Measured on this machine, the four
+    # authentications that succeeded read 605-790 and the twelve that failed
+    # read 106-202.
+    #
+    # The implementation is what is wrong. Detecting the state and waiting for
+    # the finger to leave before recalibrating worked once (a poisoned
+    # background at 21:42 recovered and authenticated at 21:43) and then hung:
+    # at 22:09 the scan failed into the wait and never came back, so PAM sat
+    # through its whole 60-second window and the person fell back to a
+    # password. Intermittently freezing authentication for a minute is worse
+    # than the failure it was meant to fix.
+    #
+    # Left here rather than deleted because the measurement is worth keeping
+    # and the fix is worth finishing - the state machine has a path out of
+    # scan_on_read_img that does not come back, and that is what to find first.
+    #patch -Np1 -i "${startdir}/patches/0021-goodix55x4-reject-contaminated-background-touch.patch"
+    # Authentication was reading the finger at the instant it was detected
+    # rather than once it had arrived. Host-side detection polls the sensor
+    # against its background and accepts the first frame over the threshold;
+    # an empty sensor reads 4-17 and a contact 130-206, so that first frame is
+    # a fingertip touching at one edge. Of 32 live authentications before this,
+    # the single acceptance covered all sixteen tiles of the sensor and
+    # correlated at 0.864, while the rejections covered as few as two and
+    # correlated 0.14-0.67 - the right finger, caught on its way down. Three
+    # polls 100ms apart before accepting, keeping the last frame: the four
+    # authentications measured after it read 13-16 tiles and 0.940-0.982.
+    patch -Np1 -i "${startdir}/patches/0023-goodix55x4-settle-before-reading-finger.patch"
 }
 
 build() {

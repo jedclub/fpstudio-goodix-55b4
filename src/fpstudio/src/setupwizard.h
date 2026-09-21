@@ -62,6 +62,16 @@ private:
     bool confirmIrreversible(const StepResult &r);
     void applyResult(int index, const StepResult &r);
     void runManagedAction(const QStringList &arguments,bool privileged=true);
+
+    // Attach a deadline to a helper this dialog started.
+    //
+    // Every long operation here disables the whole checklist while it runs, so
+    // a helper that never exits does not just fail - it takes the dialog with
+    // it, with no control left to cancel or retry from. runSystemVerify() has
+    // had its own 30-second guard for this reason; this is the same idea for
+    // the operations that were still missing one, chiefly the enrolment, which
+    // drives fprintd and is the very path that hung.
+    void guardOperation(QProcess *process,int timeoutMs);
     QProcess *m_operation=nullptr;
     bool m_scanning=false;
     void selectNextStep();
@@ -75,11 +85,11 @@ private:
     QListWidget    *m_list    = nullptr;
     QLabel         *m_title   = nullptr;
     QTextBrowser   *m_detail  = nullptr;
-    QLabel         *m_cmds    = nullptr;
+    QTextBrowser   *m_cmds    = nullptr;
     QPushButton    *m_fix     = nullptr;
     QPushButton    *m_skip    = nullptr;
     QPushButton    *m_rescan  = nullptr;
-    QLabel         *m_verdict = nullptr;
+    QTextBrowser   *m_verdict = nullptr;
     QProgressBar   *m_busy    = nullptr;
 
     // Only present when this wizard is the application's own top-level window

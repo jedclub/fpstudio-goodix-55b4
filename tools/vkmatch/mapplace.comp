@@ -1,0 +1,73 @@
+#version 450
+
+// Where does this capture belong on the coverage map?
+//
+// One workgroup per candidate pose. The CPU version could afford translation
+// only - every second offset over +-60 pixels, no rotation at all - because it
+// runs on the thread that reads frames and a full search cost 80ms there. A
+// finger that rolled a few degrees has no translation that fits, so those
+// contacts were scored below the floor and dropped: about 30% of them.
+//
+// The poses are independent of each other, which is the shape of work this
+// hardware exists for. Adding rotation multiplies the pose count rather than
+// changing the code.
+//
+// Uncovered map is absent, not black. A pose is judged only on the samples that
+// land on map that has something in it, and the overlap count is returned so
+// the host can refuse a pose that agreed with almost nothing.
+
+layout(local_size_x = 128) in;
+layout(std430, binding = 0) readonly buffer MapPixels  { float mapPixels[]; };
+layout(std430, binding = 1) readonly buffer MapWeights { float mapWeights[]; };
+layout(std430, binding = 2) readonly buffer Probe      { float probe[]; };
+// x = offset of the probe's top-left on the map, z/w = cos/sin of the rotation
+layout(std430, binding = 3) readonly buffer Poses      { vec4 poses[]; };
+layout(std430, binding = 4) writeonly buffer Results   { vec2 results[]; };
+layout(push_constant) uniform Params {
+    uint mapSize; uint width; uint height; uint stride; uint count;
+} p;
+
+shared float red[6][128];
+
+void main() {
+    uint lane = gl_LocalInvocationID.x;
+    uint pose = gl_WorkGroupID.x;
+    if (pose >= p.count) return;
+    vec4 j = poses[pose];
+
+    float sa = 0.0, sb = 0.0, saa = 0.0, sbb = 0.0, sab = 0.0, n = 0.0;
+    uint nx = (p.width + p.stride - 1) / p.stride;
+    uint ny = (p.height + p.stride - 1) / p.stride;
+    float hw = float(p.width) * 0.5, hh = float(p.height) * 0.5;
+
+    for (uint i = lane; i < nx * ny; i += 128) {
+        uint x = (i % nx) * p.stride, y = (i / nx) * p.stride;
+        float ddx = float(x) - hw, ddy = float(y) - hh;
+        // Rotation about the probe's own centre, so a pose means the same thing
+        // whatever the offset is.
+        float rx = j.z * ddx - j.w * ddy + hw;
+        float ry = j.w * ddx + j.z * ddy + hh;
+        int mx = int(round(j.x + rx)), my = int(round(j.y + ry));
+        if (mx < 0 || my < 0 || mx >= int(p.mapSize) || my >= int(p.mapSize)) continue;
+        uint idx = uint(my) * p.mapSize + uint(mx);
+        if (mapWeights[idx] <= 0.0) continue;
+        float a = probe[y * p.width + x];
+        float b = mapPixels[idx];
+        sa += a; sb += b; saa += a * a; sbb += b * b; sab += a * b; n += 1.0;
+    }
+    red[0][lane] = sa; red[1][lane] = sb; red[2][lane] = saa;
+    red[3][lane] = sbb; red[4][lane] = sab; red[5][lane] = n;
+    barrier();
+    for (uint s = 64; s > 0; s >>= 1) {
+        if (lane < s) for (uint k = 0; k < 6; ++k) red[k][lane] += red[k][lane + s];
+        barrier();
+    }
+    if (lane != 0) return;
+    sa = red[0][0]; sb = red[1][0]; saa = red[2][0];
+    sbb = red[3][0]; sab = red[4][0]; n = red[5][0];
+    float total = float(nx * ny);
+    if (n < 1.0) { results[pose] = vec2(-2.0, 0.0); return; }
+    float va = saa - sa * sa / n, vb = sbb - sb * sb / n;
+    if (va < 1e-6 || vb < 1e-6) { results[pose] = vec2(-2.0, n / total); return; }
+    results[pose] = vec2((sab - sa * sb / n) / sqrt(va * vb), n / total);
+}

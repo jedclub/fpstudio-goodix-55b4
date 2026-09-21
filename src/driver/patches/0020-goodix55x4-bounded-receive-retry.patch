@@ -1,0 +1,202 @@
+--- a/libfprint/drivers/goodixtls/goodix.c
++++ b/libfprint/drivers/goodixtls/goodix.c
+@@ -56,6 +56,11 @@ typedef struct
+ 
+   GCancellable       *transfer_cancel_tkn;
+   gboolean            inited;
++
++  /* How the current burst of receive errors is going. Both are reset by any
++   * successful read and by goodix_start_read_loop(). */
++  guint               recv_failures;
++  gint64              recv_failure_since;
+ } FpiDeviceGoodixTlsPrivate;
+ 
+ G_DEFINE_ABSTRACT_TYPE_WITH_PRIVATE (FpiDeviceGoodixTls, fpi_device_goodixtls,
+@@ -77,6 +82,32 @@ data_to_str (guint8 *data, guint32 length)
+ 
+ // ---- GOODIX RECEIVE SECTION START ----
+ 
++/* Bounds on the read loop's response to a failing bulk-in transfer.
++ *
++ * The loop used to resubmit unconditionally, with no delay and no limit. That
++ * is correct only while the errors are transient. When the sensor drops off
++ * the bus and comes back at a new address - an autosuspend/reset cycle is
++ * enough - the handle fprintd still holds is dead, every resubmit fails
++ * instantly with LIBUSB_ERROR_NO_DEVICE, and the callback re-enters itself
++ * through a nested main-context iteration. Measured on this ThinkPad, that
++ * state is not self-clearing: fprintd sat at 95.9% of a core for 1h42m, wrote
++ * ~125k identical warnings per second, and journald reported ~3.7 million
++ * suppressed messages per 30 seconds - which rotated two days of journal out
++ * of the ring buffer, taking the authentication records in it. The daemon's
++ * own 30-second idle exit never fires, because the loop never goes idle.
++ *
++ * A stack sample taken while it was spinning:
++ *   #0 transfer_finish_cb (../libfprint/fpi-usb-transfer.c:354)
++ *   #1..#3 g_main_context_iteration  <- nested, so the stack grows too
++ *
++ * So the retry needs three bounds rather than one. The delay stops a fast
++ * failure from becoming a busy loop; the count and the window stop a slow one
++ * from lasting forever; and a fatal error skips all three, because retrying a
++ * handle to a device that is gone cannot succeed however long it is given. */
++#define GOODIX_RECV_RETRY_DELAY_MS 20
++#define GOODIX_RECV_MAX_FAILURES 25
++#define GOODIX_RECV_FAILURE_WINDOW_US (5 * G_USEC_PER_SEC)
++
+ void
+ goodix_receive_done (FpDevice *dev, guint8 *data, guint16 length,
+                      GError *error)
+@@ -422,6 +453,81 @@ goodix_receive_pack (FpDevice *dev, guint8 *data, guint32 length)
+   priv->length = 0;
+ }
+ 
++/* Whether resubmitting could ever succeed.
++ *
++ * NO_DEVICE is the one that hung this driver: the device behind the handle is
++ * gone, and no number of retries brings it back - only a fresh open after
++ * re-enumeration does, which is a new activation, not a new transfer. NOT_OPEN
++ * and PERMISSION_DENIED are equally terminal for the same handle. CANCELLED
++ * means somebody asked us to stop, so stopping is the correct answer.
++ *
++ * Everything else - IO, TIMED_OUT, a short read - is the ordinary noise of a
++ * sensor being talked to, and is retried under the bounds above. */
++static gboolean
++goodix_receive_error_is_fatal (const GError *error)
++{
++  if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
++    return TRUE;
++
++  if (error->domain != G_USB_DEVICE_ERROR)
++    return FALSE;
++
++  switch (error->code)
++    {
++    case G_USB_DEVICE_ERROR_NO_DEVICE:
++    case G_USB_DEVICE_ERROR_NOT_OPEN:
++    case G_USB_DEVICE_ERROR_PERMISSION_DENIED:
++      return TRUE;
++
++    default:
++      return FALSE;
++    }
++}
++
++/* End the read loop and report why, instead of spinning on it.
++ *
++ * Clearing `inited` is what lets a later goodix_start_read_loop() build a
++ * fresh loop once the device has been re-enumerated; cancelling the token
++ * stops any transfer still in flight from resubmitting behind us.
++ *
++ * The error is ours to dispose of. goodix_receive_done() hands it to the
++ * pending command's callback - which is what turns this into an SSM failure
++ * with a reason on it, rather than a command waiting for a reply that is
++ * never coming - but it returns without taking the error when no command is
++ * waiting, so that case has to free it here. */
++static void
++goodix_receive_fail (FpDevice *dev, GError *error)
++{
++  FpiDeviceGoodixTls *self = FPI_DEVICE_GOODIXTLS (dev);
++  FpiDeviceGoodixTlsPrivate *priv =
++    fpi_device_goodixtls_get_instance_private (self);
++
++  priv->inited = FALSE;
++  priv->recv_failures = 0;
++  priv->recv_failure_since = 0;
++  g_cancellable_cancel (priv->transfer_cancel_tkn);
++
++  if (priv->ack || priv->reply)
++    goodix_receive_done (dev, NULL, 0, error);
++  else
++    g_error_free (error);
++}
++
++static void
++goodix_receive_retry_cb (FpDevice *dev, gpointer user_data)
++{
++  FpiDeviceGoodixTls *self = FPI_DEVICE_GOODIXTLS (dev);
++  FpiDeviceGoodixTlsPrivate *priv =
++    fpi_device_goodixtls_get_instance_private (self);
++
++  /* Both can change while the delay runs: a deinit cancels the token, and
++   * goodix_receive_fail() clears `inited`. Either means this retry is stale. */
++  if (!priv->inited || g_cancellable_is_cancelled (priv->transfer_cancel_tkn))
++    return;
++
++  goodix_receive_data (dev);
++}
++
+ void
+ goodix_receive_data_cb (FpiUsbTransfer *transfer, FpDevice *dev,
+                         gpointer user_data, GError *error)
+@@ -433,19 +539,56 @@ goodix_receive_data_cb (FpiUsbTransfer *transfer, FpDevice *dev,
+   if (g_cancellable_is_cancelled (priv->transfer_cancel_tkn))
+     {
+       fp_dbg ("transfer cancelled, aborting read loop...");
++      /* The cancellation arrives as an error like any other, and the callee
++       * owns it. Returning without this leaked one GError per cancelled
++       * transfer. */
++      g_clear_error (&error);
+       return;
+     }
+   if (error)
+     {
+-      // Warn about error and free it.
+-      fp_warn ("Receive data error: %s", error->message);
++      const gint64 now = g_get_monotonic_time ();
++
++      if (goodix_receive_error_is_fatal (error))
++        {
++          fp_err ("Receive data stopped, not retrying: %s", error->message);
++          goodix_receive_fail (dev, error);
++          return;
++        }
++
++      if (priv->recv_failures == 0)
++        priv->recv_failure_since = now;
++      priv->recv_failures++;
++
++      if (priv->recv_failures >= GOODIX_RECV_MAX_FAILURES ||
++          now - priv->recv_failure_since >= GOODIX_RECV_FAILURE_WINDOW_US)
++        {
++          fp_err ("Receive data gave up after %u errors in %" G_GINT64_FORMAT
++                  " ms, last: %s", priv->recv_failures,
++                  (now - priv->recv_failure_since) / 1000, error->message);
++          goodix_receive_fail (dev, error);
++          return;
++        }
++
++      /* One line per burst, not one per attempt. The count and the reason
++       * both reach the journal from goodix_receive_fail() above; repeating
++       * the same warning at transfer rate is what buried two days of it. */
++      if (priv->recv_failures == 1)
++        fp_warn ("Receive data error, retrying: %s", error->message);
+       g_error_free (error);
+ 
+-      // Retry receiving data and return.
+-      goodix_receive_data (dev);
++      /* Through a timeout rather than straight back into the submit: that is
++       * the only part of this that a fast, permanently-failing transfer
++       * cannot turn into a busy loop. */
++      fpi_device_add_timeout (dev, GOODIX_RECV_RETRY_DELAY_MS,
++                              goodix_receive_retry_cb, NULL, NULL);
+       return;
+     }
+ 
++  /* A read got through, so whatever the trouble was, it is over. */
++  priv->recv_failures = 0;
++  priv->recv_failure_since = 0;
++
+   goodix_receive_pack (dev, transfer->buffer, transfer->actual_length);
+ 
+   goodix_receive_data (dev);
+@@ -479,6 +622,11 @@ goodix_start_read_loop (FpDevice *dev)
+   if (g_cancellable_is_cancelled (priv->transfer_cancel_tkn))
+     g_cancellable_reset (priv->transfer_cancel_tkn);
+ 
++  /* A loop that stopped on a dead handle must not hand its spent budget to
++   * the one that replaces it after the device comes back. */
++  priv->recv_failures = 0;
++  priv->recv_failure_since = 0;
++
+   goodix_receive_data (dev);
+ }
+ 
