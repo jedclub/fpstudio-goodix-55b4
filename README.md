@@ -183,7 +183,7 @@ described in [SECURITY.md](SECURITY.md).
 - [Contact-anchored v8 matcher](docs/20-contact-anchored-rotation-v8.md)
 - [fprintd runaway loop: cause and fix](docs/23-fprintd-runaway.md)
 - [Matcher CPU optimisation](docs/24-optimisation.md)
-- [v0.2.9 release notes](docs/releases/v0.2.9.md)
+- [v0.3.0 release notes](docs/releases/v0.3.0.md)
 
 ## Licence and third-party code
 

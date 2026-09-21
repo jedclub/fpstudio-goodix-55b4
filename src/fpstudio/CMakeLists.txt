@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.21)
-project(fpstudio VERSION 0.2.9 LANGUAGES C CXX)
+project(fpstudio VERSION 0.3.0 LANGUAGES C CXX)
 
 include(GNUInstallDirs)
 
@@ -128,7 +128,7 @@ install(FILES
   ../../THIRD_PARTY_NOTICES.md
   ../../docs/00-setup.md
   ../../docs/21-simultaneous-auth.md
-  ../../docs/releases/v0.2.9.md
+  ../../docs/releases/v0.3.0.md
   ../../docs/23-fprintd-runaway.md
   ../../docs/24-optimisation.md
   DESTINATION ${CMAKE_INSTALL_DATADIR}/doc/fpstudio)
