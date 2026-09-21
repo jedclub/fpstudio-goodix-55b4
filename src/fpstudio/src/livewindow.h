@@ -168,6 +168,15 @@ private:
     // each one is both pointless - the finger has not moved - and unbounded
     // work.
     qint64 m_lastPlaceMs = 0;
+    // Placement runs on the thread that reads preview frames, so its cost has
+    // to be paid out of that thread's budget or contacts are missed. A fixed
+    // interval only works if placement is fast, which is an assumption about
+    // the machine: CI has a software Vulkan device where the same call is an
+    // order of magnitude slower, and it dropped 4 of 33 contacts. Waiting at
+    // least as long again as the last placement took keeps frame reading ahead
+    // of map building wherever this runs, at the cost of a sparser map on a
+    // slow device - which is the right thing to give up.
+    qint64 m_placeCostMs = 0;
     // Captures kept for enrolment, with where each one sits on the finger.
     // Keyed by nothing - a sliding finger is one contact, so "the best frame of
     // each contact" is one capture for a whole sweep.

@@ -12,6 +12,7 @@
 #include <QLabel>
 #include <QPixmap>
 #include <QPushButton>
+#include <QDateTime>
 #include <QMessageBox>
 #include <QProcessEnvironment>
 #include <QStandardPaths>
@@ -1238,9 +1239,12 @@ void LiveWindow::tick()
                     // one place registration is poor. The frames between are
                     // where the finger is moving a few pixels at a time, which
                     // is where it is accurate, and they were being discarded.
-                    if(quality.eligible&&m_mapFastPath&&now-m_lastPlaceMs>=kMapPlaceIntervalMs) {
+                    const qint64 placeEvery=std::max<qint64>(kMapPlaceIntervalMs,m_placeCostMs*2);
+                    if(quality.eligible&&m_mapFastPath&&now-m_lastPlaceMs>=placeEvery) {
                         m_lastPlaceMs=now;
+                        const qint64 startedAt=QDateTime::currentMSecsSinceEpoch();
                         placeOnMap(frame);
+                        m_placeCostMs=QDateTime::currentMSecsSinceEpoch()-startedAt;
                         // Keep a capture every so often along the sweep.
                         //
                         // "The best frame of each contact" was written when a
