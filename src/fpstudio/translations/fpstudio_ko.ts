@@ -515,95 +515,95 @@ Capture 로 센서 이미지를 가져옵니다</translation>
 <context>
     <name>fpstudio::LiveWindow</name>
     <message>
-        <location filename="../src/livewindow.cpp" line="188"/>
+        <location filename="../src/livewindow.cpp" line="189"/>
         <source>Vulkan GPU is initializing — it calculates separately from the live stream</source>
         <translation>Vulkan GPU를 초기화하는 중 — 실시간 영상과 별도로 계산합니다</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="197"/>
+        <location filename="../src/livewindow.cpp" line="198"/>
         <source>%1 · %2 references ready · waiting for a stable candidate</source>
         <translation>%1 · 기준 %2장 준비 · 안정된 후보 영상 대기</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="224"/>
+        <location filename="../src/livewindow.cpp" line="225"/>
         <source>GPU comparison error: </source>
         <translation>GPU 비교 오류: </translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="229"/>
+        <location filename="../src/livewindow.cpp" line="230"/>
         <source>GPU %1 hypotheses · %2 ms · image correlation %3 · ridge-direction agreement %4
 Best: %5 / %6 — research comparison only; not an authentication decision</source>
         <translation>GPU %1개 조건 · %2 ms · 영상 상관 %3 · 융선 방향 일치 %4
 최상위: %5 / %6 — 연구용 비교이며 인증 판정이 아닙니다</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="233"/>
+        <location filename="../src/livewindow.cpp" line="234"/>
         <source>
 Alignment is ambiguous: a different position has a similar score</source>
         <translation>
 정렬 모호함: 다른 위치에도 비슷한 점수가 있습니다</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="234"/>
+        <location filename="../src/livewindow.cpp" line="235"/>
         <source>
 At the search boundary: move the finger slightly toward the centre</source>
         <translation>
 탐색 범위 경계: 손가락을 중앙 쪽으로 조금 옮겨 보세요</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="237"/>
+        <location filename="../src/livewindow.cpp" line="238"/>
         <source>
 Interior ridge support %1/%2 regions · %3</source>
         <translation>
 내부 융선 지지 %1/%2 영역 · %3</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="239"/>
+        <location filename="../src/livewindow.cpp" line="240"/>
         <source>ridges are consistent (identity unverified)</source>
         <translation>융선 일관성 있음 (신원 미검증)</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="239"/>
+        <location filename="../src/livewindow.cpp" line="240"/>
         <source>insufficient match evidence</source>
         <translation>일치 근거 부족</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="242"/>
+        <location filename="../src/livewindow.cpp" line="243"/>
         <source> · 0/1 contact-region overlap %1%</source>
         <translation> · 0/1 접촉영역 교집합 %1%</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="244"/>
+        <location filename="../src/livewindow.cpp" line="245"/>
         <source> · 360° additional search applied</source>
         <translation> · 360° 추가 탐색 적용</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="246"/>
+        <location filename="../src/livewindow.cpp" line="247"/>
         <source> · full reference-bank search</source>
         <translation> · 전체 기준군 탐색</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="246"/>
+        <location filename="../src/livewindow.cpp" line="247"/>
         <source> · representative-reference fast comparison</source>
         <translation> · 대표 기준 빠른 비교</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="262"/>
+        <location filename="../src/livewindow.cpp" line="263"/>
         <source>GPU comparison cannot run: </source>
         <translation>GPU 비교를 실행할 수 없습니다: </translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="323"/>
+        <location filename="../src/livewindow.cpp" line="324"/>
         <source>Vulkan GPU is comparing reference images, angles, and positions in parallel…</source>
         <translation>Vulkan GPU가 기준 영상·각도·위치를 병렬 비교 중입니다…</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="328"/>
+        <location filename="../src/livewindow.cpp" line="329"/>
         <source>GPU comparison timed out — live collection continues</source>
         <translation>GPU 비교 시간이 초과되었습니다 — 실시간 수집은 계속됩니다</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="1070"/>
+        <location filename="../src/livewindow.cpp" line="1017"/>
         <source>Contact %1 · image from comparison %2 (not live)
 Gray: background (0) · yellow: contact (1), but weak features · green/red: comparison evidence
 Cyan +: transformed reference contact centre · orange +: current probe contact centre · blue: comparison range</source>
@@ -612,7 +612,7 @@ Cyan +: transformed reference contact centre · orange +: current probe contact 
 하늘색 +: 변환된 기준 접촉중심 · 주황 +: 현재 검사 접촉중심 · 파랑: 비교 범위</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="1388"/>
+        <location filename="../src/livewindow.cpp" line="1360"/>
         <source>[%1/%2 contacts compared · stops automatically at the target] </source>
         <translation>[%1/%2접촉 비교 완료 · 목표에 도달하면 자동 종료] </translation>
     </message>

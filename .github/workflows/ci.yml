@@ -140,10 +140,20 @@ jobs:
           cd src/fpstudio
           cp -r translations /tmp/translations.before
           /usr/lib/qt6/bin/lupdate src/ -ts translations/fpstudio_*.ts -no-obsolete
-          if ! diff -rq /tmp/translations.before translations; then
-            echo "::error::Source strings changed without updating the .ts files"
-            exit 1
-          fi
+          # Compare the strings, not where they happen to live. A line="123"
+          # attribute moves whenever anything above it in the source moves, so
+          # diffing it verbatim fails the build for edits that add no strings.
+          # The step runs under plain sh, so normalise into files rather than
+          # using process substitution.
+          for f in translations/fpstudio_*.ts; do
+            b=/tmp/translations.before/$(basename "$f")
+            sed 's/ line="[0-9]*"//' "$b" > /tmp/before.ts
+            sed 's/ line="[0-9]*"//' "$f" > /tmp/after.ts
+            if ! diff -u /tmp/before.ts /tmp/after.ts; then
+              echo "::error::Source strings changed without updating $f"
+              exit 1
+            fi
+          done
 
       - name: No catalogue may have an unfinished translation
         run: |
