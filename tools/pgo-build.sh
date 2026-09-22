@@ -12,6 +12,21 @@
 # run that required biometric samples could not run in CI and would not be run
 # often enough to stay current.
 #
+# What it is worth, measured: nothing yet. Against a 16-reference synthetic
+# search, interleaving the two builds so neither gets the cold clock, CPU time
+# was 105.1ms without the profile and 103.1ms with it - a 2% difference over 12
+# runs each, which is noise. That is the design working as intended rather than
+# a failure of the profile: the expensive search is dispatched to the Vulkan
+# worker and the CPU-side hot path is deliberately small, so there is little
+# for PGO to rearrange. Measured naively, running one build fully and then the
+# other, the same comparison appeared to show a 33% regression; that was the
+# first build warming the clock for itself.
+#
+# Kept because the cost is a script nobody has to run, and because the balance
+# changes the moment work moves back to the CPU - a fallback path on a machine
+# without a usable Vulkan device is exactly that. Measure before believing it
+# helps.
+#
 #   tools/pgo-build.sh [output-build-dir]
 #
 # Leaves the profile in src/fpstudio/pgo-data so a later rebuild can reuse it
