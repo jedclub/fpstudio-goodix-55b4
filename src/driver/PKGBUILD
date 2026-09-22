@@ -172,6 +172,19 @@ prepare() {
     # polls 100ms apart before accepting, keeping the last frame: the four
     # authentications measured after it read 13-16 tiles and 0.940-0.982.
     patch -Np1 -i "${startdir}/patches/0023-goodix55x4-settle-before-reading-finger.patch"
+
+    # Settling fixed when the frame is taken; this fixes handing over one the
+    # matcher cannot use. The frame at the end of the settle is whatever is on
+    # the sensor, and a lock screen is a tap. Paired against the matcher's own
+    # verdict over 43 real authentications - the driver logs "Image quality:
+    # coverage N%" beside every one - coverage under 73% was accepted once in
+    # eleven, and seven of those eleven put fewer than eight tiles of sixteen
+    # down, which the acceptance policy refuses before scoring. Inside 73-78%
+    # it is 28 of 30. Above it collapses the other way, 0 of 2 here and 3 of 12
+    # over 219 held-out captures: pressing harder covers more of the sensor and
+    # flattens the ridges into it. So keep polling while outside that band, up
+    # to 1.2s, then hand over the best of what arrived as before.
+    patch -Np1 -i "${startdir}/patches/0024-goodix55x4-wait-for-a-usable-contact.patch"
 }
 
 build() {

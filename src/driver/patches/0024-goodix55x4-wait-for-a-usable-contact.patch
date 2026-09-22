@@ -1,0 +1,127 @@
+goodix55x4: wait for a contact the matcher can use
+
+Three settle polls fixed reading the finger as it arrived, but the
+frame handed over at the end of them is still whatever is on the
+sensor. A lock screen is a tap, and a tap is often barely on the
+glass: over 43 real authentication attempts, coverage below 73%
+was accepted once in eleven, and seven of those eleven put fewer
+than eight tiles of sixteen down - which the acceptance policy
+refuses before it scores anything. Inside 73-78% it is 28 of 30.
+
+Above the band it collapses again, for the opposite reason: 0 of 2
+here, and 3 of 12 across 219 held-out captures of the enrolled
+finger. Pressing harder covers more of the sensor and flattens the
+ridges into it.
+
+So keep polling while the contact is outside that band rather than
+spending the attempt on a capture that cannot match, up to 1.2s,
+then hand over the best of what arrived exactly as before. The
+measurement is the capture path's own: subtract the background,
+stretch, and count, on 108x88.
+
+---
+--- a/libfprint/drivers/goodixtls/goodix55x4.c
++++ b/libfprint/drivers/goodixtls/goodix55x4.c
+@@ -102,6 +102,37 @@
+  * already leaving, and keeping the last frame there keeps the weakest one. */
+ #define GOODIX55X4_FINGER_SETTLE_POLLS 3
+ 
++/* How much of the sensor a contact has to cover before it is worth reading.
++ *
++ * Settling for three polls fixed the frame being taken as the finger arrived,
++ * but it still hands over whatever is there when the third poll ends. At a
++ * lock screen that is a tap, and a tap is often barely on the glass. Paired
++ * against the matcher's verdict over 43 real authentication attempts - the
++ * driver already logs "Image quality: coverage N%" beside every one:
++ *
++ *   coverage < 73    1 of 11 accepted;  7 of the 11 put fewer than eight
++ *                    tiles of sixteen on the sensor, which the acceptance
++ *                    policy refuses before it scores anything at all
++ *   coverage 73-78  28 of 30 accepted
++ *   coverage >= 79   0 of 2 accepted
++ *
++ * The ceiling is not a rounding of the floor. Pressing harder puts more finger
++ * on the glass and flattens the ridges into it, so the pattern goes: on 219
++ * held-out captures of the enrolled finger the same split is 196 of 207 inside
++ * the band and 3 of 12 above it.
++ *
++ * So the band is what the matcher can use, and a frame outside it is an
++ * attempt spent on a capture that was never going to match. Keep polling
++ * instead - the finger is usually still moving - and hand over the best of
++ * what arrived once the budget runs out, which is what this did before. */
++#define GOODIX55X4_CONTACT_MIN_COVERAGE 73 /* percent */
++#define GOODIX55X4_CONTACT_MAX_COVERAGE 78 /* percent */
++
++/* Ceiling on the waiting above, not a target: 12 polls at 100ms is 1.2s, well
++ * inside both the ten-second detection budget and the caller's own deadline.
++ * A finger that never lands properly still gets read, exactly as before. */
++#define GOODIX55X4_FINGER_SETTLE_MAX_POLLS 12
++
+ /* How close a freshly read frame has to be to the background already held
+  * before it is accepted as a new background.
+  *
+@@ -138,6 +169,7 @@
+   guint poll_attempts;
+   guint settle_polls;
+   double settle_best_diff;
++  gboolean settle_best_in_band;
+   Goodix55X4Pix settle_best[GOODIX55X4_FRAME_SIZE];
+   gboolean have_background;
+ 
+@@ -1057,6 +1089,7 @@
+   if (diff < GOODIX55X4_FINGER_DETECT_DIFF_THRESHOLD) {
+     self->settle_polls = 0;
+     self->settle_best_diff = 0;
++    self->settle_best_in_band = FALSE;
+     if (++self->poll_attempts >= GOODIX55X4_FINGER_DETECT_MAX_ATTEMPTS) {
+       /* Ten seconds of seeing nothing. Either nobody touched the sensor, or
+        * the background we are subtracting already contains whatever is on it -
+@@ -1074,20 +1107,46 @@
+     return;
+   }
+ 
+-  if (diff > self->settle_best_diff) {
++  /* What the matcher will see, measured the same way the capture path measures
++   * it: subtract the background, stretch, and count. Three arrays of 108x88 on
++   * a poll that already waits 100ms. */
++  Goodix55X4Pix settled[GOODIX55X4_FRAME_SIZE];
++  guint8 squashed[GOODIX55X4_FRAME_SIZE];
++  guint metrics[2];
++  memcpy(settled, candidate, sizeof(settled));
++  postprocess_frame(settled, self->empty_img);
++  squash_frame_linear(settled, squashed);
++  assess_image(squashed, metrics);
++  const gboolean in_band = metrics[0] >= GOODIX55X4_CONTACT_MIN_COVERAGE &&
++                           metrics[0] <= GOODIX55X4_CONTACT_MAX_COVERAGE;
++
++  /* A frame the matcher can use beats one it cannot, whatever their background
++   * differences are. Between two that it can, the larger difference wins: over
++   * the same captures that is the one that was pressed less hard, and pressing
++   * less hard is what keeps the ridges. */
++  if ((in_band && !self->settle_best_in_band) ||
++      (in_band == self->settle_best_in_band && diff > self->settle_best_diff)) {
+     self->settle_best_diff = diff;
++    self->settle_best_in_band = in_band;
+     memcpy(self->settle_best, candidate, sizeof(self->settle_best));
+   }
++  g_print("Finger-settle poll %u: coverage = %u%% sharpness = %u in-band = %d\n",
++          self->settle_polls + 1, metrics[0], metrics[1], in_band);
++
+   /* Above the threshold, but keep looking until the contact has settled. The
+    * re-read goes straight to GET_IMG rather than through the FDT states, which
+    * on this device report nothing. */
+-  if (++self->settle_polls < GOODIX55X4_FINGER_SETTLE_POLLS) {
++  ++self->settle_polls;
++  if (self->settle_polls < GOODIX55X4_FINGER_SETTLE_POLLS ||
++      (!self->settle_best_in_band &&
++       self->settle_polls < GOODIX55X4_FINGER_SETTLE_MAX_POLLS)) {
+     fpi_device_add_timeout(dev, GOODIX55X4_FINGER_DETECT_POLL_DELAY_MS,
+                            preview_next_frame, ssm, NULL);
+     return;
+   }
+   self->settle_polls = 0;
+   self->settle_best_diff = 0;
++  self->settle_best_in_band = FALSE;
+   self->poll_attempts = 0;
+   /* Only a confirmed host-side touch may advance libfprint to CAPTURE. */
+   fpi_image_device_report_finger_status(FP_IMAGE_DEVICE(dev), TRUE);
