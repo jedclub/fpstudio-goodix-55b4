@@ -202,5 +202,12 @@ if(BUILD_TESTING)
   target_link_libraries(fpstudio-layout-test PRIVATE Qt6::Core Qt6::Gui Qt6::Widgets Qt6::Test vkmatch)
   add_dependencies(fpstudio-layout-test mapplace-shader)
   add_test(NAME window-layout COMMAND fpstudio-layout-test)
+
+  # Which captures become the enrolment. Pure and directory-driven, so it needs
+  # no window, no sensor and no fingerprint data to check.
+  qt_add_executable(fpstudio-enrolselect-test tests/enrolselect_test.cpp)
+  target_include_directories(fpstudio-enrolselect-test PRIVATE src)
+  target_link_libraries(fpstudio-enrolselect-test PRIVATE Qt6::Core Qt6::Test)
+  add_test(NAME enrolment-selection COMMAND fpstudio-enrolselect-test)
   set_tests_properties(window-layout PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 endif()

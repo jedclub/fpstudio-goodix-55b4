@@ -11,6 +11,7 @@
 #include <QImage>
 #include <QLabel>
 #include <QPixmap>
+#include "enrolselect.h"
 #include <QPushButton>
 #include <QDateTime>
 #include <QMessageBox>
@@ -831,64 +832,10 @@ static QString installerScript()
 
 QStringList LiveWindow::selectEnrolment(int limit) const
 {
-    struct Entry { QString path; int x=0, y=0; double quality=0; };
-    QVector<Entry> pool;
-    for(const auto &sample:m_saved)
-        if(QFile::exists(sample.path))pool.push_back({sample.path,sample.x,sample.y,sample.quality});
-    for(auto it=m_contacts.cbegin();it!=m_contacts.cend();++it) {
-        const auto contact=it.value();
-        if(!contact.value("candidate_saved").toBool())continue;
-        if(!contact.contains("map_x"))continue;   // never registered; no place for it
-        Entry e;
-        e.path=m_dir+QStringLiteral("/candidate-touch-%1.png").arg(it.key(),2,10,QLatin1Char('0'));
-        if(!QFile::exists(e.path))continue;
-        e.x=contact.value("map_x").toInt();
-        e.y=contact.value("map_y").toInt();
-        e.quality=contact.value("map_quality").toDouble();
-        pool.push_back(e);
-    }
-    if(pool.isEmpty())return {};
-
-    // Coarse cells rather than pixels: the question is "does this capture
-    // reach somewhere new", and a few pixels of difference is not somewhere
-    // new. 12px is a ridge and a bit on this sensor.
-    constexpr int kCell=12;
-    constexpr int kGrid=(kMapSize+kCell-1)/kCell;
-    QVector<bool> taken(kGrid*kGrid,false);
-    auto cellsOf=[&](const Entry &e){
-        QVector<int> cells;
-        for(int y=e.y;y<e.y+88;y+=kCell)for(int x=e.x;x<e.x+108;x+=kCell) {
-            const int cx=x/kCell,cy=y/kCell;
-            if(cx>=0&&cy>=0&&cx<kGrid&&cy<kGrid)cells.push_back(cy*kGrid+cx);
-        }
-        return cells;
-    };
-
-    QStringList chosen;
-    QVector<bool> used(pool.size(),false);
-    while(chosen.size()<limit) {
-        int best=-1;double bestGain=0;
-        for(int i=0;i<pool.size();++i) {
-            if(used[i])continue;
-            int fresh=0;
-            for(int cell:cellsOf(pool[i]))if(!taken[cell])++fresh;
-            const double gain=fresh*std::max(0.05,pool[i].quality);
-            if(gain>bestGain){bestGain=gain;best=i;}
-        }
-        if(best<0)break;                       // nothing reaches anywhere new
-        used[best]=true;
-        for(int cell:cellsOf(pool[best]))taken[cell]=true;
-        chosen<<pool[best].path;
-    }
-    // Room left over goes to the clearest captures still unused: more views of
-    // a place already covered still help, they just help less.
-    if(chosen.size()<limit) {
-        QVector<int> rest;
-        for(int i=0;i<pool.size();++i)if(!used[i])rest.push_back(i);
-        std::sort(rest.begin(),rest.end(),[&](int a,int b){return pool[a].quality>pool[b].quality;});
-        for(int i:rest) { if(chosen.size()>=limit)break; chosen<<pool[i].path; }
-    }
-    return chosen;
+    // Read back what the session recorded rather than what this object still
+    // holds: the same function then serves the button, an offline rerun and a
+    // test, and all three make the same choice.
+    return fpstudio::selectEnrolment(fpstudio::readEnrolCandidates(m_dir),limit,kMapSize);
 }
 
 // Hand this session's captures to the authentication store.
@@ -1269,6 +1216,21 @@ void LiveWindow::tick()
                                     m_saved.push_back({path,m_mapLastX,m_mapLastY,m_mapLastQuality});
                                     m_lastSavedX=m_mapLastX;m_lastSavedY=m_mapLastY;
                                     m_haveSavedPose=true;
+                                    QSaveFile note(path+QStringLiteral(".json"));
+                                    if(note.open(QIODevice::WriteOnly)) {
+                                        note.setPermissions(QFileDevice::ReadOwner|QFileDevice::WriteOwner);
+                                        note.write(QJsonDocument(QJsonObject{
+                                            {"role","unvalidated-candidate"},
+                                            {"source","sweep"},
+                                            {"instructed_role",m_differentFinger?"different-finger":"genuine"},
+                                            {"finger_label","unconfirmed"},
+                                            {"contact_group",m_touch},
+                                            {"sensor_timestamp_us",stamp},
+                                            {"map_x",m_mapLastX},{"map_y",m_mapLastY},
+                                            {"map_angle",m_mapLastAngle},{"map_fit",m_mapLastFit},
+                                            {"map_quality",m_mapLastQuality}}).toJson());
+                                        note.commit();
+                                    }
                                 }
                             }
                         }
@@ -1329,7 +1291,17 @@ void LiveWindow::tick()
                                     {"sensor_timestamp_us", stamp}, {"ranking_version", 1},
                                     {"score", quality.score}, {"coherence", quality.coherence}, {"motion", quality.motion},
                                     {"signal", fields[2].toDouble()}, {"coverage", fields[3].toInt()},
-                                    {"sharpness", fields[4].toInt()}}).toJson());
+                                    {"sharpness", fields[4].toInt()},
+                                    // Where it sits on the finger. Written here rather
+                                    // than kept in memory so that the enrolment set a
+                                    // session would have chosen can still be worked out
+                                    // after the window is gone - and so that choosing it
+                                    // can be tested without one.
+                                    {"map_x", m_mapOutcome==MapOutcome::Placed?QJsonValue(m_mapLastX):QJsonValue()},
+                                    {"map_y", m_mapOutcome==MapOutcome::Placed?QJsonValue(m_mapLastY):QJsonValue()},
+                                    {"map_angle", m_mapOutcome==MapOutcome::Placed?QJsonValue(m_mapLastAngle):QJsonValue()},
+                                    {"map_fit", m_mapOutcome==MapOutcome::Placed?QJsonValue(m_mapLastFit):QJsonValue()},
+                                    {"map_quality", m_mapOutcome==MapOutcome::Placed?QJsonValue(m_mapLastQuality):QJsonValue()}}).toJson());
                                 metadata.commit();
                             }
                         }
