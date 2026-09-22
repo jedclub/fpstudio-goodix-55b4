@@ -29,7 +29,23 @@ jobs:
         run: |
           export VK_DRIVER_FILES="$(find /usr/share/vulkan/icd.d -maxdepth 1 -type f -name 'lvp_icd*.json' -print -quit)"
           test -n "$VK_DRIVER_FILES"
-          cmake -S src/fpstudio -B build -G Ninja -DBUILD_TESTING=ON
+          # Two builds: one that counts which way the branches went, then the
+          # real one compiled against what was counted. The training in
+          # between is the test suite, which drives the PAM conversation, the
+          # frame selector, the placement search and the matcher end to end.
+          # It uses no fingerprint data, so it runs here as it does anywhere.
+          profile="$PWD/pgo-data"
+          cmake -S src/fpstudio -B build-pgo-gen -G Ninja -DBUILD_TESTING=ON \
+                -DFPSTUDIO_PGO=GENERATE -DFPSTUDIO_PGO_DIR="$profile"
+          cmake --build build-pgo-gen --parallel
+          # A failing test still records the paths it took, so training does
+          # not stop here - but a release must not ship from a red suite, and
+          # the verification run below is the one that gates it.
+          ctest --test-dir build-pgo-gen --output-on-failure || true
+          test -n "$(find "$profile" -name '*.gcda' -print -quit)"
+
+          cmake -S src/fpstudio -B build -G Ninja -DBUILD_TESTING=ON \
+                -DFPSTUDIO_PGO=USE -DFPSTUDIO_PGO_DIR="$profile"
           cmake --build build --parallel
           ctest --test-dir build --output-on-failure
           python src/pam/test_tty.py build/pam
