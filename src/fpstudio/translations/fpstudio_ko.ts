@@ -515,6 +515,134 @@ Capture 로 센서 이미지를 가져옵니다</translation>
 <context>
     <name>fpstudio::LiveWindow</name>
     <message>
+        <location filename="../src/livewindow.cpp" line="39"/>
+        <source>a different finger from the last one</source>
+        <translation>방금과 다른 손가락</translation>
+    </message>
+    <message>
+        <location filename="../src/livewindow.cpp" line="40"/>
+        <source>the same finger used so far</source>
+        <translation>지금까지 사용한 같은 손가락</translation>
+    </message>
+    <message>
+        <location filename="../src/livewindow.cpp" line="41"/>
+        <source>fpstudio · live fingerprint stream</source>
+        <translation>fpstudio · 실시간 지문 영상</translation>
+    </message>
+    <message>
+        <location filename="../src/livewindow.cpp" line="51"/>
+        <source>⚠ Different-finger trial — lift your finger off the sensor. Calibration starts automatically.</source>
+        <translation>⚠ 다른 손가락 시험 — 손가락을 센서에서 떼 주세요. 곧 자동으로 보정합니다.</translation>
+    </message>
+    <message>
+        <location filename="../src/livewindow.cpp" line="52"/>
+        <source>Lift your finger off the sensor. Calibration starts automatically.</source>
+        <translation>손가락을 센서에서 떼 주세요. 곧 자동으로 보정합니다.</translation>
+    </message>
+    <message>
+        <location filename="../src/livewindow.cpp" line="73"/>
+        <source>After calibration, rest the same finger lightly on the sensor and follow the prompts. Candidates are compared automatically for each contact.
+Live sensor image 108 × 88 · background subtracted, contrast normalised · not an authentication decision · up to 3 minutes</source>
+        <translation>보정 후 같은 손가락을 가볍게 올리고 안내를 따라 주세요. 접촉별 후보를 자동 비교합니다.
+실제 센서 영상 108 × 88 · 배경 차감/명암 정규화 · 인증 판정 아님 · 최대 3분</translation>
+    </message>
+    <message>
+        <location filename="../src/livewindow.cpp" line="77"/>
+        <source>This is a different-finger comparison trial. Do not use the finger from the previous run this time.
+After calibration, tap and lift repeatedly with one other finger. Even a high score does not mean authentication was granted.</source>
+        <translation>다른 손가락 비교 시험입니다. 방금 사용한 손가락은 이번에는 대지 마세요.
+보정 후 다른 손가락 하나로 가볍게 대었다 떼며 반복하세요. 높은 점수도 인증 승인을 뜻하지 않습니다.</translation>
+    </message>
+    <message>
+        <location filename="../src/livewindow.cpp" line="79"/>
+        <source>Waiting for calibration — no live image yet</source>
+        <translation>보정 대기 중 — 아직 실시간 영상이 없습니다</translation>
+    </message>
+    <message>
+        <location filename="../src/livewindow.cpp" line="96"/>
+        <source>0 FPS · waiting for a new frame</source>
+        <translation>0 FPS · 새 프레임 대기</translation>
+    </message>
+    <message>
+        <location filename="../src/livewindow.cpp" line="99"/>
+        <source>GPU comparison: no reference image set · collecting live only</source>
+        <translation>GPU 비교: 기준 영상 미지정 · 실시간 수집만 진행</translation>
+    </message>
+    <message>
+        <location filename="../src/livewindow.cpp" line="106"/>
+        <location filename="../src/livewindow.cpp" line="1031"/>
+        <source>Stop</source>
+        <translation>중단</translation>
+    </message>
+    <message>
+        <location filename="../src/livewindow.cpp" line="111"/>
+        <source>Install this fingerprint as the enrolment</source>
+        <translation>이 지문을 등록본으로 설치</translation>
+    </message>
+    <message>
+        <location filename="../src/livewindow.cpp" line="114"/>
+        <source>Coverage map — drawn here as contacts accumulate
+The dark red areas have not been touched yet
+Move your finger toward the empty side
+This is enrolment guidance, not an authentication decision</source>
+        <translation>커버리지 지도 — 접촉이 쌓이면 여기에 그려집니다
+어두운 붉은 부분이 아직 안 닿은 곳입니다
+비어 있는 쪽으로 손가락을 옮겨 대주세요
+인증 판정이 아니라 등록 안내용입니다</translation>
+    </message>
+    <message>
+        <location filename="../src/livewindow.cpp" line="132"/>
+        <source>The enrolment is installed. sudo and the lock screen now use this fingerprint.</source>
+        <translation>등록본을 설치했습니다. 이제 sudo · 잠금화면에서 이 지문이 쓰입니다.</translation>
+    </message>
+    <message>
+        <location filename="../src/livewindow.cpp" line="133"/>
+        <source>Installing the enrolment failed. The existing enrolment is unchanged.</source>
+        <translation>등록본 설치에 실패했습니다. 기존 등록본은 그대로입니다.</translation>
+    </message>
+    <message>
+        <location filename="../src/livewindow.cpp" line="136"/>
+        <source>Installation failed</source>
+        <translation>설치 실패</translation>
+    </message>
+    <message>
+        <location filename="../src/livewindow.cpp" line="137"/>
+        <source>The installer exited with code %1.</source>
+        <translation>설치 도구가 코드 %1 로 끝났습니다.</translation>
+    </message>
+    <message>
+        <location filename="../src/livewindow.cpp" line="144"/>
+        <source>Could not start. Check for another sensor session, or the permissions on the save folder.</source>
+        <translation>시작하지 못했습니다. 다른 센서 세션 또는 저장 폴더 권한을 확인하세요.</translation>
+    </message>
+    <message>
+        <location filename="../src/livewindow.cpp" line="157"/>
+        <source>Could not run the capture program: </source>
+        <translation>캡처 프로그램을 실행하지 못했습니다: </translation>
+    </message>
+    <message>
+        <location filename="../src/livewindow.cpp" line="158"/>
+        <location filename="../src/livewindow.cpp" line="167"/>
+        <location filename="../src/livewindow.cpp" line="1033"/>
+        <source>Close</source>
+        <translation>닫기</translation>
+    </message>
+    <message>
+        <location filename="../src/livewindow.cpp" line="164"/>
+        <source>Stopped. You can lift your finger off the sensor.</source>
+        <translation>중단했습니다. 센서에서 손을 떼셔도 됩니다.</translation>
+    </message>
+    <message>
+        <location filename="../src/livewindow.cpp" line="165"/>
+        <source>The live stream has ended. Lift your finger off the sensor.</source>
+        <translation>실시간 영상이 종료되었습니다. 센서에서 손을 떼 주세요.</translation>
+    </message>
+    <message>
+        <location filename="../src/livewindow.cpp" line="166"/>
+        <source>0 FPS · ended · the last image is a still · %1 frames in total</source>
+        <translation>0 FPS · 종료 · 마지막 영상은 정지 화면입니다 · 총 %1 프레임</translation>
+    </message>
+    <message>
         <location filename="../src/livewindow.cpp" line="189"/>
         <source>Vulkan GPU is initializing — it calculates separately from the live stream</source>
         <translation>Vulkan GPU를 초기화하는 중 — 실시간 영상과 별도로 계산합니다</translation>
@@ -593,6 +721,11 @@ Interior ridge support %1/%2 regions · %3</source>
         <translation>GPU 비교를 실행할 수 없습니다: </translation>
     </message>
     <message>
+        <location filename="../src/livewindow.cpp" line="269"/>
+        <source>The GPU comparison worker exited unexpectedly (code %1)</source>
+        <translation>GPU 비교 작업자가 예기치 않게 종료됐습니다 (코드 %1)</translation>
+    </message>
+    <message>
         <location filename="../src/livewindow.cpp" line="324"/>
         <source>Vulkan GPU is comparing reference images, angles, and positions in parallel…</source>
         <translation>Vulkan GPU가 기준 영상·각도·위치를 병렬 비교 중입니다…</translation>
@@ -601,6 +734,75 @@ Interior ridge support %1/%2 regions · %3</source>
         <location filename="../src/livewindow.cpp" line="329"/>
         <source>GPU comparison timed out — live collection continues</source>
         <translation>GPU 비교 시간이 초과되었습니다 — 실시간 수집은 계속됩니다</translation>
+    </message>
+    <message>
+        <location filename="../src/livewindow.cpp" line="783"/>
+        <source>added</source>
+        <translation>반영됨</translation>
+    </message>
+    <message>
+        <location filename="../src/livewindow.cpp" line="784"/>
+        <source>smeared · not added</source>
+        <translation>뭉개짐 · 미반영</translation>
+    </message>
+    <message>
+        <location filename="../src/livewindow.cpp" line="785"/>
+        <source>registration failed · not added</source>
+        <translation>정합 실패 · 미반영</translation>
+    </message>
+    <message>
+        <location filename="../src/livewindow.cpp" line="786"/>
+        <source>too little overlap · not added</source>
+        <translation>겹침 부족 · 미반영</translation>
+    </message>
+    <message>
+        <location filename="../src/livewindow.cpp" line="794"/>
+        <source>last contact · %1</source>
+        <translation>마지막 접촉 · %1</translation>
+    </message>
+    <message>
+        <location filename="../src/livewindow.cpp" line="798"/>
+        <source>Coverage %1× · %2 placed · %3 not added
+Dark red is what has not been touched yet · the green outline is what was just added</source>
+        <translation>덮인 범위 %1배 · 배치 %2개 · 미반영 %3개
+어두운 붉은 부분이 아직 안 닿은 곳 · 초록 테두리가 방금 반영된 위치</translation>
+    </message>
+    <message>
+        <location filename="../src/livewindow.cpp" line="852"/>
+        <location filename="../src/livewindow.cpp" line="885"/>
+        <source>Cannot install</source>
+        <translation>설치할 수 없음</translation>
+    </message>
+    <message>
+        <location filename="../src/livewindow.cpp" line="853"/>
+        <source>No capture has been placed on the map. Rest your finger on the sensor, move it slowly, and collect again.</source>
+        <translation>지도에 등록된 캡쳐가 없습니다. 손가락을 센서에 대고 천천히 움직여 다시 수집해 주세요.</translation>
+    </message>
+    <message>
+        <location filename="../src/livewindow.cpp" line="858"/>
+        <source>Install fingerprint enrolment</source>
+        <translation>지문 등록본 설치</translation>
+    </message>
+    <message>
+        <location filename="../src/livewindow.cpp" line="859"/>
+        <source>Install %1 captures from this session as the authentication enrolment.
+
+The existing enrolment is backed up and replaced; fprintd enrolment and PAM settings are left alone.
+This matcher has not been validated for rejecting other people. Continue?</source>
+        <translation>이번 세션의 캡쳐 %1장을 인증 등록본으로 설치합니다.
+
+기존 등록본은 백업 후 교체되고, fprintd 등록과 PAM 설정은 그대로 둡니다.
+이 매처는 타인 거부가 검증되지 않았습니다. 진행할까요?</translation>
+    </message>
+    <message>
+        <location filename="../src/livewindow.cpp" line="886"/>
+        <source>Could not find the installer (tools/auth_install.py).</source>
+        <translation>설치 도구(tools/auth_install.py)를 찾지 못했습니다.</translation>
+    </message>
+    <message>
+        <location filename="../src/livewindow.cpp" line="895"/>
+        <source>Installing the enrolment…</source>
+        <translation>등록본을 설치하는 중입니다…</translation>
     </message>
     <message>
         <location filename="../src/livewindow.cpp" line="1017"/>
@@ -612,9 +814,216 @@ Cyan +: transformed reference contact centre · orange +: current probe contact 
 하늘색 +: 변환된 기준 접촉중심 · 주황 +: 현재 검사 접촉중심 · 파랑: 비교 범위</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="1360"/>
+        <location filename="../src/livewindow.cpp" line="1030"/>
+        <source>Capture finished — lift your finger. %1 remaining contacts are still being compared</source>
+        <translation>촬영 종료 — 손을 떼 주세요. 남은 접촉 %1개를 자동 비교 중입니다</translation>
+    </message>
+    <message>
+        <location filename="../src/livewindow.cpp" line="1038"/>
+        <source>The target of %1 contacts has been compared — no need to repeat. You can lift your finger.</source>
+        <translation>목표 %1접촉 비교를 완료했습니다 — 더 반복하지 마세요. 손을 떼셔도 됩니다.</translation>
+    </message>
+    <message>
+        <location filename="../src/livewindow.cpp" line="1038"/>
+        <source>Stopped. You can lift your finger.</source>
+        <translation>중단했습니다. 손을 떼셔도 됩니다.</translation>
+    </message>
+    <message>
+        <location filename="../src/livewindow.cpp" line="1039"/>
+        <source>Capture and candidate comparison have ended. See the per-contact totals below.</source>
+        <translation>촬영과 후보 비교가 종료되었습니다. 아래 접촉별 집계를 확인하세요.</translation>
+    </message>
+    <message>
+        <location filename="../src/livewindow.cpp" line="1080"/>
+        <source>Capture finished · %1 frames · %2 contacts detected
+%3 comparisons answered · %4 ridge-consistent · %5 not compared (%6 with no candidate) · %7 queued · %8 errors
+Research results on selected data, not an authentication success rate</source>
+        <translation>촬영 종료 · %1 프레임 · 감지 접촉 %2회
+비교 응답 %3회 · 무늬 일관성 %4회 · 미비교 %5회 (후보 없음 %6회) · 대기 %7회 · 오류 %8건
+선별 자료의 연구 결과이며 인증 성공률이 아닙니다</translation>
+    </message>
+    <message>
+        <location filename="../src/livewindow.cpp" line="1088"/>
+        <source>Keep your finger off — connecting to the sensor and calibrating the background</source>
+        <translation>아직 손을 떼고 계세요 — 센서 연결 및 배경 보정 중</translation>
+    </message>
+    <message>
+        <location filename="../src/livewindow.cpp" line="1137"/>
+        <source>Lift your finger — background calibration in %1 s</source>
+        <translation>손가락을 떼 주세요 — %1초 후 배경 보정</translation>
+    </message>
+    <message>
+        <location filename="../src/livewindow.cpp" line="1146"/>
+        <source>Keep your finger off — collecting more background from the live stream</source>
+        <translation>손을 계속 떼고 계세요 — 연속 영상으로 배경을 추가 수집합니다</translation>
+    </message>
+    <message>
+        <location filename="../src/livewindow.cpp" line="1149"/>
+        <source>0 FPS · waiting for the first image · %1 s</source>
+        <translation>0 FPS · 첫 영상 대기 중 · %1초</translation>
+    </message>
+    <message>
+        <location filename="../src/livewindow.cpp" line="1326"/>
+        <source>Keep your finger off and hold — collecting the background over several frames (do not touch the sensor yet)</source>
+        <translation>손을 떼고 유지해 주세요 — 배경을 여러 프레임으로 수집 중입니다 (지금은 접촉하지 마세요)</translation>
+    </message>
+    <message>
+        <location filename="../src/livewindow.cpp" line="1327"/>
+        <source>No finger detected — now rest %1 lightly in the centre of the sensor</source>
+        <translation>손 뗌 상태입니다 — 지금 %1을 센서 중앙에 가볍게 올려 주세요</translation>
+    </message>
+    <message>
+        <location filename="../src/livewindow.cpp" line="1330"/>
+        <source>Warning: the other finger also produced ridge-match evidence. A suspected false accept has been recorded — lift and touch again</source>
+        <translation>주의: 다른 손가락에서도 무늬 일치 근거가 나왔습니다. 오인식 의심 기록 완료 — 떼었다 다시 대 주세요</translation>
+    </message>
+    <message>
+        <location filename="../src/livewindow.cpp" line="1331"/>
+        <source>This other finger produced no match evidence. Recorded — lift completely and touch again</source>
+        <translation>이번 다른 손가락에서는 일치 근거가 없었습니다. 기록 완료 — 손을 완전히 떼었다 다시 대 주세요</translation>
+    </message>
+    <message>
+        <location filename="../src/livewindow.cpp" line="1333"/>
+        <source>This contact&apos;s ridges were confirmed — lift completely and rest %1 on the sensor again (not an authentication decision)</source>
+        <translation>이번 접촉의 무늬를 확인했습니다 — 손을 완전히 떼고 %1을 다시 올려 주세요 (인증 판정 아님)</translation>
+    </message>
+    <message>
+        <location filename="../src/livewindow.cpp" line="1335"/>
+        <source>A sharp image was captured — comparing automatically. You can lift your finger</source>
+        <translation>선명한 영상을 확보했습니다 — 자동 비교 중입니다. 손을 떼셔도 됩니다</translation>
+    </message>
+    <message>
+        <location filename="../src/livewindow.cpp" line="1338"/>
+        <source>Three comparisons of this contact found too little evidence — lift completely, then place %1 in the centre again</source>
+        <translation>이번 접촉은 3회 비교해도 근거가 부족합니다 — 완전히 뗀 뒤 %1을 중앙에 다시 대 주세요</translation>
+    </message>
+    <message>
+        <location filename="../src/livewindow.cpp" line="1339"/>
+        <source>Too little match evidence — move %1 slightly toward the centre and press more lightly. It will be compared again automatically</source>
+        <translation>일치 근거가 부족합니다 — %1을 중앙으로 조금 옮기고 압력을 낮춰 주세요. 자동 재비교합니다</translation>
+    </message>
+    <message>
+        <location filename="../src/livewindow.cpp" line="1340"/>
+        <source>The contact area is small — lay the pad of %1 flat across the centre of the sensor</source>
+        <translation>접촉 면적이 작습니다 — %1의 지문 면을 센서 중앙에 넓게 대 주세요</translation>
+    </message>
+    <message>
+        <location filename="../src/livewindow.cpp" line="1341"/>
+        <source>You are pressing hard — ease off and just rest the finger. Quality falls below 0.79 in this range</source>
+        <translation>누르는 힘이 셉니다 — 살짝 올려놓듯이 힘을 빼 주세요. 이 구간에서 품질이 0.79 아래로 떨어집니다</translation>
+    </message>
+    <message>
+        <location filename="../src/livewindow.cpp" line="1342"/>
+        <source>Hold your finger still for a moment — a stable image will be selected automatically</source>
+        <translation>손가락을 잠깐 멈춰 주세요 — 안정된 영상을 자동 선택합니다</translation>
+    </message>
+    <message>
+        <location filename="../src/livewindow.cpp" line="1343"/>
+        <source>The ridges are unclear — ease off a little and shift %1 slightly</source>
+        <translation>무늬가 불분명합니다 — 힘을 조금 빼고 %1의 위치를 살짝 바꿔 주세요</translation>
+    </message>
+    <message>
+        <location filename="../src/livewindow.cpp" line="1344"/>
+        <source>Hold it there for a moment — selecting a sharp image automatically</source>
+        <translation>그대로 잠깐 유지해 주세요 — 선명한 영상을 자동 선택 중입니다</translation>
+    </message>
+    <message>
+        <location filename="../src/livewindow.cpp" line="1345"/>
+        <source>⚠ Use a different finger · </source>
+        <translation>⚠ 다른 손가락을 올리세요 · </translation>
+    </message>
+    <message>
+        <location filename="../src/livewindow.cpp" line="1348"/>
+        <source>The research storage and comparison limit has been reached — this contact will not be compared further. Please stop</source>
+        <translation>연구 저장·비교 한도에 도달했습니다 — 이 접촉은 추가 비교하지 않습니다. 중단해 주세요</translation>
+    </message>
+    <message>
+        <location filename="../src/livewindow.cpp" line="1349"/>
+        <source>GPU comparison is unavailable — showing the image only. Please stop</source>
+        <translation>GPU 비교를 사용할 수 없습니다 — 영상만 표시 중입니다. 중단해 주세요</translation>
+    </message>
+    <message>
+        <location filename="../src/livewindow.cpp" line="1353"/>
+        <source>⚠ The ridges were smeared, so this was not added to the map — the red outline on the map is where it would have gone. Ease off and press the same spot again</source>
+        <translation>⚠ 무늬가 뭉개져 지도에 넣지 않았습니다 — 지도의 빨간 테두리가 그 위치입니다. 힘을 빼고 같은 곳을 다시 눌러 주세요</translation>
+    </message>
+    <message>
+        <location filename="../src/livewindow.cpp" line="1356"/>
+        <source>⚠ This could not be fitted to the map — press so that it overlaps an already filled area by about half</source>
+        <translation>⚠ 지도에 맞출 수 없었습니다 — 이미 채워진 곳과 절반쯤 겹치게 눌러 주세요</translation>
+    </message>
+    <message>
+        <location filename="../src/livewindow.cpp" line="1359"/>
+        <source>⚠ This does not overlap anything already on the map — continue from the edge of a filled area</source>
+        <translation>⚠ 지도의 기존 영역과 겹치는 부분이 없습니다 — 채워진 곳 가장자리부터 이어 나가 주세요</translation>
+    </message>
+    <message>
+        <location filename="../src/livewindow.cpp" line="1363"/>
         <source>[%1/%2 contacts compared · stops automatically at the target] </source>
         <translation>[%1/%2접촉 비교 완료 · 목표에 도달하면 자동 종료] </translation>
+    </message>
+    <message>
+        <location filename="../src/livewindow.cpp" line="1367"/>
+        <source>%1 FPS · %2 frames · ridge signal %3 · contrast area %4% · sharpness %5
+</source>
+        <translation>%1 FPS · %2 프레임 · 무늬 신호 %3 · 명암 면적 %4% · 선명도 %5
+</translation>
+    </message>
+    <message>
+        <location filename="../src/livewindow.cpp" line="1370"/>
+        <source>%1 · %2 contacts · %3 candidates · %4 GPU comparisons done / %5 contacts queued (not validated for authentication)</source>
+        <translation>%1 · 접촉 %2회 · 후보 %3장 · GPU 완료 %4건 / 대기 %5접촉 (인증용 미검증)</translation>
+    </message>
+    <message>
+        <location filename="../src/livewindow.cpp" line="1372"/>
+        <source>
+Raw difference %1 · background noise %2 · %3</source>
+        <translation>
+원본 차이 %1 · 배경 잡음 %2 · %3</translation>
+    </message>
+    <message>
+        <location filename="../src/livewindow.cpp" line="1373"/>
+        <source>collecting background</source>
+        <translation>배경 수집 중</translation>
+    </message>
+    <message>
+        <location filename="../src/livewindow.cpp" line="1373"/>
+        <source>finger in contact</source>
+        <translation>손가락 접촉</translation>
+    </message>
+    <message>
+        <location filename="../src/livewindow.cpp" line="1373"/>
+        <source>no finger</source>
+        <translation>손 뗌</translation>
+    </message>
+    <message>
+        <location filename="../src/livewindow.cpp" line="1378"/>
+        <source>The image stream has stopped — the screen shows the last frame</source>
+        <translation>영상 수신이 멈췄습니다 — 현재 화면은 마지막 프레임입니다</translation>
+    </message>
+    <message>
+        <location filename="../src/livewindow.cpp" line="1379"/>
+        <source>0 FPS · no new image for %1 s</source>
+        <translation>0 FPS · %1초 동안 새 영상 없음</translation>
+    </message>
+    <message>
+        <location filename="../src/livewindow.cpp" line="1416"/>
+        <source>GPU comparison finished · %1 processed · stopped normally on reaching the target of %2 contacts
+The results and colour-marked images have been saved. This did not decide whether authentication is granted.</source>
+        <translation>GPU 비교 완료 · %1건 처리 · 목표 %2접촉 도달로 정상 종료
+결과와 색상 표시 영상은 저장되어 있습니다. 인증 승인 여부를 판정한 것은 아닙니다.</translation>
+    </message>
+    <message>
+        <location filename="../src/livewindow.cpp" line="1417"/>
+        <source>GPU comparison stopped · %1 finished · %2 cancelled in progress
+Stopped at your request. Saved results are kept.</source>
+        <translation>GPU 비교 중단 · 완료 %1건 · 진행 중 취소 %2건
+사용자 요청으로 중단했습니다. 저장된 결과는 유지됩니다.</translation>
+    </message>
+    <message>
+        <location filename="../src/livewindow.cpp" line="1418"/>
+        <source>Stopping — lift your finger</source>
+        <translation>중단 중 — 손가락을 떼 주세요</translation>
     </message>
 </context>
 <context>
@@ -924,6 +1333,233 @@ ID: %2
         <location filename="../src/privrunner.cpp" line="151"/>
         <source>Could not resolve this program&apos;s own path</source>
         <translation>실행 파일 경로를 확인할 수 없습니다</translation>
+    </message>
+</context>
+<context>
+    <name>fpstudio::ResearchWindow</name>
+    <message>
+        <location filename="../src/researchwindow.cpp" line="43"/>
+        <source>fpstudio · fingerprint research session</source>
+        <translation>fpstudio · 지문 연구 세션</translation>
+    </message>
+    <message>
+        <location filename="../src/researchwindow.cpp" line="55"/>
+        <source>The captured fingerprint image will appear here</source>
+        <translation>촬영 후 실제 지문 영상이 여기에 표시됩니다</translation>
+    </message>
+    <message>
+        <location filename="../src/researchwindow.cpp" line="58"/>
+        <source>No image · nothing captured yet</source>
+        <translation>영상 없음 · 아직 촬영하지 않았습니다</translation>
+    </message>
+    <message>
+        <location filename="../src/researchwindow.cpp" line="60"/>
+        <source>Stop</source>
+        <translation>중단</translation>
+    </message>
+    <message>
+        <location filename="../src/researchwindow.cpp" line="68"/>
+        <source>Another research session is already running</source>
+        <translation>다른 연구 세션이 실행 중입니다</translation>
+    </message>
+    <message>
+        <location filename="../src/researchwindow.cpp" line="69"/>
+        <location filename="../src/researchwindow.cpp" line="230"/>
+        <location filename="../src/researchwindow.cpp" line="248"/>
+        <source>Close</source>
+        <translation>닫기</translation>
+    </message>
+    <message>
+        <location filename="../src/researchwindow.cpp" line="74"/>
+        <source>Could not create the save folder</source>
+        <translation>저장 폴더를 만들지 못했습니다</translation>
+    </message>
+    <message>
+        <location filename="../src/researchwindow.cpp" line="88"/>
+        <source>Could not start the capture program</source>
+        <translation>캡처 프로그램을 시작하지 못했습니다</translation>
+    </message>
+    <message>
+        <location filename="../src/researchwindow.cpp" line="94"/>
+        <source>Get your right index finger ready. Do not touch the sensor yet.</source>
+        <translation>오른쪽 검지를 준비하세요. 아직 센서에 대지 마세요.</translation>
+    </message>
+    <message>
+        <location filename="../src/researchwindow.cpp" line="95"/>
+        <source>Plan: 6 reference images → 4 verification images of the same finger → 4 comparison images of the right middle finger.
+No buttons to press. Follow the finger and position prompts on screen. You can stop at any time.</source>
+        <translation>계획: 기준 6장 → 같은 손가락 검증 4장 → 오른쪽 중지 비교 4장.
+버튼을 누를 필요 없습니다. 화면의 손가락·위치 안내를 따라가세요. 중단은 언제든 가능합니다.</translation>
+    </message>
+    <message>
+        <location filename="../src/researchwindow.cpp" line="107"/>
+        <source>Reference images</source>
+        <translation>기준 영상</translation>
+    </message>
+    <message>
+        <location filename="../src/researchwindow.cpp" line="107"/>
+        <source>Separate verification images</source>
+        <translation>별도 검증 영상</translation>
+    </message>
+    <message>
+        <location filename="../src/researchwindow.cpp" line="107"/>
+        <source>Different-finger comparison</source>
+        <translation>다른 손가락 비교</translation>
+    </message>
+    <message>
+        <location filename="../src/researchwindow.cpp" line="111"/>
+        <source>the broad pad of your right middle finger, centred</source>
+        <translation>오른쪽 중지의 넓은 면을 중앙에</translation>
+    </message>
+    <message>
+        <location filename="../src/researchwindow.cpp" line="112"/>
+        <source>your right index finger, a touch left of centre</source>
+        <translation>오른쪽 검지를 중앙에서 아주 조금 왼쪽으로</translation>
+    </message>
+    <message>
+        <location filename="../src/researchwindow.cpp" line="113"/>
+        <source>your right index finger, a touch right of centre</source>
+        <translation>오른쪽 검지를 중앙에서 아주 조금 오른쪽으로</translation>
+    </message>
+    <message>
+        <location filename="../src/researchwindow.cpp" line="114"/>
+        <source>the broad pad of your right index finger, centred</source>
+        <translation>오른쪽 검지의 넓은 면을 중앙에</translation>
+    </message>
+    <message>
+        <location filename="../src/researchwindow.cpp" line="125"/>
+        <source>%1 · saved %2 / %3</source>
+        <translation>%1 · 저장 %2 / %3</translation>
+    </message>
+    <message>
+        <location filename="../src/researchwindow.cpp" line="143"/>
+        <source>① Lift your finger clear of the sensor · 5 s</source>
+        <translation>① 손가락을 센서에서 완전히 떼세요 · 5초</translation>
+    </message>
+    <message>
+        <location filename="../src/researchwindow.cpp" line="144"/>
+        <source>The empty sensor is measured first. Wait until this changes to &apos;Touch now&apos;.</source>
+        <translation>빈 센서를 먼저 측정합니다. &apos;지금 대세요&apos;로 바뀔 때까지 기다리세요.</translation>
+    </message>
+    <message>
+        <location filename="../src/researchwindow.cpp" line="149"/>
+        <source>① Keep it off and wait · preparing the sensor</source>
+        <translation>① 그대로 떼고 기다리세요 · 센서 준비 중</translation>
+    </message>
+    <message>
+        <location filename="../src/researchwindow.cpp" line="150"/>
+        <source>This changes to &apos;Touch now&apos; automatically once the background measurement is done.</source>
+        <translation>배경 측정이 끝나면 자동으로 &apos;지금 대세요&apos;로 바뀝니다.</translation>
+    </message>
+    <message>
+        <location filename="../src/researchwindow.cpp" line="164"/>
+        <source>① Lift your finger clear · %1 s</source>
+        <translation>① 손가락을 완전히 떼세요 · %1초</translation>
+    </message>
+    <message>
+        <location filename="../src/researchwindow.cpp" line="168"/>
+        <source>%1 · sensor ready in %2 s</source>
+        <translation>%1 · %2초 뒤 센서 준비</translation>
+    </message>
+    <message>
+        <location filename="../src/researchwindow.cpp" line="173"/>
+        <source>6 reference images done. Starting the separate verification.</source>
+        <translation>기준 영상 6장 완료. 별도 검증을 시작합니다.</translation>
+    </message>
+    <message>
+        <location filename="../src/researchwindow.cpp" line="174"/>
+        <source>Now switch to your right middle finger.</source>
+        <translation>이제 오른쪽 중지로 바꿔 주세요.</translation>
+    </message>
+    <message>
+        <location filename="../src/researchwindow.cpp" line="175"/>
+        <source>Four more images with the same right index finger, placed afresh. These are evaluated separately from the reference images.</source>
+        <translation>같은 오른쪽 검지를 새로 대어 4장을 촬영합니다. 이 영상은 기준 영상과 분리해 평가합니다.</translation>
+    </message>
+    <message>
+        <location filename="../src/researchwindow.cpp" line="176"/>
+        <source>Four images to check whether a different finger is wrongly accepted. Do not touch the sensor yet.</source>
+        <translation>다른 손가락을 잘못 받아들이는지 확인할 4장입니다. 아직 센서에는 대지 마세요.</translation>
+    </message>
+    <message>
+        <location filename="../src/researchwindow.cpp" line="188"/>
+        <source>② Touch now — %1</source>
+        <translation>② 지금 대세요 — %1</translation>
+    </message>
+    <message>
+        <location filename="../src/researchwindow.cpp" line="189"/>
+        <source>Cover the whole sensor, press lightly and hold. Lift when the prompt says so, after the image appears.</source>
+        <translation>센서 전체를 덮고 가볍게 눌러 유지하세요. 영상이 나온 뒤 &apos;떼세요&apos; 안내에 따라 떼면 됩니다.</translation>
+    </message>
+    <message>
+        <location filename="../src/researchwindow.cpp" line="191"/>
+        <source>③ Hold your finger still · capturing</source>
+        <translation>③ 손가락을 그대로 유지하세요 · 촬영 중</translation>
+    </message>
+    <message>
+        <location filename="../src/researchwindow.cpp" line="192"/>
+        <source>Contact confirmed. Do not move your finger.</source>
+        <translation>실제 접촉이 확인됐습니다. 손가락을 움직이지 마세요.</translation>
+    </message>
+    <message>
+        <location filename="../src/researchwindow.cpp" line="194"/>
+        <source>④ Captured. Lift your finger clear.</source>
+        <translation>④ 촬영했습니다. 손가락을 완전히 떼세요.</translation>
+    </message>
+    <message>
+        <location filename="../src/researchwindow.cpp" line="195"/>
+        <source>The image and its quality will be shown in a moment.</source>
+        <translation>곧 촬영 영상과 품질을 표시합니다.</translation>
+    </message>
+    <message>
+        <location filename="../src/researchwindow.cpp" line="221"/>
+        <source>Image just captured · %1×%2 · contact %3% · sharpness %4 · background difference %5</source>
+        <translation>방금 촬영한 영상 · %1×%2 · 접촉률 %3% · 선명도 %4 · 배경 차이 %5</translation>
+    </message>
+    <message>
+        <location filename="../src/researchwindow.cpp" line="228"/>
+        <source>All 14 images collected — you can rest your hand.</source>
+        <translation>14장 수집 완료 — 손을 쉬세요.</translation>
+    </message>
+    <message>
+        <location filename="../src/researchwindow.cpp" line="229"/>
+        <source>The reference, verification and different-finger images were saved separately. The matching results are analysed next. Finishing collection is not a decision that authentication succeeded.</source>
+        <translation>기준·검증·다른 손가락 영상이 분리 저장됐습니다. 이제 매칭 결과를 분석합니다. 수집 완료는 인증 성공 판정이 아닙니다.</translation>
+    </message>
+    <message>
+        <location filename="../src/researchwindow.cpp" line="233"/>
+        <source>④ Saved · %1/14 — lift your finger.</source>
+        <translation>④ 저장 완료 · %1/14 — 손가락을 떼세요.</translation>
+    </message>
+    <message>
+        <location filename="../src/researchwindow.cpp" line="234"/>
+        <source>Below is the image just captured. The next capture is prepared automatically in 4 seconds.</source>
+        <translation>아래는 방금 촬영한 실제 영상입니다. 4초 뒤 다음 촬영 준비로 자동 이동합니다.</translation>
+    </message>
+    <message>
+        <location filename="../src/researchwindow.cpp" line="239"/>
+        <source>The capture failed — lift your finger.</source>
+        <translation>촬영하지 못했습니다 — 손가락을 떼세요.</translation>
+    </message>
+    <message>
+        <location filename="../src/researchwindow.cpp" line="240"/>
+        <source>The same sample will be retried automatically. Do not touch the sensor yet.</source>
+        <translation>같은 샘플을 자동으로 다시 시도합니다. 아직 손가락을 대지 마세요.</translation>
+    </message>
+    <message>
+        <location filename="../src/researchwindow.cpp" line="241"/>
+        <source>Three failures in a row, so it has paused for diagnosis. Rest your hand. Collection resumes automatically once the cause is identified.</source>
+        <translation>3회 연속 실패하여 진단을 위해 멈췄습니다. 손을 쉬세요. 원인을 확인한 뒤 자동 수집을 재개합니다.</translation>
+    </message>
+    <message>
+        <location filename="../src/researchwindow.cpp" line="249"/>
+        <source>Stopped. Lift your finger.</source>
+        <translation>중단했습니다. 손가락을 떼세요.</translation>
+    </message>
+    <message>
+        <location filename="../src/researchwindow.cpp" line="249"/>
+        <source>Images already saved have been kept.</source>
+        <translation>이미 저장한 영상은 보존했습니다.</translation>
     </message>
 </context>
 <context>

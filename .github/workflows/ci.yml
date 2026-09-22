@@ -155,6 +155,21 @@ jobs:
             fi
           done
 
+      - name: No user-visible string may bypass the catalogues
+        run: |
+          cd src/fpstudio
+          # lupdate only sees tr() and QCoreApplication::translate(), so a
+          # QStringLiteral holding Korean is invisible to it: the catalogue
+          # check passes, every locale shows Korean, and nobody finds out. That
+          # is how 81 strings in the enrolment window ended up untranslatable.
+          # i18n.cpp is exempt because its Korean is an endonym in the language
+          # picker, which must not be translated.
+          if grep -rn --include=*.cpp --include=*.h \
+               'QStringLiteral("[^"]*[가-힣]' src/ | grep -v '^src/i18n.cpp:'; then
+            echo "::error::Korean literal outside tr() - it cannot be translated"
+            exit 1
+          fi
+
       - name: No catalogue may have an unfinished translation
         run: |
           cd src/fpstudio/translations

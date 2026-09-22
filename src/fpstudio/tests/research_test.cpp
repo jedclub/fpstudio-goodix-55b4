@@ -45,13 +45,13 @@ private slots:
         QVERIFY(read().value("target_reached").toBool());
         QCOMPARE(read().value("compared_contacts").toInt(),3);
         QCOMPARE(read().value("pending_contacts").toInt(),0);
-        QVERIFY(read().value("instruction").toString().contains(QStringLiteral("더 반복하지 마세요")));
+        QVERIFY(read().value("instruction").toString().contains(QStringLiteral("no need to repeat")));
         QTest::qWait(500); // Include the asynchronous QProcess termination events.
         QCOMPARE(read().value("gpu_errors").toInt(),0);
-        QVERIFY(read().value("gpu_message").toString().contains(QStringLiteral("정상 종료")));
-        QVERIFY(!read().value("gpu_message").toString().contains(QStringLiteral("실행할 수 없습니다")));
+        QVERIFY(read().value("gpu_message").toString().contains(QStringLiteral("stopped normally")));
+        QVERIFY(!read().value("gpu_message").toString().contains(QStringLiteral("GPU comparison cannot run")));
         for(const auto *label:w.findChildren<QLabel *>())
-            QVERIFY(!label->text().contains(QStringLiteral("실행할 수 없습니다")));
+            QVERIFY(!label->text().contains(QStringLiteral("GPU comparison cannot run")));
     }
     void cascadeFallbackAndBankIntegrity() {
         QTemporaryDir dir;
@@ -130,8 +130,8 @@ private slots:
         QVERIFY(cancelled);
         QTest::qWait(500);
         QCOMPARE(read().value("gpu_errors").toInt(),0);
-        QVERIFY(read().value("gpu_message").toString().contains(QStringLiteral("사용자 요청")));
-        QVERIFY(!read().value("gpu_message").toString().contains(QStringLiteral("실행할 수 없습니다")));
+        QVERIFY(read().value("gpu_message").toString().contains(QStringLiteral("at your request")));
+        QVERIFY(!read().value("gpu_message").toString().contains(QStringLiteral("GPU comparison cannot run")));
     }
     void scaleRefinementAndNegativeControls() {
         QTemporaryDir dir;
@@ -197,7 +197,7 @@ private slots:
             QVERIFY(!(f.permissions()&(QFileDevice::ReadGroup|QFileDevice::ReadOther)));
         }
         QVERIFY(QFile::exists(dir.path()+"/candidate-touch-33.png"));
-        QCOMPARE(stopButton(w)->text(),QStringLiteral("닫기"));
+        QCOMPARE(stopButton(w)->text(),QStringLiteral("Close"));
         // A finished session with captures on the map can be enrolled from
         // here; that is the whole point of the session, and it used to need a
         // separate tool and a hand-copied directory.
@@ -273,7 +273,7 @@ private slots:
         const QString screenshot=qEnvironmentVariable("FPSTUDIO_LIVE_SCREENSHOT");
         if(!screenshot.isEmpty())QVERIFY(w.grab().save(screenshot));
         QTest::mouseClick(stopButton(w),Qt::LeftButton);
-        QTRY_COMPARE_WITH_TIMEOUT(stopButton(w)->text(),QStringLiteral("닫기"),2000);
+        QTRY_COMPARE_WITH_TIMEOUT(stopButton(w)->text(),QStringLiteral("Close"),2000);
     }
     void selectorRejectsBadFrames() {
         QImage flat(108,88,QImage::Format_Grayscale8); flat.fill(128);
@@ -326,9 +326,9 @@ private slots:
         QCOMPARE(liveStatus().value("candidates").toInt(), 1);
         QVERIFY(QFile::exists(dir.path()+"/candidate-touch-01.png"));
         QTRY_COMPARE_WITH_TIMEOUT(liveStatus().value("fps").toDouble(), 0.0, 4000);
-        QVERIFY(liveStatus().value("instruction").toString().contains(QStringLiteral("멈췄습니다")));
+        QVERIFY(liveStatus().value("instruction").toString().contains(QStringLiteral("stream has stopped")));
         QTest::mouseClick(stopButton(w), Qt::LeftButton);
-        QTRY_COMPARE_WITH_TIMEOUT(stopButton(w)->text(), QStringLiteral("닫기"), 2000);
+        QTRY_COMPARE_WITH_TIMEOUT(stopButton(w)->text(), QStringLiteral("Close"), 2000);
     }
     void fullPlan() {
         QTemporaryDir dir;

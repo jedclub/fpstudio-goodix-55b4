@@ -36,9 +36,9 @@ LiveWindow::LiveWindow(const QString &directory, QWidget *parent,
 {
     m_targetContacts=qBound(0,targetContacts,128);
     m_differentFinger=differentFinger;
-    m_fingerPrompt=differentFinger?QStringLiteral("방금과 다른 손가락"):
-        QStringLiteral("지금까지 사용한 같은 손가락");
-    setWindowTitle(QStringLiteral("fpstudio · 실시간 지문 영상"));
+    m_fingerPrompt=differentFinger?tr("a different finger from the last one"):
+        tr("the same finger used so far");
+    setWindowTitle(tr("fpstudio · live fingerprint stream"));
     // 1050x920 assumes a display with room for it. On a 1080p panel, once the
     // title bar and a desktop panel are taken out, it is already close; at any
     // desktop scale above 1 it is past, and what goes over the bottom edge is
@@ -48,8 +48,8 @@ LiveWindow::LiveWindow(const QString &directory, QWidget *parent,
     setStyleSheet("QDialog {background:#101827;} QLabel {color:#e5edf8;} QPushButton {padding:12px 28px;font-size:18px;}");
     auto *layout = new QVBoxLayout(this);
     m_instruction = new QLabel(m_differentFinger
-        ? QStringLiteral("\u26a0 다른 손가락 시험 — 손가락을 센서에서 떼 주세요. 곧 자동으로 보정합니다.")
-        : QStringLiteral("손가락을 센서에서 떼 주세요. 곧 자동으로 보정합니다."));
+        ? tr("\u26a0 Different-finger trial — lift your finger off the sensor. Calibration starts automatically.")
+        : tr("Lift your finger off the sensor. Calibration starts automatically."));
     m_instruction->setWordWrap(true);
     // Red for the different-finger run, blue otherwise.
     //
@@ -70,13 +70,13 @@ LiveWindow::LiveWindow(const QString &directory, QWidget *parent,
     // capture helper, whose length nothing here controls. Capped so that no
     // message it is handed can take the window's other rows off the bottom.
     m_instruction->setMaximumHeight(110);
-    auto *detail = new QLabel(QStringLiteral("보정 후 같은 손가락을 가볍게 올리고 안내를 따라 주세요. 접촉별 후보를 자동 비교합니다.\n"
-        "실제 센서 영상 108 × 88 · 배경 차감/명암 정규화 · 인증 판정 아님 · 최대 3분"));
+    auto *detail = new QLabel(tr("After calibration, rest the same finger lightly on the sensor and follow the prompts. Candidates are compared automatically for each contact.\n"
+        "Live sensor image 108 × 88 · background subtracted, contrast normalised · not an authentication decision · up to 3 minutes"));
     detail->setWordWrap(true); detail->setStyleSheet("font-size:16px;");
     detail->setMaximumHeight(72);
-    if(m_differentFinger)detail->setText(QStringLiteral("다른 손가락 비교 시험입니다. 방금 사용한 손가락은 이번에는 대지 마세요.\n"
-        "보정 후 다른 손가락 하나로 가볍게 대었다 떼며 반복하세요. 높은 점수도 인증 승인을 뜻하지 않습니다."));
-    m_image = new QLabel(QStringLiteral("보정 대기 중 — 아직 실시간 영상이 없습니다"));
+    if(m_differentFinger)detail->setText(tr("This is a different-finger comparison trial. Do not use the finger from the previous run this time.\n"
+        "After calibration, tap and lift repeatedly with one other finger. Even a high score does not mean authentication was granted."));
+    m_image = new QLabel(tr("Waiting for calibration — no live image yet"));
     // Minimum, not preferred: two of these side by side at 352 high, plus the
     // instruction banner, the detail text, the metrics line, the match caption
     // and the button, set a floor the window cannot shrink below. On a short
@@ -93,25 +93,25 @@ LiveWindow::LiveWindow(const QString &directory, QWidget *parent,
     m_image->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
     m_image->setWordWrap(true);
     m_image->setStyleSheet("background:#050a11;border:1px solid #344155;");
-    m_metrics = new QLabel(QStringLiteral("0 FPS · 새 프레임 대기"));
+    m_metrics = new QLabel(tr("0 FPS · waiting for a new frame"));
     m_metrics->setStyleSheet("font-size:18px;");
     m_metrics->setMaximumHeight(44);
-    m_matchLabel = new QLabel(QStringLiteral("GPU 비교: 기준 영상 미지정 · 실시간 수집만 진행"));
+    m_matchLabel = new QLabel(tr("GPU comparison: no reference image set · collecting live only"));
     m_matchLabel->setWordWrap(true); m_matchLabel->setStyleSheet("font-size:16px;color:#a5d7ff;");
     // Capped as well as floored: this caption reports per-contact comparison
     // results whose length is not fixed, and an uncapped growing widget in a
     // vertical layout takes its space from whatever sits below it.
     m_matchLabel->setMinimumHeight(110);
     m_matchLabel->setMaximumHeight(150);
-    m_stop = new QPushButton(QStringLiteral("중단"));
+    m_stop = new QPushButton(tr("Stop"));
     m_stop->setObjectName(QStringLiteral("stop"));
     // Only offered once the session has stopped and there is something to
     // install: enrolling from a half-finished sweep is how a gallery ends up
     // covering one corner of the finger.
-    m_install = new QPushButton(QStringLiteral("이 지문을 등록본으로 설치"));
+    m_install = new QPushButton(tr("Install this fingerprint as the enrolment"));
     m_install->setObjectName(QStringLiteral("install"));
     m_install->hide();
-    m_matchImage=new QLabel(QStringLiteral("커버리지 지도 — 접촉이 쌓이면 여기에 그려집니다\n어두운 붉은 부분이 아직 안 닿은 곳입니다\n비어 있는 쪽으로 손가락을 옮겨 대주세요\n인증 판정이 아니라 등록 안내용입니다"));
+    m_matchImage=new QLabel(tr("Coverage map — drawn here as contacts accumulate\nThe dark red areas have not been touched yet\nMove your finger toward the empty side\nThis is enrolment guidance, not an authentication decision"));
     m_matchImage->setAlignment(Qt::AlignCenter);m_matchImage->setMinimumSize(240,180);
     m_matchImage->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
     m_matchImage->setWordWrap(true);
@@ -129,19 +129,19 @@ LiveWindow::LiveWindow(const QString &directory, QWidget *parent,
         m_install->setEnabled(true);
         m_stage.reset();
         const bool ok=status==QProcess::NormalExit&&code==0;
-        m_instruction->setText(ok?QStringLiteral("등록본을 설치했습니다. 이제 sudo · 잠금화면에서 이 지문이 쓰입니다.")
-                                 :QStringLiteral("등록본 설치에 실패했습니다. 기존 등록본은 그대로입니다."));
+        m_instruction->setText(ok?tr("The enrolment is installed. sudo and the lock screen now use this fingerprint.")
+                                 :tr("Installing the enrolment failed. The existing enrolment is unchanged."));
         if(!ok) {
             const QString detail=QString::fromLocal8Bit(m_installer.readAllStandardError()).trimmed();
-            QMessageBox::warning(this,QStringLiteral("설치 실패"),
-                detail.isEmpty()?QStringLiteral("설치 도구가 코드 %1 로 끝났습니다.").arg(code)
+            QMessageBox::warning(this,tr("Installation failed"),
+                detail.isEmpty()?tr("The installer exited with code %1.").arg(code)
                                 :detail.right(1200));
         }
     });
     m_lock = std::make_unique<QLockFile>(QStandardPaths::writableLocation(QStandardPaths::RuntimeLocation) + "/fpstudio-research.lock");
     if (!m_lock->tryLock() || !QDir().mkpath(m_dir) ||
         !QFile::setPermissions(m_dir, QFileDevice::ReadOwner | QFileDevice::WriteOwner | QFileDevice::ExeOwner)) {
-        m_instruction->setText(QStringLiteral("시작하지 못했습니다. 다른 센서 세션 또는 저장 폴더 권한을 확인하세요."));
+        m_instruction->setText(tr("Could not start. Check for another sensor session, or the permissions on the save folder."));
         m_finished = true; return;
     }
     auto env = QProcessEnvironment::systemEnvironment();
@@ -154,17 +154,17 @@ LiveWindow::LiveWindow(const QString &directory, QWidget *parent,
     connect(&m_worker, &QProcess::errorOccurred, this, [this](QProcess::ProcessError e) {
         if (e == QProcess::FailedToStart) {
             m_finished = true;
-            m_instruction->setText(QStringLiteral("캡처 프로그램을 실행하지 못했습니다: ") + m_worker.errorString());
-            m_stop->setText(QStringLiteral("닫기"));
+            m_instruction->setText(tr("Could not run the capture program: ") + m_worker.errorString());
+            m_stop->setText(tr("Close"));
             finishMatching();
         }
     });
     connect(&m_worker, qOverload<int, QProcess::ExitStatus>(&QProcess::finished), this, [this](int, QProcess::ExitStatus) {
         m_finished = true;
-        m_instruction->setText(m_stopping ? QStringLiteral("중단했습니다. 센서에서 손을 떼셔도 됩니다.")
-             : QStringLiteral("실시간 영상이 종료되었습니다. 센서에서 손을 떼 주세요."));
-        m_metrics->setText(QStringLiteral("0 FPS · 종료 · 마지막 영상은 정지 화면입니다 · 총 %1 프레임").arg(m_total));
-        m_stop->setText(QStringLiteral("닫기"));
+        m_instruction->setText(m_stopping ? tr("Stopped. You can lift your finger off the sensor.")
+             : tr("The live stream has ended. Lift your finger off the sensor."));
+        m_metrics->setText(tr("0 FPS · ended · the last image is a still · %1 frames in total").arg(m_total));
+        m_stop->setText(tr("Close"));
         saveMap();
         QSaveFile result(m_dir + "/capture-result.json");
         if (result.open(QIODevice::WriteOnly)) {
@@ -266,7 +266,7 @@ void LiveWindow::startMatcher(const QString &referenceDir, const QString &progra
     connect(&m_matcher,qOverload<int,QProcess::ExitStatus>(&QProcess::finished),this,[this](int code,QProcess::ExitStatus exit) {
         if(!m_gpuStopExpected&&!m_gpuFailed&&(m_gpuBusy||!m_pending.isEmpty()||!m_finished||code!=0||exit!=QProcess::NormalExit)) {
             failPending("matcher-exited");
-            m_matchLabel->setText(QStringLiteral("GPU 비교 작업자가 예기치 않게 종료됐습니다 (코드 %1)").arg(code));
+            m_matchLabel->setText(tr("The GPU comparison worker exited unexpectedly (code %1)").arg(code));
         }
         m_gpuReady=false;m_gpuBusy=false;
         finishMatching();
@@ -780,10 +780,10 @@ void LiveWindow::renderMap()
         const int lx=(side-w)/2+m_mapLastX-x0,ly=(side-h)/2+m_mapLastY-y0;
         QColor mark;QString note;
         switch(m_mapOutcome) {
-        case MapOutcome::Placed:        mark=QColor(80,255,140);note=QStringLiteral("반영됨");break;
-        case MapOutcome::TooSmeared:    mark=QColor(255,80,80); note=QStringLiteral("뭉개짐 · 미반영");break;
-        case MapOutcome::NotRegistered: mark=QColor(255,170,40);note=QStringLiteral("정합 실패 · 미반영");break;
-        default:                        mark=QColor(255,170,40);note=QStringLiteral("겹침 부족 · 미반영");break;
+        case MapOutcome::Placed:        mark=QColor(80,255,140);note=tr("added");break;
+        case MapOutcome::TooSmeared:    mark=QColor(255,80,80); note=tr("smeared · not added");break;
+        case MapOutcome::NotRegistered: mark=QColor(255,170,40);note=tr("registration failed · not added");break;
+        default:                        mark=QColor(255,170,40);note=tr("too little overlap · not added");break;
         }
         painter.setPen(QPen(mark,2));
         painter.drawRect(lx,ly,108-1,88-1);
@@ -791,11 +791,11 @@ void LiveWindow::renderMap()
         painter.drawLine(lx+48,ly+44,lx+60,ly+44);
         painter.setPen(mark);painter.setFont(QFont(QString(),8));
         painter.drawText(QRect(lx,ly-13,108,12),Qt::AlignCenter,
-            QStringLiteral("마지막 접촉 · %1").arg(note));
+            tr("last contact · %1").arg(note));
     }
     painter.setPen(Qt::white);painter.setFont(QFont(QString(),9));
     painter.drawText(QRect(0,side,side,34),Qt::AlignCenter|Qt::TextWordWrap,
-        QStringLiteral("덮인 범위 %1배 · 배치 %2개 · 미반영 %3개\n어두운 붉은 부분이 아직 안 닿은 곳 · 초록 테두리가 방금 반영된 위치")
+        tr("Coverage %1× · %2 placed · %3 not added\nDark red is what has not been touched yet · the green outline is what was just added")
             .arg(double(covered)/(108.0*88.0),0,'f',2).arg(m_mapPlaced).arg(m_mapRejects));
     painter.end();
     m_matchImage->setPixmap(QPixmap::fromImage(
@@ -849,16 +849,16 @@ void LiveWindow::installEnrolment()
     if(m_installer.state()!=QProcess::NotRunning)return;
     const QStringList chosen=selectEnrolment(56);
     if(chosen.isEmpty()) {
-        QMessageBox::warning(this,QStringLiteral("설치할 수 없음"),
-            QStringLiteral("지도에 등록된 캡쳐가 없습니다. 손가락을 센서에 대고 천천히 움직여 다시 수집해 주세요."));
+        QMessageBox::warning(this,tr("Cannot install"),
+            tr("No capture has been placed on the map. Rest your finger on the sensor, move it slowly, and collect again."));
         return;
     }
     const QString user=qEnvironmentVariable("USER");
     if(user.isEmpty())return;
-    if(QMessageBox::question(this,QStringLiteral("지문 등록본 설치"),
-        QStringLiteral("이번 세션의 캡쳐 %1장을 인증 등록본으로 설치합니다.\n\n"
-                       "기존 등록본은 백업 후 교체되고, fprintd 등록과 PAM 설정은 그대로 둡니다.\n"
-                       "이 매처는 타인 거부가 검증되지 않았습니다. 진행할까요?").arg(chosen.size()))
+    if(QMessageBox::question(this,tr("Install fingerprint enrolment"),
+        tr("Install %1 captures from this session as the authentication enrolment.\n\n"
+           "The existing enrolment is backed up and replaced; fprintd enrolment and PAM settings are left alone.\n"
+           "This matcher has not been validated for rejecting other people. Continue?").arg(chosen.size()))
         !=QMessageBox::Yes)return;
 
     m_stage=std::make_unique<QTemporaryDir>();
@@ -882,8 +882,8 @@ void LiveWindow::installEnrolment()
     }
     const QString script=installerScript();
     if(script.isEmpty()) {
-        QMessageBox::warning(this,QStringLiteral("설치할 수 없음"),
-            QStringLiteral("설치 도구(tools/auth_install.py)를 찾지 못했습니다."));
+        QMessageBox::warning(this,tr("Cannot install"),
+            tr("Could not find the installer (tools/auth_install.py)."));
         return;
     }
     QStringList args{QStringLiteral("/usr/bin/python"),script};
@@ -892,7 +892,7 @@ void LiveWindow::installEnrolment()
         <<QStringLiteral("--reference-dir")<<m_stage->path()
         <<QStringLiteral("--enable-experimental-auth")<<QStringLiteral("--apply");
     m_install->setEnabled(false);
-    m_instruction->setText(QStringLiteral("등록본을 설치하는 중입니다…"));
+    m_instruction->setText(tr("Installing the enrolment…"));
     m_installer.start(QStringLiteral("/usr/bin/pkexec"),args);
 }
 
@@ -1027,16 +1027,16 @@ void LiveWindow::finishMatching()
 {
     if(m_finished) {
         if(m_gpuBusy||!m_pending.isEmpty()) {
-            m_instruction->setText(QStringLiteral("촬영 종료 — 손을 떼 주세요. 남은 접촉 %1개를 자동 비교 중입니다").arg(m_pending.size()+(m_gpuBusy?1:0)));
-            m_stop->setText(QStringLiteral("중단"));
+            m_instruction->setText(tr("Capture finished — lift your finger. %1 remaining contacts are still being compared").arg(m_pending.size()+(m_gpuBusy?1:0)));
+            m_stop->setText(tr("Stop"));
         } else {
-            m_stop->setText(QStringLiteral("닫기"));
+            m_stop->setText(tr("Close"));
             // The session is over and its captures are on disk, so enrolling
             // from them is now a single button rather than a separate tool.
             if(m_install&&m_installer.state()==QProcess::NotRunning)
                 m_install->setVisible(m_mapPlaced>0&&m_candidates>0);
-            m_instruction->setText(m_targetReached?QStringLiteral("목표 %1접촉 비교를 완료했습니다 — 더 반복하지 마세요. 손을 떼셔도 됩니다.").arg(m_targetContacts):m_stopping?QStringLiteral("중단했습니다. 손을 떼셔도 됩니다."):
-                QStringLiteral("촬영과 후보 비교가 종료되었습니다. 아래 접촉별 집계를 확인하세요."));
+            m_instruction->setText(m_targetReached?tr("The target of %1 contacts has been compared — no need to repeat. You can lift your finger.").arg(m_targetContacts):m_stopping?tr("Stopped. You can lift your finger."):
+                tr("Capture and candidate comparison have ended. See the per-contact totals below."));
             m_matcher.closeWriteChannel();
         }
     }
@@ -1077,7 +1077,7 @@ void LiveWindow::writeStatus()
         file.setPermissions(QFileDevice::ReadOwner|QFileDevice::WriteOwner);
         file.write(QJsonDocument(object).toJson());file.commit();
     }
-    if(m_finished)m_metrics->setText(QStringLiteral("촬영 종료 · %1 프레임 · 감지 접촉 %2회\n비교 응답 %3회 · 무늬 일관성 %4회 · 미비교 %5회 (후보 없음 %6회) · 대기 %7회 · 오류 %8건\n선별 자료의 연구 결과이며 인증 성공률이 아닙니다")
+    if(m_finished)m_metrics->setText(tr("Capture finished · %1 frames · %2 contacts detected\n%3 comparisons answered · %4 ridge-consistent · %5 not compared (%6 with no candidate) · %7 queued · %8 errors\nResearch results on selected data, not an authentication success rate")
         .arg(m_total).arg(m_touch).arg(compared).arg(consistent).arg(m_touch-compared).arg(noCandidate).arg(m_pending.size()).arg(m_gpuErrors));
     m_lastStatusWrite=now;
 }
@@ -1085,7 +1085,7 @@ void LiveWindow::start()
 {
     m_started = true;
     m_scanStart = m_clock.elapsed();
-    m_instruction->setText(QStringLiteral("아직 손을 떼고 계세요 — 센서 연결 및 배경 보정 중"));
+    m_instruction->setText(tr("Keep your finger off — connecting to the sensor and calibrating the background"));
     // The child inherits the language already selected by the application.
     // Forcing Korean here made an otherwise localized session switch language
     // as soon as live capture started.
@@ -1118,11 +1118,14 @@ static QString pressureGauge(int coverage)
         bar+=i<filled?(at>=79?QStringLiteral("\u2588"):at>=78?QStringLiteral("\u2593"):QStringLiteral("\u2592"))
                      :QStringLiteral("\u00b7");
     }
-    const QString verdict=coverage<=77?QStringLiteral("좋음")
-                         :coverage<=78?QStringLiteral("살짝 셈")
-                         :coverage<=79?QStringLiteral("셈 — 힘을 빼세요")
-                                      :QStringLiteral("너무 셈 — 살짝 올려놓듯이");
-    return QStringLiteral("누르는 힘 %1 %2  %3   (목표 77 이하)")
+    // A free function, so it cannot use tr(); named into LiveWindow's context
+    // so these strings sit with the rest of the window's text.
+    const auto T=[](const char *text){return QCoreApplication::translate("LiveWindow",text);};
+    const QString verdict=coverage<=77?T("good")
+                         :coverage<=78?T("slightly hard")
+                         :coverage<=79?T("hard — ease off")
+                                      :T("too hard — just rest it on");
+    return T("Pressure %1 %2  %3   (target 77 or below)")
         .arg(bar).arg(coverage,2).arg(verdict);
 }
 
@@ -1131,7 +1134,7 @@ void LiveWindow::tick()
     if (m_finished || m_stopping) return;
     const qint64 now = m_clock.elapsed();
     if (!m_started) {
-        m_instruction->setText(QStringLiteral("손가락을 떼 주세요 — %1초 후 배경 보정").arg(qMax<qint64>(1, (m_prepareMs - now + 999) / 1000)));
+        m_instruction->setText(tr("Lift your finger — background calibration in %1 s").arg(qMax<qint64>(1, (m_prepareMs - now + 999) / 1000)));
         if (now >= m_prepareMs) start();
         return;
     }
@@ -1140,10 +1143,10 @@ void LiveWindow::tick()
         if (beacon.open(QIODevice::ReadOnly)) {
             const auto state = QJsonDocument::fromJson(beacon.readAll()).object();
             if (state.value("stage").toString() == "background-ready")
-                m_instruction->setText(QStringLiteral("손을 계속 떼고 계세요 — 연속 영상으로 배경을 추가 수집합니다"));
+                m_instruction->setText(tr("Keep your finger off — collecting more background from the live stream"));
         }
         if (now > m_prepareMs + 15000)
-            m_metrics->setText(QStringLiteral("0 FPS · 첫 영상 대기 중 · %1초").arg((now - m_prepareMs) / 1000));
+            m_metrics->setText(tr("0 FPS · waiting for the first image · %1 s").arg((now - m_prepareMs) / 1000));
     }
     QFile file(m_dir + "/live.pgm");
     if (file.open(QIODevice::ReadOnly)) {
@@ -1320,40 +1323,40 @@ void LiveWindow::tick()
                     matchFrame(frame,"diverse-retry");
                 m_image->setPixmap(QPixmap::fromImage(frame).scaled(m_image->size(), Qt::KeepAspectRatio, Qt::FastTransformation));
                 QString guidance;
-                if(!m_calibrated)guidance=QStringLiteral("손을 떼고 유지해 주세요 — 배경을 여러 프레임으로 수집 중입니다 (지금은 접촉하지 마세요)");
-                else if(!touch)guidance=QStringLiteral("손 뗌 상태입니다 — 지금 %1을 센서 중앙에 가볍게 올려 주세요").arg(m_fingerPrompt);
+                if(!m_calibrated)guidance=tr("Keep your finger off and hold — collecting the background over several frames (do not touch the sensor yet)");
+                else if(!touch)guidance=tr("No finger detected — now rest %1 lightly in the centre of the sensor").arg(m_fingerPrompt);
                 else if(m_differentFinger&&m_contacts[m_touch].value("compared").toBool())
                     guidance=m_contacts[m_touch].value("consistent").toBool()?
-                        QStringLiteral("주의: 다른 손가락에서도 무늬 일치 근거가 나왔습니다. 오인식 의심 기록 완료 — 떼었다 다시 대 주세요"):
-                        QStringLiteral("이번 다른 손가락에서는 일치 근거가 없었습니다. 기록 완료 — 손을 완전히 떼었다 다시 대 주세요");
+                        tr("Warning: the other finger also produced ridge-match evidence. A suspected false accept has been recorded — lift and touch again"):
+                        tr("This other finger produced no match evidence. Recorded — lift completely and touch again");
                 else if(m_contacts[m_touch].value("consistent").toBool())
-                    guidance=QStringLiteral("이번 접촉의 무늬를 확인했습니다 — 손을 완전히 떼고 같은 손가락을 다시 올려 주세요 (인증 판정 아님)");
+                    guidance=tr("This contact's ridges were confirmed — lift completely and rest %1 on the sensor again (not an authentication decision)").arg(m_fingerPrompt);
                 else if(m_pending.contains(m_touch)||(m_gpuBusy&&m_gpuContact==m_touch))
-                    guidance=QStringLiteral("선명한 영상을 확보했습니다 — 자동 비교 중입니다. 손을 떼셔도 됩니다");
+                    guidance=tr("A sharp image was captured — comparing automatically. You can lift your finger");
                 else if(m_contacts[m_touch].value("compared").toBool())
                     guidance=m_contacts[m_touch].value("submitted").toInt()>=3?
-                        QStringLiteral("이번 접촉은 3회 비교해도 근거가 부족합니다 — 완전히 뗀 뒤 같은 손가락을 중앙에 다시 대 주세요"):
-                        QStringLiteral("일치 근거가 부족합니다 — 같은 손가락을 중앙으로 조금 옮기고 압력을 낮춰 주세요. 자동 재비교합니다");
-                else if(fields[3].toInt()<62)guidance=QStringLiteral("접촉 면적이 작습니다 — 같은 손가락의 지문 면을 센서 중앙에 넓게 대 주세요");
-                else if(fields[3].toInt()>=79)guidance=QStringLiteral("누르는 힘이 셉니다 — 살짝 올려놓듯이 힘을 빼 주세요. 이 구간에서 품질이 0.79 아래로 떨어집니다");
-                else if(quality.motion>18)guidance=QStringLiteral("손가락을 잠깐 멈춰 주세요 — 안정된 영상을 자동 선택합니다");
-                else if(!quality.eligible)guidance=QStringLiteral("무늬가 불분명합니다 — 힘을 조금 빼고 같은 손가락 위치를 살짝 바꿔 주세요");
-                else guidance=QStringLiteral("그대로 잠깐 유지해 주세요 — 선명한 영상을 자동 선택 중입니다");
-                if(m_differentFinger)guidance=QStringLiteral("\u26a0 다른 손가락을 올리세요 · ")+guidance.replace(QStringLiteral("같은 손가락"),QStringLiteral("이번 시험 손가락"));
+                        tr("Three comparisons of this contact found too little evidence — lift completely, then place %1 in the centre again").arg(m_fingerPrompt):
+                        tr("Too little match evidence — move %1 slightly toward the centre and press more lightly. It will be compared again automatically").arg(m_fingerPrompt);
+                else if(fields[3].toInt()<62)guidance=tr("The contact area is small — lay the pad of %1 flat across the centre of the sensor").arg(m_fingerPrompt);
+                else if(fields[3].toInt()>=79)guidance=tr("You are pressing hard — ease off and just rest the finger. Quality falls below 0.79 in this range");
+                else if(quality.motion>18)guidance=tr("Hold your finger still for a moment — a stable image will be selected automatically");
+                else if(!quality.eligible)guidance=tr("The ridges are unclear — ease off a little and shift %1 slightly").arg(m_fingerPrompt);
+                else guidance=tr("Hold it there for a moment — selecting a sharp image automatically");
+                if(m_differentFinger)guidance=tr("\u26a0 Use a different finger · ")+guidance;
                 const auto skipReason=m_contacts.value(m_touch).value("skip_reason").toString();
                 if(touch&&(skipReason=="candidate-storage-limit"||skipReason=="session-comparison-limit"))
-                    guidance=QStringLiteral("연구 저장·비교 한도에 도달했습니다 — 이 접촉은 추가 비교하지 않습니다. 중단해 주세요");
-                if(m_gpuFailed)guidance=QStringLiteral("GPU 비교를 사용할 수 없습니다 — 영상만 표시 중입니다. 중단해 주세요");
+                    guidance=tr("The research storage and comparison limit has been reached — this contact will not be compared further. Please stop");
+                if(m_gpuFailed)guidance=tr("GPU comparison is unavailable — showing the image only. Please stop");
                 // Say it where it can still be acted on: the contact is over,
                 // but the place it was meant to cover is still empty.
                 if(touch&&m_mapOutcome==MapOutcome::TooSmeared)
-                    guidance=QStringLiteral("\u26a0 무늬가 뭉개져 지도에 넣지 않았습니다 — 지도의 빨간 테두리가 그 위치입니다. "
-                        "힘을 빼고 같은 곳을 다시 눌러 주세요")+QStringLiteral(" · ")+guidance;
+                    guidance=tr("\u26a0 The ridges were smeared, so this was not added to the map — the red outline on the map is where it would have gone. "
+                        "Ease off and press the same spot again")+QStringLiteral(" · ")+guidance;
                 else if(touch&&m_mapOutcome==MapOutcome::NotRegistered)
-                    guidance=QStringLiteral("\u26a0 지도에 맞출 수 없었습니다 — 이미 채워진 곳과 절반쯤 겹치게 눌러 주세요")
+                    guidance=tr("\u26a0 This could not be fitted to the map — press so that it overlaps an already filled area by about half")
                         +QStringLiteral(" · ")+guidance;
                 else if(touch&&m_mapOutcome==MapOutcome::NoOverlap)
-                    guidance=QStringLiteral("\u26a0 지도의 기존 영역과 겹치는 부분이 없습니다 — 채워진 곳 가장자리부터 이어 나가 주세요")
+                    guidance=tr("\u26a0 This does not overlap anything already on the map — continue from the edge of a filled area")
                         +QStringLiteral(" · ")+guidance;
                 if(m_targetContacts>0) {
                     int completed=0;for(const auto &c:m_contacts)if(c.value("compared").toBool())++completed;
@@ -1361,19 +1364,19 @@ void LiveWindow::tick()
                 }
                 m_instruction->setText(guidance);
                 m_metrics->setText(pressureGauge(fields[3].toInt())+QStringLiteral("\n")
-                    +QStringLiteral("%1 FPS · %2 프레임 · 무늬 신호 %3 · 명암 면적 %4% · 선명도 %5\n")
+                    +tr("%1 FPS · %2 frames · ridge signal %3 · contrast area %4% · sharpness %5\n")
                     .arg(m_fps, 0, 'f', 1).arg(m_total).arg(QString::fromLatin1(fields[2]))
                     .arg(QString::fromLatin1(fields[3])).arg(QString::fromLatin1(fields[4]))
-                    + QStringLiteral("%1 · 접촉 %2회 · 후보 %3장 · GPU 완료 %4건 / 대기 %5접촉 (인증용 미검증)")
+                    + tr("%1 · %2 contacts · %3 candidates · %4 GPU comparisons done / %5 contacts queued (not validated for authentication)")
                         .arg(quality.reason).arg(m_touch).arg(m_candidates).arg(m_gpuCompleted).arg(m_pending.size())+
-                    QStringLiteral("\n원본 차이 %1 · 배경 잡음 %2 · %3").arg(m_rawSignal,0,'f',1).arg(m_noise,0,'f',1)
-                        .arg(!m_calibrated?QStringLiteral("배경 수집 중"):touch?QStringLiteral("손가락 접촉"):QStringLiteral("손 뗌")));
+                    tr("\nRaw difference %1 · background noise %2 · %3").arg(m_rawSignal,0,'f',1).arg(m_noise,0,'f',1)
+                        .arg(!m_calibrated?tr("collecting background"):touch?tr("finger in contact"):tr("no finger")));
             }
         }
     }
     if (m_lastArrival && now - m_lastArrival > 1500) {
-        m_instruction->setText(QStringLiteral("영상 수신이 멈췄습니다 — 현재 화면은 마지막 프레임입니다"));
-        m_metrics->setText(QStringLiteral("0 FPS · %1초 동안 새 영상 없음").arg((now - m_lastArrival) / 1000.0, 0, 'f', 1));
+        m_instruction->setText(tr("The image stream has stopped — the screen shows the last frame"));
+        m_metrics->setText(tr("0 FPS · no new image for %1 s").arg((now - m_lastArrival) / 1000.0, 0, 'f', 1));
     }
     // Spend the thermal budget rather than run into it. See kScanBudgetMs.
     if(m_scanStart&&!m_finished&&!m_stopping) {
@@ -1410,9 +1413,9 @@ void LiveWindow::stop(bool completed)
     if(completed)m_matcher.closeWriteChannel();
     else m_matcher.kill();
     if(!m_gpuFailed)m_matchLabel->setText(completed?
-        QStringLiteral("GPU 비교 완료 · %1건 처리 · 목표 %2접촉 도달로 정상 종료\n결과와 색상 표시 영상은 저장되어 있습니다. 인증 승인 여부를 판정한 것은 아닙니다.").arg(m_gpuCompleted).arg(m_targetContacts):
-        QStringLiteral("GPU 비교 중단 · 완료 %1건 · 진행 중 취소 %2건\n사용자 요청으로 중단했습니다. 저장된 결과는 유지됩니다.").arg(m_gpuCompleted).arg(m_gpuCancelled));
-    m_instruction->setText(QStringLiteral("중단 중 — 손가락을 떼 주세요"));
+        tr("GPU comparison finished · %1 processed · stopped normally on reaching the target of %2 contacts\nThe results and colour-marked images have been saved. This did not decide whether authentication is granted.").arg(m_gpuCompleted).arg(m_targetContacts):
+        tr("GPU comparison stopped · %1 finished · %2 cancelled in progress\nStopped at your request. Saved results are kept.").arg(m_gpuCompleted).arg(m_gpuCancelled));
+    m_instruction->setText(tr("Stopping — lift your finger"));
     writeStatus();
     if(m_finished)finishMatching();
     QFile marker(m_dir + "/live.pgm.stop");

@@ -40,7 +40,7 @@ ResearchWindow::ResearchWindow(const QString &directory, QWidget *parent,
       m_captureProgram(captureProgram.isEmpty() ? QCoreApplication::applicationFilePath() : captureProgram),
       m_prepareMs(prepareMs), m_reviewMs(reviewMs)
 {
-    setWindowTitle(QStringLiteral("fpstudio · 지문 연구 세션"));
+    setWindowTitle(tr("fpstudio · fingerprint research session"));
     resize(920, 720);
     setStyleSheet(QStringLiteral("QDialog {background:#101827;color:#e5edf8;} QLabel {color:#e5edf8;}"
                                  "QPushButton {padding:12px 24px;font-size:16px;}"));
@@ -52,12 +52,12 @@ ResearchWindow::ResearchWindow(const QString &directory, QWidget *parent,
     m_instructionLabel->setStyleSheet("font-size:26px;font-weight:bold;padding:16px;background:#1d4ed8;border-radius:8px;");
     m_detailLabel = new QLabel; m_detailLabel->setWordWrap(true);
     m_detailLabel->setMinimumHeight(58); m_detailLabel->setStyleSheet("font-size:17px;color:#b9cbe5;");
-    m_preview = new QLabel(QStringLiteral("촬영 후 실제 지문 영상이 여기에 표시됩니다"));
+    m_preview = new QLabel(tr("The captured fingerprint image will appear here"));
     m_preview->setAlignment(Qt::AlignCenter); m_preview->setMinimumSize(432, 352);
     m_preview->setStyleSheet("background:#060b12;border:1px solid #344155;border-radius:8px;");
-    m_quality = new QLabel(QStringLiteral("영상 없음 · 아직 촬영하지 않았습니다"));
+    m_quality = new QLabel(tr("No image · nothing captured yet"));
     m_quality->setAlignment(Qt::AlignCenter); m_quality->setStyleSheet("font-size:16px;");
-    m_stop = new QPushButton(QStringLiteral("중단"));
+    m_stop = new QPushButton(tr("Stop"));
     auto *buttons = new QHBoxLayout; buttons->addStretch(); buttons->addWidget(m_stop);
     layout->addWidget(m_heading); layout->addWidget(m_progress); layout->addWidget(m_instructionLabel);
     layout->addWidget(m_detailLabel); layout->addWidget(m_preview, 1); layout->addWidget(m_quality); layout->addLayout(buttons);
@@ -65,13 +65,13 @@ ResearchWindow::ResearchWindow(const QString &directory, QWidget *parent,
     m_lock = std::make_unique<QLockFile>(QStandardPaths::writableLocation(QStandardPaths::RuntimeLocation)
                                         + QStringLiteral("/fpstudio-research.lock"));
     if (!m_lock->tryLock()) {
-        m_instructionLabel->setText(QStringLiteral("다른 연구 세션이 실행 중입니다"));
-        m_stop->setText(QStringLiteral("닫기"));
+        m_instructionLabel->setText(tr("Another research session is already running"));
+        m_stop->setText(tr("Close"));
         connect(m_stop, &QPushButton::clicked, this, &QDialog::reject);
         return;
     }
     if (!QDir().mkpath(m_dir)) {
-        m_instructionLabel->setText(QStringLiteral("저장 폴더를 만들지 못했습니다"));
+        m_instructionLabel->setText(tr("Could not create the save folder"));
         connect(m_stop, &QPushButton::clicked, this, &QDialog::reject);
         return;
     }
@@ -85,15 +85,15 @@ ResearchWindow::ResearchWindow(const QString &directory, QWidget *parent,
     connect(&m_capture, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), this, &ResearchWindow::finished);
     connect(&m_capture, &QProcess::errorOccurred, this, [this](QProcess::ProcessError error) {
         if (error == QProcess::FailedToStart) {
-            announce("paused", QStringLiteral("캡처 프로그램을 시작하지 못했습니다"), m_capture.errorString());
+            announce("paused", tr("Could not start the capture program"), m_capture.errorString());
         }
     });
     connect(m_stop, &QPushButton::clicked, this, &ResearchWindow::stop);
     connect(&m_tick, &QTimer::timeout, this, &ResearchWindow::tick);
     m_tick.start(150);
-    announce("ready", QStringLiteral("오른쪽 검지를 준비하세요. 아직 센서에 대지 마세요."),
-             QStringLiteral("계획: 기준 6장 → 같은 손가락 검증 4장 → 오른쪽 중지 비교 4장.\n"
-                            "버튼을 누를 필요 없습니다. 화면의 손가락·위치 안내를 따라가세요. 중단은 언제든 가능합니다."));
+    announce("ready", tr("Get your right index finger ready. Do not touch the sensor yet."),
+             tr("Plan: 6 reference images → 4 verification images of the same finger → 4 comparison images of the right middle finger.\n"
+                "No buttons to press. Follow the finger and position prompts on screen. You can stop at any time."));
     if (autoRun) QTimer::singleShot(qMin(m_prepareMs, 1500), this, &ResearchWindow::prepare);
 }
 
@@ -104,14 +104,14 @@ ResearchWindow::~ResearchWindow()
 
 QString ResearchWindow::phase() const
 {
-    return m_index < 6 ? QStringLiteral("기준 영상") : m_index < 10 ? QStringLiteral("별도 검증 영상") : QStringLiteral("다른 손가락 비교");
+    return m_index < 6 ? tr("Reference images") : m_index < 10 ? tr("Separate verification images") : tr("Different-finger comparison");
 }
 QString ResearchWindow::placement() const
 {
-    if (m_index >= 10) return QStringLiteral("오른쪽 중지의 넓은 면을 중앙에");
-    if (m_index == 4 || m_index == 8) return QStringLiteral("오른쪽 검지를 중앙에서 아주 조금 왼쪽으로");
-    if (m_index == 5 || m_index == 9) return QStringLiteral("오른쪽 검지를 중앙에서 아주 조금 오른쪽으로");
-    return QStringLiteral("오른쪽 검지의 넓은 면을 중앙에");
+    if (m_index >= 10) return tr("the broad pad of your right middle finger, centred");
+    if (m_index == 4 || m_index == 8) return tr("your right index finger, a touch left of centre");
+    if (m_index == 5 || m_index == 9) return tr("your right index finger, a touch right of centre");
+    return tr("the broad pad of your right index finger, centred");
 }
 QString ResearchWindow::filename() const
 {
@@ -122,7 +122,7 @@ void ResearchWindow::announce(const QString &state, const QString &instruction, 
 {
     m_state = state; m_instruction = instruction; m_detail = detail;
     m_instructionLabel->setText(instruction); m_detailLabel->setText(detail);
-    m_heading->setText(QStringLiteral("%1 · 저장 %2 / %3").arg(phase()).arg(m_index).arg(total));
+    m_heading->setText(tr("%1 · saved %2 / %3").arg(phase()).arg(m_index).arg(total));
     m_progress->setValue(m_index);
     persist();
 }
@@ -140,16 +140,16 @@ void ResearchWindow::prepare()
     if (m_cancelled || m_index >= total || m_capture.state() != QProcess::NotRunning) return;
     m_ready = false;
     m_deadline = QDateTime::currentMSecsSinceEpoch() + m_prepareMs;
-    announce("prepare", QStringLiteral("① 손가락을 센서에서 완전히 떼세요 · 5초"),
-             QStringLiteral("빈 센서를 먼저 측정합니다. '지금 대세요'로 바뀔 때까지 기다리세요."));
+    announce("prepare", tr("① Lift your finger clear of the sensor · 5 s"),
+             tr("The empty sensor is measured first. Wait until this changes to 'Touch now'."));
 }
 void ResearchWindow::capture()
 {
     m_path = filename(); m_output.clear(); m_errors.clear(); ++m_attempt;
-    announce("calibrating", QStringLiteral("① 그대로 떼고 기다리세요 · 센서 준비 중"),
-             QStringLiteral("배경 측정이 끝나면 자동으로 '지금 대세요'로 바뀝니다."));
+    announce("calibrating", tr("① Keep it off and wait · preparing the sensor"),
+             tr("This changes to 'Touch now' automatically once the background measurement is done."));
     m_capture.start(m_captureProgram,
-                    {"--lang", "ko", "--cli", "capture", "--timeout", "30", "--out", m_path});
+                    {"--cli", "capture", "--timeout", "30", "--out", m_path});
 }
 void ResearchWindow::tick()
 {
@@ -161,19 +161,19 @@ void ResearchWindow::tick()
     const qint64 now = QDateTime::currentMSecsSinceEpoch();
     if (m_state == "prepare") {
         const int seconds = qMax(0, int((m_deadline - now + 999) / 1000));
-        m_instructionLabel->setText(QStringLiteral("① 손가락을 완전히 떼세요 · %1초").arg(seconds));
+        m_instructionLabel->setText(tr("① Lift your finger clear · %1 s").arg(seconds));
         if (!seconds) capture();
     } else if (m_state == "phase-ready") {
         const int seconds = qMax(0, int((m_deadline - now + 999) / 1000));
-        m_instructionLabel->setText(QStringLiteral("%1 · %2초 뒤 센서 준비").arg(m_instruction).arg(seconds));
+        m_instructionLabel->setText(tr("%1 · sensor ready in %2 s").arg(m_instruction).arg(seconds));
         if (!seconds) prepare();
     } else if (m_state == "review" || m_state == "retry") {
         if (now >= m_deadline) {
             if (m_state == "review" && (m_index == 6 || m_index == 10)) {
-                announce("phase-ready", m_index == 6 ? QStringLiteral("기준 영상 6장 완료. 별도 검증을 시작합니다.")
-                                                      : QStringLiteral("이제 오른쪽 중지로 바꿔 주세요."),
-                         m_index == 6 ? QStringLiteral("같은 오른쪽 검지를 새로 대어 4장을 촬영합니다. 이 영상은 기준 영상과 분리해 평가합니다.")
-                                      : QStringLiteral("다른 손가락을 잘못 받아들이는지 확인할 4장입니다. 아직 센서에는 대지 마세요."));
+                announce("phase-ready", m_index == 6 ? tr("6 reference images done. Starting the separate verification.")
+                                                      : tr("Now switch to your right middle finger."),
+                         m_index == 6 ? tr("Four more images with the same right index finger, placed afresh. These are evaluated separately from the reference images.")
+                                      : tr("Four images to check whether a different finger is wrongly accepted. Do not touch the sensor yet."));
                 m_deadline = now + m_prepareMs;
             } else prepare();
         }
@@ -185,14 +185,14 @@ void ResearchWindow::tick()
         const QString stage = b.value("stage").toString();
         if (stage == "background-ready" && !m_ready) {
             m_ready = true;
-            announce("await-touch", QStringLiteral("② 지금 대세요 — %1").arg(placement()),
-                     QStringLiteral("센서 전체를 덮고 가볍게 눌러 유지하세요. 영상이 나온 뒤 '떼세요' 안내에 따라 떼면 됩니다."));
+            announce("await-touch", tr("② Touch now — %1").arg(placement()),
+                     tr("Cover the whole sensor, press lightly and hold. Lift when the prompt says so, after the image appears."));
         } else if ((stage == "finger-on" || stage == "captured") && m_state != "hold") {
-            announce("hold", QStringLiteral("③ 손가락을 그대로 유지하세요 · 촬영 중"),
-                     QStringLiteral("실제 접촉이 확인됐습니다. 손가락을 움직이지 마세요."));
+            announce("hold", tr("③ Hold your finger still · capturing"),
+                     tr("Contact confirmed. Do not move your finger."));
         } else if (stage == "await-finger-off" && m_state != "release") {
-            announce("release", QStringLiteral("④ 촬영했습니다. 손가락을 완전히 떼세요."),
-                     QStringLiteral("곧 촬영 영상과 품질을 표시합니다."));
+            announce("release", tr("④ Captured. Lift your finger clear."),
+                     tr("The image and its quality will be shown in a moment."));
         }
     }
 }
@@ -218,35 +218,35 @@ void ResearchWindow::finished(int code, QProcess::ExitStatus exitStatus)
     if (ok && !image.isNull()) {
         QFile::setPermissions(m_path, QFileDevice::ReadOwner | QFileDevice::WriteOwner);
         m_preview->setPixmap(QPixmap::fromImage(image).scaled(540, 440, Qt::KeepAspectRatio, Qt::FastTransformation));
-        m_quality->setText(QStringLiteral("방금 촬영한 영상 · %1×%2 · 접촉률 %3% · 선명도 %4 · 배경 차이 %5")
+        m_quality->setText(tr("Image just captured · %1×%2 · contact %3% · sharpness %4 · background difference %5")
                            .arg(image.width()).arg(image.height()).arg(coverage).arg(sharpness).arg(background, 0, 'f', 1));
         m_samples.append(QJsonObject{{"path", m_path}, {"role", m_index < 6 ? "reference" : "probe"},
                                     {"finger", m_index < 10 ? "index" : "middle"},
                                     {"coverage", coverage}, {"sharpness", sharpness}, {"background_diff", background}});
         ++m_index; m_retries = 0;
         if (m_index == total) {
-            announce("complete", QStringLiteral("14장 수집 완료 — 손을 쉬세요."),
-                     QStringLiteral("기준·검증·다른 손가락 영상이 분리 저장됐습니다. 이제 매칭 결과를 분석합니다. 수집 완료는 인증 성공 판정이 아닙니다."));
-            m_stop->setText(QStringLiteral("닫기")); return;
+            announce("complete", tr("All 14 images collected — you can rest your hand."),
+                     tr("The reference, verification and different-finger images were saved separately. The matching results are analysed next. Finishing collection is not a decision that authentication succeeded."));
+            m_stop->setText(tr("Close")); return;
         }
         m_deadline = QDateTime::currentMSecsSinceEpoch() + m_reviewMs;
-        announce("review", QStringLiteral("④ 저장 완료 · %1/14 — 손가락을 떼세요.").arg(m_index),
-                 QStringLiteral("아래는 방금 촬영한 실제 영상입니다. 4초 뒤 다음 촬영 준비로 자동 이동합니다."));
+        announce("review", tr("④ Saved · %1/14 — lift your finger.").arg(m_index),
+                 tr("Below is the image just captured. The next capture is prepared automatically in 4 seconds."));
     } else {
         ++m_retries;
         const QString error = result.value("error").toString(QString::fromUtf8(m_errors).right(250));
         m_deadline = QDateTime::currentMSecsSinceEpoch() + m_reviewMs;
-        announce(m_retries < 3 ? "retry" : "paused", QStringLiteral("촬영하지 못했습니다 — 손가락을 떼세요."),
-                 QStringLiteral("%1\n%2").arg(error, m_retries < 3 ? QStringLiteral("같은 샘플을 자동으로 다시 시도합니다. 아직 손가락을 대지 마세요.")
-                                                                             : QStringLiteral("3회 연속 실패하여 진단을 위해 멈췄습니다. 손을 쉬세요. 원인을 확인한 뒤 자동 수집을 재개합니다.")));
+        announce(m_retries < 3 ? "retry" : "paused", tr("The capture failed — lift your finger."),
+                 QStringLiteral("%1\n%2").arg(error, m_retries < 3 ? tr("The same sample will be retried automatically. Do not touch the sensor yet.")
+                                                                             : tr("Three failures in a row, so it has paused for diagnosis. Rest your hand. Collection resumes automatically once the cause is identified.")));
     }
 }
 void ResearchWindow::stop()
 {
     if (m_state == "complete" || m_state == "cancelled") { accept(); return; }
     m_cancelled = true;
-    m_stop->setText(QStringLiteral("닫기"));
-    announce("cancelled", QStringLiteral("중단했습니다. 손가락을 떼세요."), QStringLiteral("이미 저장한 영상은 보존했습니다."));
+    m_stop->setText(tr("Close"));
+    announce("cancelled", tr("Stopped. Lift your finger."), tr("Images already saved have been kept."));
     if (m_capture.state() != QProcess::NotRunning) m_capture.terminate();
 }
 void ResearchWindow::closeEvent(QCloseEvent *event)
