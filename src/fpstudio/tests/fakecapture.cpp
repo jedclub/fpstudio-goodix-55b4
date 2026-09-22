@@ -1,6 +1,7 @@
 // A synthetic device process for state-machine tests. Never opens USB.
 #include <QCoreApplication>
 #include <QFile>
+#include <QFileInfo>
 #include <QImage>
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -39,8 +40,25 @@ int main(int argc, char **argv)
     const bool retry=qEnvironmentVariableIsSet("FPSTUDIO_TEST_RETRY");
     const bool extended=qEnvironmentVariableIsSet("FPSTUDIO_TEST_EXTENDED");
     if (!preview.isEmpty()) {
+        // Do not run away from the reader. The preview is one file that this
+        // process overwrites, so a reader that falls behind does not get a
+        // queue - it gets a gap, and a whole contact fits in one. On a loaded
+        // machine that turned a fixed 40ms cadence into a test that sometimes
+        // saw 32 of 33 contacts. The window publishes how many frames it has
+        // taken, so wait rather than overwrite one it has not read yet.
+        const QString status = QFileInfo(preview).path() + "/live-status.json";
+        auto consumed = [&status] {
+            QFile f(status);
+            if (!f.open(QIODevice::ReadOnly)) return -1LL;
+            return QJsonDocument::fromJson(f.readAll()).object()
+                       .value("frames").toInteger(-1);
+        };
         QObject::connect(&stream, &QTimer::timeout, [&] {
             if (QFile::exists(preview + ".stop")) { app.exit(); return; }
+            // The status file is written a few times a second, so this lead is
+            // generous; it bounds the drift rather than pacing every frame.
+            const qint64 taken = consumed();
+            if (taken >= 0 && stamp - taken > 8) return;
             // Pause after 30 frames to exercise stale-image detection.
             if(contacts&&stamp>=contacts*10){app.exit();return;}
             if(retry&&stamp>=120){app.exit();return;}

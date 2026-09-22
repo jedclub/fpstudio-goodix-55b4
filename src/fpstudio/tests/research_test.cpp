@@ -171,8 +171,26 @@ private slots:
         qunsetenv("FPSTUDIO_TEST_CONTACTS");
         qunsetenv("FPSTUDIO_TEST_EXTENDED");
         auto read=[&]{QFile f(dir.path()+"/live-status.json");if(!f.open(QIODevice::ReadOnly))return QJsonObject();return QJsonDocument::fromJson(f.readAll()).object();};
-        QTRY_COMPARE_WITH_TIMEOUT(read().value("state").toString(),"ended",25000);
+        // The capture side now waits on this window rather than overwriting
+        // frames it has not read, so the session runs at the reader's pace and
+        // a loaded machine makes it longer, not lossier. 33 contacts of ten
+        // frames at 40ms is 13s of stream before any GPU work.
+        QTRY_COMPARE_WITH_TIMEOUT(read().value("state").toString(),"ended",60000);
         const auto result=read();
+        // Checked before the counts below, because it explains them. The
+        // preview is one file the capture side overwrites; a reader that falls
+        // behind loses frames rather than queueing them, and a whole contact
+        // fits in the gap. Without this, that arrives as "32 != 33" and looks
+        // like an accounting bug.
+        //
+        // The bound is on the longest gap rather than the total, because that
+        // is the property that matters: this stream gives each contact seven
+        // frames of touch, so no gap under that can hide one. Losing three
+        // frames spread over a session is slow, not wrong.
+        QVERIFY2(result.value("longest_frame_gap").toInt()<4,
+                 qPrintable(QStringLiteral("longest gap %1, %2 frames dropped in total")
+                     .arg(result.value("longest_frame_gap").toInt())
+                     .arg(result.value("dropped_frames").toInt())));
         QCOMPARE(result.value("touches").toInt(),33);
         QCOMPARE(result.value("candidates").toInt(),32);
         QCOMPARE(result.value("compared_contacts").toInt(),32);

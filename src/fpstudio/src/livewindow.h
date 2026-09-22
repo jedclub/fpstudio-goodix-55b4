@@ -139,6 +139,17 @@ private:
     // are going.
     std::unique_ptr<QFile> m_trace;
     qint64 m_contactStart=0;
+    // Frames that arrived while this window was busy elsewhere. The preview is
+    // a single file the capture side overwrites, so falling behind does not
+    // queue - it loses. A whole contact fits in the gap, and the per-contact
+    // totals this window exists to produce would then simply be short, with
+    // nothing on screen or on disk saying so.
+    qint64 m_dropped=0;
+    // The total says how much was lost; this says whether a contact could
+    // have been lost inside it. A contact is several frames of touch, so a
+    // gap shorter than that cannot hide one - and a gap longer than that is
+    // the difference between a slow session and a wrong count.
+    qint64 m_longestGap=0;
     std::unique_ptr<QLockFile> m_lock;
     qint64 m_lastStamp = 0, m_lastArrival = 0, m_windowStart = 0;
     int m_prepareMs, m_frames = 0, m_total = 0;

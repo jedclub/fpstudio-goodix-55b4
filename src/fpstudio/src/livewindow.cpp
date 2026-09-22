@@ -1080,7 +1080,7 @@ void LiveWindow::writeStatus()
     const bool draining=m_finished&&(m_gpuBusy||!m_pending.isEmpty());
     const QJsonObject object{{"schema_version",2},{"state",draining?"draining":m_finished?"ended":m_stopping?"stopping":"running"},
         {"research_only",true},{"authentication_decision",QJsonValue::Null},
-        {"frames",m_total},{"touches",m_touch},{"candidates",m_candidates},
+        {"frames",m_total},{"dropped_frames",m_dropped},{"longest_frame_gap",m_longestGap},{"touches",m_touch},{"candidates",m_candidates},
         {"target_contacts",m_targetContacts},{"target_reached",m_targetReached},
         {"scan_seconds_left",m_scanStart&&!m_finished?qMax<qint64>(0,(kScanBudgetMs-(now-m_scanStart))/1000):-1},
         {"stop_reason",m_thermalStop?QJsonValue(QStringLiteral("sensor-duty-limit")):m_targetReached?QJsonValue(QStringLiteral("target-reached")):m_stopping?QJsonValue(QStringLiteral("user-stopped")):QJsonValue(QJsonValue::Null)},
@@ -1178,6 +1178,11 @@ void LiveWindow::tick()
             const qint64 stamp = fields[1].toLongLong();
             const QImage frame = QImage::fromData(data, "PGM");
             if (!frame.isNull() && stamp > m_lastStamp) {
+                if (m_lastStamp && stamp > m_lastStamp + 1) {
+                    const qint64 gap = stamp - m_lastStamp - 1;
+                    m_dropped += gap;
+                    if (gap > m_longestGap) m_longestGap = gap;
+                }
                 m_lastStamp = stamp; m_lastArrival = now; ++m_frames; ++m_total;
                 if (now - m_windowStart >= 1000) {
                     m_fps = m_frames * 1000.0 / (now - m_windowStart);
