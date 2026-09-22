@@ -570,7 +570,7 @@ After calibration, tap and lift repeatedly with one other finger. Even a high sc
     </message>
     <message>
         <location filename="../src/livewindow.cpp" line="106"/>
-        <location filename="../src/livewindow.cpp" line="1031"/>
+        <location filename="../src/livewindow.cpp" line="1052"/>
         <source>Stop</source>
         <translation>停止</translation>
     </message>
@@ -623,7 +623,7 @@ This is enrolment guidance, not an authentication decision</source>
     <message>
         <location filename="../src/livewindow.cpp" line="158"/>
         <location filename="../src/livewindow.cpp" line="167"/>
-        <location filename="../src/livewindow.cpp" line="1033"/>
+        <location filename="../src/livewindow.cpp" line="1054"/>
         <source>Close</source>
         <translation>关闭</translation>
     </message>
@@ -805,7 +805,7 @@ This matcher has not been validated for rejecting other people. Continue?</sourc
         <translation>正在安装登记数据…</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="1017"/>
+        <location filename="../src/livewindow.cpp" line="1038"/>
         <source>Contact %1 · image from comparison %2 (not live)
 Gray: background (0) · yellow: contact (1), but weak features · green/red: comparison evidence
 Cyan +: transformed reference contact centre · orange +: current probe contact centre · blue: comparison range</source>
@@ -814,27 +814,27 @@ Cyan +: transformed reference contact centre · orange +: current probe contact 
 青色 +：变换后的参考接触中心 · 橙色 +：当前待测接触中心 · 蓝色：比对范围</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="1030"/>
+        <location filename="../src/livewindow.cpp" line="1051"/>
         <source>Capture finished — lift your finger. %1 remaining contacts are still being compared</source>
         <translation>采集结束 — 请抬起手指。剩余 %1 次接触仍在比对中</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="1038"/>
+        <location filename="../src/livewindow.cpp" line="1059"/>
         <source>The target of %1 contacts has been compared — no need to repeat. You can lift your finger.</source>
         <translation>已完成目标的 %1 次接触比对 — 无需重复。可以抬起手指。</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="1038"/>
+        <location filename="../src/livewindow.cpp" line="1059"/>
         <source>Stopped. You can lift your finger.</source>
         <translation>已停止。可以抬起手指。</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="1039"/>
+        <location filename="../src/livewindow.cpp" line="1060"/>
         <source>Capture and candidate comparison have ended. See the per-contact totals below.</source>
         <translation>采集与候选比对已结束。请查看下方按接触统计的结果。</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="1080"/>
+        <location filename="../src/livewindow.cpp" line="1101"/>
         <source>Capture finished · %1 frames · %2 contacts detected
 %3 comparisons answered · %4 ridge-consistent · %5 not compared (%6 with no candidate) · %7 queued · %8 errors
 Research results on selected data, not an authentication success rate</source>
@@ -843,185 +843,185 @@ Research results on selected data, not an authentication success rate</source>
 这是对筛选数据的研究结果，不是认证成功率</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="1088"/>
+        <location filename="../src/livewindow.cpp" line="1109"/>
         <source>Keep your finger off — connecting to the sensor and calibrating the background</source>
         <translation>请继续抬着手指 — 正在连接传感器并校准背景</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="1137"/>
+        <location filename="../src/livewindow.cpp" line="1158"/>
         <source>Lift your finger — background calibration in %1 s</source>
         <translation>请抬起手指 — %1 秒后校准背景</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="1146"/>
+        <location filename="../src/livewindow.cpp" line="1167"/>
         <source>Keep your finger off — collecting more background from the live stream</source>
         <translation>请继续抬着手指 — 正在从实时图像中补充采集背景</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="1149"/>
+        <location filename="../src/livewindow.cpp" line="1170"/>
         <source>0 FPS · waiting for the first image · %1 s</source>
         <translation>0 FPS · 正在等待第一张图像 · %1 秒</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="1326"/>
+        <location filename="../src/livewindow.cpp" line="1349"/>
         <source>Keep your finger off and hold — collecting the background over several frames (do not touch the sensor yet)</source>
         <translation>请抬着手指等待 — 正在用多帧采集背景（此时请勿触碰传感器）</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="1327"/>
+        <location filename="../src/livewindow.cpp" line="1350"/>
         <source>No finger detected — now rest %1 lightly in the centre of the sensor</source>
         <translation>未检测到手指 — 现在请把%1轻轻放在传感器中央</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="1330"/>
+        <location filename="../src/livewindow.cpp" line="1353"/>
         <source>Warning: the other finger also produced ridge-match evidence. A suspected false accept has been recorded — lift and touch again</source>
         <translation>注意：其他手指也出现了纹线吻合的迹象。已记录为疑似误识 — 请抬起后重新放置</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="1331"/>
+        <location filename="../src/livewindow.cpp" line="1354"/>
         <source>This other finger produced no match evidence. Recorded — lift completely and touch again</source>
         <translation>这根其他手指没有出现吻合迹象。已记录 — 请完全抬起后重新放置</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="1333"/>
+        <location filename="../src/livewindow.cpp" line="1356"/>
         <source>This contact&apos;s ridges were confirmed — lift completely and rest %1 on the sensor again (not an authentication decision)</source>
         <translation>已确认本次接触的纹线 — 请完全抬起，然后把%1重新放在传感器上（不是认证判定）</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="1335"/>
+        <location filename="../src/livewindow.cpp" line="1358"/>
         <source>A sharp image was captured — comparing automatically. You can lift your finger</source>
         <translation>已取得清晰图像 — 正在自动比对。可以抬起手指</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="1338"/>
+        <location filename="../src/livewindow.cpp" line="1361"/>
         <source>Three comparisons of this contact found too little evidence — lift completely, then place %1 in the centre again</source>
         <translation>本次接触比对 3 次仍证据不足 — 请完全抬起，然后把%1重新放到中央</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="1339"/>
+        <location filename="../src/livewindow.cpp" line="1362"/>
         <source>Too little match evidence — move %1 slightly toward the centre and press more lightly. It will be compared again automatically</source>
         <translation>吻合证据不足 — 请把%1稍微移向中央并减轻力度。系统会自动重新比对</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="1340"/>
+        <location filename="../src/livewindow.cpp" line="1363"/>
         <source>The contact area is small — lay the pad of %1 flat across the centre of the sensor</source>
         <translation>接触面积偏小 — 请把%1的指腹平放在传感器中央</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="1341"/>
+        <location filename="../src/livewindow.cpp" line="1364"/>
         <source>You are pressing hard — ease off and just rest the finger. Quality falls below 0.79 in this range</source>
         <translation>按压力度偏大 — 请放松力度，像轻放一样。在此区间品质会降到 0.79 以下</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="1342"/>
+        <location filename="../src/livewindow.cpp" line="1365"/>
         <source>Hold your finger still for a moment — a stable image will be selected automatically</source>
         <translation>请让手指稍微静止 — 系统会自动选取稳定的图像</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="1343"/>
+        <location filename="../src/livewindow.cpp" line="1366"/>
         <source>The ridges are unclear — ease off a little and shift %1 slightly</source>
         <translation>纹线不清晰 — 请稍微放松力度，并把%1的位置略作调整</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="1344"/>
+        <location filename="../src/livewindow.cpp" line="1367"/>
         <source>Hold it there for a moment — selecting a sharp image automatically</source>
         <translation>请保持一下 — 正在自动选取清晰图像</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="1345"/>
+        <location filename="../src/livewindow.cpp" line="1368"/>
         <source>⚠ Use a different finger · </source>
         <translation>⚠ 请换一根手指 · </translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="1348"/>
+        <location filename="../src/livewindow.cpp" line="1371"/>
         <source>The research storage and comparison limit has been reached — this contact will not be compared further. Please stop</source>
         <translation>已达到研究用存储与比对上限 — 本次接触不再继续比对。请停止</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="1349"/>
+        <location filename="../src/livewindow.cpp" line="1372"/>
         <source>GPU comparison is unavailable — showing the image only. Please stop</source>
         <translation>无法使用 GPU 比对 — 仅显示图像。请停止</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="1353"/>
+        <location filename="../src/livewindow.cpp" line="1376"/>
         <source>⚠ The ridges were smeared, so this was not added to the map — the red outline on the map is where it would have gone. Ease off and press the same spot again</source>
         <translation>⚠ 纹线模糊，因此未加入覆盖图 — 图上的红色边框就是该位置。请放松力度并在同一位置重新按压</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="1356"/>
+        <location filename="../src/livewindow.cpp" line="1379"/>
         <source>⚠ This could not be fitted to the map — press so that it overlaps an already filled area by about half</source>
         <translation>⚠ 无法与覆盖图对齐 — 请按压时与已填满的区域重叠约一半</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="1359"/>
+        <location filename="../src/livewindow.cpp" line="1382"/>
         <source>⚠ This does not overlap anything already on the map — continue from the edge of a filled area</source>
         <translation>⚠ 与覆盖图上已有区域没有任何重叠 — 请从已填满区域的边缘继续</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="1363"/>
+        <location filename="../src/livewindow.cpp" line="1386"/>
         <source>[%1/%2 contacts compared · stops automatically at the target] </source>
         <translation>[%1/%2 次接触已比对 · 达到目标时自动停止] </translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="1367"/>
+        <location filename="../src/livewindow.cpp" line="1390"/>
         <source>%1 FPS · %2 frames · ridge signal %3 · contrast area %4% · sharpness %5
 </source>
         <translation>%1 FPS · %2 帧 · 纹线信号 %3 · 对比面积 %4% · 清晰度 %5
 </translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="1370"/>
+        <location filename="../src/livewindow.cpp" line="1393"/>
         <source>%1 · %2 contacts · %3 candidates · %4 GPU comparisons done / %5 contacts queued (not validated for authentication)</source>
         <translation>%1 · 接触 %2 次 · 候选 %3 张 · GPU 完成 %4 件 / 等待 %5 次接触（未针对认证验证）</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="1372"/>
+        <location filename="../src/livewindow.cpp" line="1395"/>
         <source>
 Raw difference %1 · background noise %2 · %3</source>
         <translation>
 原始差值 %1 · 背景噪声 %2 · %3</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="1373"/>
+        <location filename="../src/livewindow.cpp" line="1396"/>
         <source>collecting background</source>
         <translation>正在采集背景</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="1373"/>
+        <location filename="../src/livewindow.cpp" line="1396"/>
         <source>finger in contact</source>
         <translation>手指接触中</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="1373"/>
+        <location filename="../src/livewindow.cpp" line="1396"/>
         <source>no finger</source>
         <translation>无手指</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="1378"/>
+        <location filename="../src/livewindow.cpp" line="1401"/>
         <source>The image stream has stopped — the screen shows the last frame</source>
         <translation>图像接收已停止 — 屏幕显示的是最后一帧</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="1379"/>
+        <location filename="../src/livewindow.cpp" line="1402"/>
         <source>0 FPS · no new image for %1 s</source>
         <translation>0 FPS · 已有 %1 秒没有新图像</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="1416"/>
+        <location filename="../src/livewindow.cpp" line="1439"/>
         <source>GPU comparison finished · %1 processed · stopped normally on reaching the target of %2 contacts
 The results and colour-marked images have been saved. This did not decide whether authentication is granted.</source>
         <translation>GPU 比对完成 · 已处理 %1 件 · 达到 %2 次接触的目标后正常结束
 结果与彩色标注图像均已保存。这并未判定认证是否通过。</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="1417"/>
+        <location filename="../src/livewindow.cpp" line="1440"/>
         <source>GPU comparison stopped · %1 finished · %2 cancelled in progress
 Stopped at your request. Saved results are kept.</source>
         <translation>GPU 比对已停止 · 完成 %1 件 · 进行中取消 %2 件
 已按您的要求停止。已保存的结果予以保留。</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="1418"/>
+        <location filename="../src/livewindow.cpp" line="1441"/>
         <source>Stopping — lift your finger</source>
         <translation>正在停止 — 请抬起手指</translation>
     </message>

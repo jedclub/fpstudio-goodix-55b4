@@ -896,6 +896,27 @@ void LiveWindow::installEnrolment()
     m_installer.start(QStringLiteral("/usr/bin/pkexec"),args);
 }
 
+
+// One line per frame, so that a contact can be replayed afterwards. Numbers
+// only - no image data - and 0600 like everything else this window writes.
+void LiveWindow::traceFrame(bool touch, qint64 stamp, double signal, int coverage,
+                            int sharpness, double motion, bool eligible)
+{
+    if(!m_trace) {
+        m_trace=std::make_unique<QFile>(m_dir+"/frame-trace.csv");
+        if(!m_trace->open(QIODevice::WriteOnly|QIODevice::Append|QIODevice::Text)) { m_trace.reset(); return; }
+        m_trace->setPermissions(QFileDevice::ReadOwner|QFileDevice::WriteOwner);
+        m_trace->write("contact,ms_into_contact,touch,signal,coverage,sharpness,motion,eligible\n");
+    }
+    if(touch&&!m_contactStart) m_contactStart=stamp;
+    if(!touch) m_contactStart=0;
+    const qint64 into=m_contactStart?(stamp-m_contactStart)/1000:-1;
+    m_trace->write(QStringLiteral("%1,%2,%3,%4,%5,%6,%7,%8\n")
+        .arg(m_touch).arg(into).arg(touch?1:0)
+        .arg(signal,0,'f',1).arg(coverage).arg(sharpness)
+        .arg(motion,0,'f',2).arg(eligible?1:0).toLatin1());
+}
+
 void LiveWindow::saveMap()
 {
     if(m_mapPixel.isEmpty()||m_mapPlaced<2)return;
@@ -1176,6 +1197,8 @@ void LiveWindow::tick()
                 m_emptyFrames = touch ? 0 : m_emptyFrames + 1;
                 const auto quality = assessPreview(frame, m_previous, touch?100:0, fields[3].toInt(), fields[4].toInt());
                 m_previous = frame;
+                traceFrame(touch, stamp, fields[2].toDouble(), fields[3].toInt(),
+                           fields[4].toInt(), quality.motion, quality.eligible);
                 m_stable = quality.eligible ? m_stable + 1 : 0;
                 if(touch) {
                     auto &contact=m_contacts[m_touch];

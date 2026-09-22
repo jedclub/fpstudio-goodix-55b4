@@ -65,6 +65,8 @@ private:
     // at at all once the window closed. It is research material like every
     // other capture here and is written the same way: 0600, beside them, and
     // labelled for what it is rather than mistaken later for a template.
+    void traceFrame(bool touch, qint64 stamp, double signal, int coverage,
+                    int sharpness, double motion, bool eligible);
     void saveMap();
     void dispatchMatch();
     void writeStatus();
@@ -129,6 +131,14 @@ private:
     static constexpr qint64 kScanBudgetMs = 170000;
     QTimer m_tick;
     QElapsedTimer m_clock;
+    // Per-frame record of what the sensor reported, kept for one question the
+    // saved candidates cannot answer: within a single contact, is the finger
+    // still arriving or already leaving? Only the chosen frame of a contact is
+    // saved as a candidate, so the shape of the contact is lost. The driver's
+    // settle rule picks among frames 100ms apart and has to know which way they
+    // are going.
+    std::unique_ptr<QFile> m_trace;
+    qint64 m_contactStart=0;
     std::unique_ptr<QLockFile> m_lock;
     qint64 m_lastStamp = 0, m_lastArrival = 0, m_windowStart = 0;
     int m_prepareMs, m_frames = 0, m_total = 0;

@@ -570,7 +570,7 @@ Tras la calibración, apoye y retire repetidamente otro dedo. Una puntuación al
     </message>
     <message>
         <location filename="../src/livewindow.cpp" line="106"/>
-        <location filename="../src/livewindow.cpp" line="1031"/>
+        <location filename="../src/livewindow.cpp" line="1052"/>
         <source>Stop</source>
         <translation>Detener</translation>
     </message>
@@ -623,7 +623,7 @@ Esto es una guía de registro, no una decisión de autenticación</translation>
     <message>
         <location filename="../src/livewindow.cpp" line="158"/>
         <location filename="../src/livewindow.cpp" line="167"/>
-        <location filename="../src/livewindow.cpp" line="1033"/>
+        <location filename="../src/livewindow.cpp" line="1054"/>
         <source>Close</source>
         <translation>Cerrar</translation>
     </message>
@@ -805,7 +805,7 @@ Este comparador no está validado para rechazar a otras personas. ¿Continuar?</
         <translation>Instalando el registro…</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="1017"/>
+        <location filename="../src/livewindow.cpp" line="1038"/>
         <source>Contact %1 · image from comparison %2 (not live)
 Gray: background (0) · yellow: contact (1), but weak features · green/red: comparison evidence
 Cyan +: transformed reference contact centre · orange +: current probe contact centre · blue: comparison range</source>
@@ -814,27 +814,27 @@ Gris: fondo (0) · amarillo: contacto (1), pero rasgos débiles · verde/rojo: e
 + cian: centro de contacto de referencia transformado · + naranja: centro del contacto actual · azul: intervalo de comparación</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="1030"/>
+        <location filename="../src/livewindow.cpp" line="1051"/>
         <source>Capture finished — lift your finger. %1 remaining contacts are still being compared</source>
         <translation>Captura finalizada — retire el dedo. Aún se están comparando %1 contactos restantes</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="1038"/>
+        <location filename="../src/livewindow.cpp" line="1059"/>
         <source>The target of %1 contacts has been compared — no need to repeat. You can lift your finger.</source>
         <translation>Se ha comparado el objetivo de %1 contactos — no hace falta repetir. Puede retirar el dedo.</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="1038"/>
+        <location filename="../src/livewindow.cpp" line="1059"/>
         <source>Stopped. You can lift your finger.</source>
         <translation>Detenido. Puede retirar el dedo.</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="1039"/>
+        <location filename="../src/livewindow.cpp" line="1060"/>
         <source>Capture and candidate comparison have ended. See the per-contact totals below.</source>
         <translation>La captura y la comparación de candidatos han terminado. Vea los totales por contacto abajo.</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="1080"/>
+        <location filename="../src/livewindow.cpp" line="1101"/>
         <source>Capture finished · %1 frames · %2 contacts detected
 %3 comparisons answered · %4 ridge-consistent · %5 not compared (%6 with no candidate) · %7 queued · %8 errors
 Research results on selected data, not an authentication success rate</source>
@@ -843,185 +843,185 @@ Research results on selected data, not an authentication success rate</source>
 Resultados de investigación sobre datos seleccionados, no una tasa de éxito de autenticación</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="1088"/>
+        <location filename="../src/livewindow.cpp" line="1109"/>
         <source>Keep your finger off — connecting to the sensor and calibrating the background</source>
         <translation>Mantenga el dedo fuera — conectando con el sensor y calibrando el fondo</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="1137"/>
+        <location filename="../src/livewindow.cpp" line="1158"/>
         <source>Lift your finger — background calibration in %1 s</source>
         <translation>Retire el dedo — calibración del fondo en %1 s</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="1146"/>
+        <location filename="../src/livewindow.cpp" line="1167"/>
         <source>Keep your finger off — collecting more background from the live stream</source>
         <translation>Mantenga el dedo fuera — recogiendo más fondo de la transmisión en directo</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="1149"/>
+        <location filename="../src/livewindow.cpp" line="1170"/>
         <source>0 FPS · waiting for the first image · %1 s</source>
         <translation>0 FPS · esperando la primera imagen · %1 s</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="1326"/>
+        <location filename="../src/livewindow.cpp" line="1349"/>
         <source>Keep your finger off and hold — collecting the background over several frames (do not touch the sensor yet)</source>
         <translation>Mantenga el dedo fuera y espere — el fondo se recoge a lo largo de varios fotogramas (no toque aún el sensor)</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="1327"/>
+        <location filename="../src/livewindow.cpp" line="1350"/>
         <source>No finger detected — now rest %1 lightly in the centre of the sensor</source>
         <translation>No se detecta ningún dedo — apoye ahora %1 suavemente en el centro del sensor</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="1330"/>
+        <location filename="../src/livewindow.cpp" line="1353"/>
         <source>Warning: the other finger also produced ridge-match evidence. A suspected false accept has been recorded — lift and touch again</source>
         <translation>Aviso: el otro dedo también produjo indicios de coincidencia de crestas. Se ha registrado una posible falsa aceptación — retire y vuelva a apoyar</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="1331"/>
+        <location filename="../src/livewindow.cpp" line="1354"/>
         <source>This other finger produced no match evidence. Recorded — lift completely and touch again</source>
         <translation>Este otro dedo no produjo indicios de coincidencia. Registrado — retire del todo y vuelva a apoyar</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="1333"/>
+        <location filename="../src/livewindow.cpp" line="1356"/>
         <source>This contact&apos;s ridges were confirmed — lift completely and rest %1 on the sensor again (not an authentication decision)</source>
         <translation>Se han confirmado las crestas de este contacto — retire del todo y vuelva a apoyar %1 en el sensor (no es una decisión de autenticación)</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="1335"/>
+        <location filename="../src/livewindow.cpp" line="1358"/>
         <source>A sharp image was captured — comparing automatically. You can lift your finger</source>
         <translation>Se ha capturado una imagen nítida — comparando automáticamente. Puede retirar el dedo</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="1338"/>
+        <location filename="../src/livewindow.cpp" line="1361"/>
         <source>Three comparisons of this contact found too little evidence — lift completely, then place %1 in the centre again</source>
         <translation>Tres comparaciones de este contacto encontraron muy pocos indicios — retire del todo y coloque %1 de nuevo en el centro</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="1339"/>
+        <location filename="../src/livewindow.cpp" line="1362"/>
         <source>Too little match evidence — move %1 slightly toward the centre and press more lightly. It will be compared again automatically</source>
         <translation>Indicios de coincidencia insuficientes — mueva %1 ligeramente hacia el centro y presione más suave. Se volverá a comparar automáticamente</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="1340"/>
+        <location filename="../src/livewindow.cpp" line="1363"/>
         <source>The contact area is small — lay the pad of %1 flat across the centre of the sensor</source>
         <translation>El área de contacto es pequeña — apoye la yema de %1 plana sobre el centro del sensor</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="1341"/>
+        <location filename="../src/livewindow.cpp" line="1364"/>
         <source>You are pressing hard — ease off and just rest the finger. Quality falls below 0.79 in this range</source>
         <translation>Está presionando fuerte — afloje y limite a apoyar el dedo. En este rango la calidad cae por debajo de 0,79</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="1342"/>
+        <location filename="../src/livewindow.cpp" line="1365"/>
         <source>Hold your finger still for a moment — a stable image will be selected automatically</source>
         <translation>Mantenga el dedo quieto un momento — se seleccionará automáticamente una imagen estable</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="1343"/>
+        <location filename="../src/livewindow.cpp" line="1366"/>
         <source>The ridges are unclear — ease off a little and shift %1 slightly</source>
         <translation>Las crestas no son claras — afloje un poco y desplace %1 ligeramente</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="1344"/>
+        <location filename="../src/livewindow.cpp" line="1367"/>
         <source>Hold it there for a moment — selecting a sharp image automatically</source>
         <translation>Manténgalo ahí un momento — seleccionando automáticamente una imagen nítida</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="1345"/>
+        <location filename="../src/livewindow.cpp" line="1368"/>
         <source>⚠ Use a different finger · </source>
         <translation>⚠ Use otro dedo · </translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="1348"/>
+        <location filename="../src/livewindow.cpp" line="1371"/>
         <source>The research storage and comparison limit has been reached — this contact will not be compared further. Please stop</source>
         <translation>Se ha alcanzado el límite de almacenamiento y comparación de investigación — este contacto no se comparará más. Deténgase, por favor</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="1349"/>
+        <location filename="../src/livewindow.cpp" line="1372"/>
         <source>GPU comparison is unavailable — showing the image only. Please stop</source>
         <translation>La comparación GPU no está disponible — solo se muestra la imagen. Deténgase, por favor</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="1353"/>
+        <location filename="../src/livewindow.cpp" line="1376"/>
         <source>⚠ The ridges were smeared, so this was not added to the map — the red outline on the map is where it would have gone. Ease off and press the same spot again</source>
         <translation>⚠ Las crestas salieron borrosas, así que esto no se añadió al mapa — el contorno rojo del mapa marca dónde habría ido. Afloje y presione de nuevo en el mismo punto</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="1356"/>
+        <location filename="../src/livewindow.cpp" line="1379"/>
         <source>⚠ This could not be fitted to the map — press so that it overlaps an already filled area by about half</source>
         <translation>⚠ Esto no se pudo encajar en el mapa — presione de forma que solape en torno a la mitad de una zona ya rellenada</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="1359"/>
+        <location filename="../src/livewindow.cpp" line="1382"/>
         <source>⚠ This does not overlap anything already on the map — continue from the edge of a filled area</source>
         <translation>⚠ Esto no solapa nada que ya esté en el mapa — continúe desde el borde de una zona rellenada</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="1363"/>
+        <location filename="../src/livewindow.cpp" line="1386"/>
         <source>[%1/%2 contacts compared · stops automatically at the target] </source>
         <translation>[%1/%2 contactos comparados · se detiene automáticamente al alcanzar el objetivo] </translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="1367"/>
+        <location filename="../src/livewindow.cpp" line="1390"/>
         <source>%1 FPS · %2 frames · ridge signal %3 · contrast area %4% · sharpness %5
 </source>
         <translation>%1 FPS · %2 fotogramas · señal de crestas %3 · área de contraste %4 % · nitidez %5
 </translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="1370"/>
+        <location filename="../src/livewindow.cpp" line="1393"/>
         <source>%1 · %2 contacts · %3 candidates · %4 GPU comparisons done / %5 contacts queued (not validated for authentication)</source>
         <translation>%1 · %2 contactos · %3 candidatos · %4 comparaciones GPU hechas / %5 contactos en cola (no validado para autenticación)</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="1372"/>
+        <location filename="../src/livewindow.cpp" line="1395"/>
         <source>
 Raw difference %1 · background noise %2 · %3</source>
         <translation>
 Diferencia bruta %1 · ruido de fondo %2 · %3</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="1373"/>
+        <location filename="../src/livewindow.cpp" line="1396"/>
         <source>collecting background</source>
         <translation>recogiendo fondo</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="1373"/>
+        <location filename="../src/livewindow.cpp" line="1396"/>
         <source>finger in contact</source>
         <translation>dedo en contacto</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="1373"/>
+        <location filename="../src/livewindow.cpp" line="1396"/>
         <source>no finger</source>
         <translation>sin dedo</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="1378"/>
+        <location filename="../src/livewindow.cpp" line="1401"/>
         <source>The image stream has stopped — the screen shows the last frame</source>
         <translation>La transmisión de imágenes se ha detenido — la pantalla muestra el último fotograma</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="1379"/>
+        <location filename="../src/livewindow.cpp" line="1402"/>
         <source>0 FPS · no new image for %1 s</source>
         <translation>0 FPS · sin imagen nueva desde hace %1 s</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="1416"/>
+        <location filename="../src/livewindow.cpp" line="1439"/>
         <source>GPU comparison finished · %1 processed · stopped normally on reaching the target of %2 contacts
 The results and colour-marked images have been saved. This did not decide whether authentication is granted.</source>
         <translation>Comparación GPU finalizada · %1 procesadas · parada normal al alcanzar el objetivo de %2 contactos
 Los resultados y las imágenes marcadas en color se han guardado. Esto no ha decidido si se concede la autenticación.</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="1417"/>
+        <location filename="../src/livewindow.cpp" line="1440"/>
         <source>GPU comparison stopped · %1 finished · %2 cancelled in progress
 Stopped at your request. Saved results are kept.</source>
         <translation>Comparación GPU detenida · %1 finalizadas · %2 canceladas en curso
 Detenida a petición suya. Los resultados guardados se conservan.</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="1418"/>
+        <location filename="../src/livewindow.cpp" line="1441"/>
         <source>Stopping — lift your finger</source>
         <translation>Deteniendo — retire el dedo</translation>
     </message>
