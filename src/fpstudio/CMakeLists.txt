@@ -17,6 +17,49 @@ endif()
 set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_RELEASE ON)
 add_compile_options(-Wall -Wextra -Wno-unused-parameter)
 
+# Profile-guided optimisation.
+#
+# Two configures of the same tree: one that records which branches are taken,
+# and one that compiles with that record. The training run in between is what
+# makes it worth anything - see tools/pgo-build.sh, which uses the test suite
+# and a synthetic matcher sweep so that training needs no fingerprint data and
+# can therefore run anywhere, including CI.
+#
+#   cmake -DFPSTUDIO_PGO=GENERATE ..   # then build, then run the training
+#   cmake -DFPSTUDIO_PGO=USE ..        # then build again
+#
+# The profile lives outside the build directory on purpose: the USE configure
+# wipes and rewrites object files, and a profile stored among them would be
+# destroyed by the build that is supposed to consume it.
+set(FPSTUDIO_PGO OFF CACHE STRING "Profile-guided optimisation: OFF, GENERATE or USE")
+set_property(CACHE FPSTUDIO_PGO PROPERTY STRINGS OFF GENERATE USE)
+set(FPSTUDIO_PGO_DIR "${CMAKE_CURRENT_BINARY_DIR}/../pgo-data"
+    CACHE PATH "Where -fprofile-generate writes and -fprofile-use reads")
+get_filename_component(FPSTUDIO_PGO_DIR "${FPSTUDIO_PGO_DIR}" ABSOLUTE)
+
+if(FPSTUDIO_PGO STREQUAL "GENERATE")
+  file(MAKE_DIRECTORY "${FPSTUDIO_PGO_DIR}")
+  # prefer-atomic: the preview reader, the Vulkan worker and Qt's own pools all
+  # run counters concurrently, and the default non-atomic update loses them.
+  add_compile_options(-fprofile-generate "-fprofile-dir=${FPSTUDIO_PGO_DIR}"
+                      -fprofile-update=prefer-atomic)
+  add_link_options(-fprofile-generate "-fprofile-dir=${FPSTUDIO_PGO_DIR}")
+  message(STATUS "PGO: recording to ${FPSTUDIO_PGO_DIR}")
+elseif(FPSTUDIO_PGO STREQUAL "USE")
+  if(NOT EXISTS "${FPSTUDIO_PGO_DIR}")
+    message(FATAL_ERROR "FPSTUDIO_PGO=USE but no profile at ${FPSTUDIO_PGO_DIR}; run the GENERATE build and its training first")
+  endif()
+  # A source file the training never reached has no profile, which is normal
+  # for error paths and must not fail the build. Correction is needed because
+  # the atomic counters above can still be raced across processes.
+  add_compile_options(-fprofile-use "-fprofile-dir=${FPSTUDIO_PGO_DIR}"
+                      -fprofile-correction -Wno-missing-profile)
+  add_link_options(-fprofile-use "-fprofile-dir=${FPSTUDIO_PGO_DIR}")
+  message(STATUS "PGO: compiling against ${FPSTUDIO_PGO_DIR}")
+elseif(NOT FPSTUDIO_PGO STREQUAL "OFF")
+  message(FATAL_ERROR "FPSTUDIO_PGO must be OFF, GENERATE or USE (got '${FPSTUDIO_PGO}')")
+endif()
+
 # Authentication logs may include __FILE__ through libsystemd's journal
 # macros.  Strip the build machine's absolute checkout path from every target
 # so Release binaries are reproducible and never disclose a user/home name.

@@ -465,37 +465,37 @@ Windows fingerprint sign-in will stop working on this machine, permanently. If y
         <translation>未確認 — センサーなし</translation>
     </message>
     <message>
-        <location filename="../src/frameselector.h" line="20"/>
+        <location filename="../src/frameselector.h" line="102"/>
         <source>Unexpected image size</source>
         <translation>Unexpected image size</translation>
     </message>
     <message>
-        <location filename="../src/frameselector.h" line="52"/>
+        <location filename="../src/frameselector.h" line="134"/>
         <source>Waiting for a finger</source>
         <translation>Waiting for a finger</translation>
     </message>
     <message>
-        <location filename="../src/frameselector.h" line="53"/>
+        <location filename="../src/frameselector.h" line="135"/>
         <source>Insufficient contact area</source>
         <translation>Insufficient contact area</translation>
     </message>
     <message>
-        <location filename="../src/frameselector.h" line="54"/>
+        <location filename="../src/frameselector.h" line="136"/>
         <source>Insufficient ridge contrast</source>
         <translation>Insufficient ridge contrast</translation>
     </message>
     <message>
-        <location filename="../src/frameselector.h" line="55"/>
+        <location filename="../src/frameselector.h" line="137"/>
         <source>Insufficient consistent ridge pattern</source>
         <translation>Insufficient consistent ridge pattern</translation>
     </message>
     <message>
-        <location filename="../src/frameselector.h" line="56"/>
+        <location filename="../src/frameselector.h" line="138"/>
         <source>Waiting for motion to settle</source>
         <translation>Waiting for motion to settle</translation>
     </message>
     <message>
-        <location filename="../src/frameselector.h" line="57"/>
+        <location filename="../src/frameselector.h" line="139"/>
         <source>Research candidate</source>
         <translation>Research candidate</translation>
     </message>
@@ -515,95 +515,95 @@ Use Capture to pull an image from the sensor</source>
 <context>
     <name>fpstudio::LiveWindow</name>
     <message>
-        <location filename="../src/livewindow.cpp" line="145"/>
+        <location filename="../src/livewindow.cpp" line="188"/>
         <source>Vulkan GPU is initializing — it calculates separately from the live stream</source>
         <translation>Vulkan GPU を初期化中 — ライブ映像とは別に計算します</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="154"/>
+        <location filename="../src/livewindow.cpp" line="197"/>
         <source>%1 · %2 references ready · waiting for a stable candidate</source>
         <translation>%1 · 基準 %2 枚を準備済み · 安定した候補映像を待機中</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="181"/>
+        <location filename="../src/livewindow.cpp" line="224"/>
         <source>GPU comparison error: </source>
         <translation>GPU 比較エラー: </translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="186"/>
+        <location filename="../src/livewindow.cpp" line="229"/>
         <source>GPU %1 hypotheses · %2 ms · image correlation %3 · ridge-direction agreement %4
 Best: %5 / %6 — research comparison only; not an authentication decision</source>
         <translation>GPU 条件 %1 件 · %2 ms · 画像相関 %3 · 隆線方向一致 %4
 最上位: %5 / %6 — 研究用の比較であり、認証判定ではありません</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="190"/>
+        <location filename="../src/livewindow.cpp" line="233"/>
         <source>
 Alignment is ambiguous: a different position has a similar score</source>
         <translation>
 位置合わせが曖昧です: 別の位置に近いスコアがあります</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="191"/>
+        <location filename="../src/livewindow.cpp" line="234"/>
         <source>
 At the search boundary: move the finger slightly toward the centre</source>
         <translation>
 探索範囲の境界です: 指を少し中央寄りに動かしてください</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="194"/>
+        <location filename="../src/livewindow.cpp" line="237"/>
         <source>
 Interior ridge support %1/%2 regions · %3</source>
         <translation>
 内部隆線の支持 %1/%2 領域 · %3</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="196"/>
+        <location filename="../src/livewindow.cpp" line="239"/>
         <source>ridges are consistent (identity unverified)</source>
         <translation>隆線は一貫しています（本人性は未検証）</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="196"/>
+        <location filename="../src/livewindow.cpp" line="239"/>
         <source>insufficient match evidence</source>
         <translation>一致の根拠が不足しています</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="199"/>
+        <location filename="../src/livewindow.cpp" line="242"/>
         <source> · 0/1 contact-region overlap %1%</source>
         <translation> · 0/1 接触領域の重なり %1%</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="201"/>
+        <location filename="../src/livewindow.cpp" line="244"/>
         <source> · 360° additional search applied</source>
         <translation> · 360° 追加探索を適用</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="203"/>
+        <location filename="../src/livewindow.cpp" line="246"/>
         <source> · full reference-bank search</source>
         <translation> · 基準バンク全体を探索</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="203"/>
+        <location filename="../src/livewindow.cpp" line="246"/>
         <source> · representative-reference fast comparison</source>
         <translation> · 代表基準による高速比較</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="219"/>
+        <location filename="../src/livewindow.cpp" line="262"/>
         <source>GPU comparison cannot run: </source>
         <translation>GPU 比較を実行できません: </translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="280"/>
+        <location filename="../src/livewindow.cpp" line="323"/>
         <source>Vulkan GPU is comparing reference images, angles, and positions in parallel…</source>
         <translation>Vulkan GPU が基準映像・角度・位置を並列比較中です…</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="285"/>
+        <location filename="../src/livewindow.cpp" line="328"/>
         <source>GPU comparison timed out — live collection continues</source>
         <translation>GPU 比較がタイムアウトしました — ライブ収集は継続します</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="357"/>
+        <location filename="../src/livewindow.cpp" line="1070"/>
         <source>Contact %1 · image from comparison %2 (not live)
 Gray: background (0) · yellow: contact (1), but weak features · green/red: comparison evidence
 Cyan +: transformed reference contact centre · orange +: current probe contact centre · blue: comparison range</source>
@@ -612,7 +612,7 @@ Cyan +: transformed reference contact centre · orange +: current probe contact 
 水色 +: 変換後の基準接触中心 · 橙 +: 現在の検査接触中心 · 青: 比較範囲</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="546"/>
+        <location filename="../src/livewindow.cpp" line="1388"/>
         <source>[%1/%2 contacts compared · stops automatically at the target] </source>
         <translation>[%1/%2 接触を比較済み · 目標に達すると自動終了] </translation>
     </message>

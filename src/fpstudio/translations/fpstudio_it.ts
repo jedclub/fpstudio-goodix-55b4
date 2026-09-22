@@ -465,37 +465,37 @@ L&apos;accesso con impronta di Windows smetterà di funzionare su questa macchin
         <translation>Non controllato - nessun sensore</translation>
     </message>
     <message>
-        <location filename="../src/frameselector.h" line="20"/>
+        <location filename="../src/frameselector.h" line="102"/>
         <source>Unexpected image size</source>
         <translation>Unexpected image size</translation>
     </message>
     <message>
-        <location filename="../src/frameselector.h" line="52"/>
+        <location filename="../src/frameselector.h" line="134"/>
         <source>Waiting for a finger</source>
         <translation>Waiting for a finger</translation>
     </message>
     <message>
-        <location filename="../src/frameselector.h" line="53"/>
+        <location filename="../src/frameselector.h" line="135"/>
         <source>Insufficient contact area</source>
         <translation>Insufficient contact area</translation>
     </message>
     <message>
-        <location filename="../src/frameselector.h" line="54"/>
+        <location filename="../src/frameselector.h" line="136"/>
         <source>Insufficient ridge contrast</source>
         <translation>Insufficient ridge contrast</translation>
     </message>
     <message>
-        <location filename="../src/frameselector.h" line="55"/>
+        <location filename="../src/frameselector.h" line="137"/>
         <source>Insufficient consistent ridge pattern</source>
         <translation>Insufficient consistent ridge pattern</translation>
     </message>
     <message>
-        <location filename="../src/frameselector.h" line="56"/>
+        <location filename="../src/frameselector.h" line="138"/>
         <source>Waiting for motion to settle</source>
         <translation>Waiting for motion to settle</translation>
     </message>
     <message>
-        <location filename="../src/frameselector.h" line="57"/>
+        <location filename="../src/frameselector.h" line="139"/>
         <source>Research candidate</source>
         <translation>Research candidate</translation>
     </message>
@@ -515,95 +515,95 @@ Usa Acquisisci per ottenere un&apos;immagine dal sensore</translation>
 <context>
     <name>fpstudio::LiveWindow</name>
     <message>
-        <location filename="../src/livewindow.cpp" line="145"/>
+        <location filename="../src/livewindow.cpp" line="188"/>
         <source>Vulkan GPU is initializing — it calculates separately from the live stream</source>
         <translation>Inizializzazione della GPU Vulkan — calcola separatamente dal flusso in tempo reale</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="154"/>
+        <location filename="../src/livewindow.cpp" line="197"/>
         <source>%1 · %2 references ready · waiting for a stable candidate</source>
         <translation>%1 · %2 riferimenti pronti · in attesa di un candidato stabile</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="181"/>
+        <location filename="../src/livewindow.cpp" line="224"/>
         <source>GPU comparison error: </source>
         <translation>Errore di confronto GPU: </translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="186"/>
+        <location filename="../src/livewindow.cpp" line="229"/>
         <source>GPU %1 hypotheses · %2 ms · image correlation %3 · ridge-direction agreement %4
 Best: %5 / %6 — research comparison only; not an authentication decision</source>
         <translation>GPU: %1 ipotesi · %2 ms · correlazione dell’immagine %3 · concordanza della direzione delle creste %4
 Migliore: %5 / %6 — solo confronto di ricerca; non è una decisione di autenticazione</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="190"/>
+        <location filename="../src/livewindow.cpp" line="233"/>
         <source>
 Alignment is ambiguous: a different position has a similar score</source>
         <translation>
 L’allineamento è ambiguo: un’altra posizione ha un punteggio simile</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="191"/>
+        <location filename="../src/livewindow.cpp" line="234"/>
         <source>
 At the search boundary: move the finger slightly toward the centre</source>
         <translation>
 Al limite della ricerca: spostare leggermente il dito verso il centro</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="194"/>
+        <location filename="../src/livewindow.cpp" line="237"/>
         <source>
 Interior ridge support %1/%2 regions · %3</source>
         <translation>
 Supporto interno delle creste: %1/%2 regioni · %3</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="196"/>
+        <location filename="../src/livewindow.cpp" line="239"/>
         <source>ridges are consistent (identity unverified)</source>
         <translation>creste coerenti (identità non verificata)</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="196"/>
+        <location filename="../src/livewindow.cpp" line="239"/>
         <source>insufficient match evidence</source>
         <translation>prove di corrispondenza insufficienti</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="199"/>
+        <location filename="../src/livewindow.cpp" line="242"/>
         <source> · 0/1 contact-region overlap %1%</source>
         <translation> · sovrapposizione della regione di contatto 0/1: %1%</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="201"/>
+        <location filename="../src/livewindow.cpp" line="244"/>
         <source> · 360° additional search applied</source>
         <translation> · applicata ricerca aggiuntiva a 360°</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="203"/>
+        <location filename="../src/livewindow.cpp" line="246"/>
         <source> · full reference-bank search</source>
         <translation> · ricerca nell’intera raccolta di riferimenti</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="203"/>
+        <location filename="../src/livewindow.cpp" line="246"/>
         <source> · representative-reference fast comparison</source>
         <translation> · confronto rapido con riferimenti rappresentativi</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="219"/>
+        <location filename="../src/livewindow.cpp" line="262"/>
         <source>GPU comparison cannot run: </source>
         <translation>Impossibile eseguire il confronto GPU: </translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="280"/>
+        <location filename="../src/livewindow.cpp" line="323"/>
         <source>Vulkan GPU is comparing reference images, angles, and positions in parallel…</source>
         <translation>La GPU Vulkan confronta in parallelo immagini di riferimento, angoli e posizioni…</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="285"/>
+        <location filename="../src/livewindow.cpp" line="328"/>
         <source>GPU comparison timed out — live collection continues</source>
         <translation>Timeout del confronto GPU — la raccolta in tempo reale continua</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="357"/>
+        <location filename="../src/livewindow.cpp" line="1070"/>
         <source>Contact %1 · image from comparison %2 (not live)
 Gray: background (0) · yellow: contact (1), but weak features · green/red: comparison evidence
 Cyan +: transformed reference contact centre · orange +: current probe contact centre · blue: comparison range</source>
@@ -612,7 +612,7 @@ Grigio: sfondo (0) · giallo: contatto (1), ma caratteristiche deboli · verde/r
 + ciano: centro di contatto di riferimento trasformato · + arancione: centro del contatto corrente · blu: intervallo di confronto</translation>
     </message>
     <message>
-        <location filename="../src/livewindow.cpp" line="546"/>
+        <location filename="../src/livewindow.cpp" line="1388"/>
         <source>[%1/%2 contacts compared · stops automatically at the target] </source>
         <translation>[%1/%2 contatti confrontati · arresto automatico al raggiungimento dell’obiettivo] </translation>
     </message>
